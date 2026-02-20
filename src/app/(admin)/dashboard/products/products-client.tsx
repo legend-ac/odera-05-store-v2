@@ -250,13 +250,13 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
 
   return (
     <div className="grid xl:grid-cols-[300px_1fr] gap-4 md:gap-6">
-      <div className="border border-neutral-200 rounded-xl p-3 md:p-4 h-fit bg-white">
-        <div className="font-medium mb-2">Productos</div>
+      <div className="panel p-3 md:p-4 h-fit">
+        <div className="font-semibold text-slate-900 mb-2">Productos</div>
 
         <div className="flex gap-2 mb-3">
           <button
             type="button"
-            className="px-3 py-2 rounded-lg border border-neutral-300 text-sm bg-white hover:bg-neutral-50"
+            className="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white hover:bg-slate-50"
             onClick={() => {
               setSelectedId("");
               setDraft(emptyProduct());
@@ -267,7 +267,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
           </button>
           <button
             type="button"
-            className="px-3 py-2 rounded-lg border border-neutral-300 text-sm bg-white hover:bg-neutral-50 disabled:opacity-50"
+            className="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white hover:bg-slate-50 disabled:opacity-50"
             disabled={!selected}
             onClick={loadSelected}
           >
@@ -278,7 +278,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         <select
           value={selectedId}
           onChange={(e) => setSelectedId(e.target.value)}
-          className="w-full border border-neutral-300 rounded-lg px-2 py-2 text-sm bg-white"
+          className="w-full border border-slate-300 rounded-lg px-2 py-2 text-sm bg-white"
         >
           <option value="">(Selecciona)</option>
           {products.map((p) => (
@@ -288,14 +288,17 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
           ))}
         </select>
 
-        <div className="mt-3 text-xs text-neutral-500">
+        <div className="mt-3 text-xs text-slate-500">
           Nota: aquí el <b>docId</b> es el <b>slug</b>. Cambiar slug crea otro documento.
         </div>
       </div>
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="font-medium">Editor de producto</div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-semibold text-slate-900">Editor de producto</h1>
+            <p className="text-sm text-slate-600">Crea y actualiza productos con variantes e imágenes.</p>
+          </div>
           <button
             type="button"
             onClick={save}
@@ -306,17 +309,17 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
           </button>
         </div>
 
-        {msg ? <div className="text-sm text-neutral-700 panel p-3">{msg}</div> : null}
+        {msg ? <div className="text-sm text-slate-700 panel p-3">{msg}</div> : null}
 
         <div className="grid gap-4">
           <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Slug (kebab-case)</label>
-              <input value={draft.slug} onChange={(e) => setDraft((d) => ({ ...d, slug: e.target.value }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" />
+              <input value={draft.slug} onChange={(e) => setDraft((d) => ({ ...d, slug: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">Estado</label>
-              <select value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as any }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm">
+              <select value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as any }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
                 <option value="active">Activo</option>
                 <option value="archived">Archivado</option>
               </select>
@@ -334,35 +337,35 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                   return { ...d, name, slug: canAutofillSlug ? safeSlug(name) : d.slug };
                 })
               }
-              className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm"
             />
           </div>
 
           <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Marca</label>
-              <input value={draft.brand} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" />
+              <input value={draft.brand} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">Categoría</label>
-              <input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" />
+              <input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
           </div>
 
           <div className="grid gap-1 panel p-3 md:p-4">
             <label className="text-sm font-medium">Descripción</label>
-            <textarea value={draft.description} onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm min-h-28" />
+            <textarea value={draft.description} onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm min-h-28" />
           </div>
 
           <div className="grid md:grid-cols-3 gap-3 panel p-3 md:p-4">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Precio</label>
-              <input type="number" value={draft.price} onChange={(e) => setDraft((d) => ({ ...d, price: Number(e.target.value) }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" />
+              <input type="number" value={draft.price} onChange={(e) => setDraft((d) => ({ ...d, price: Number(e.target.value) }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
 
             <div className="grid gap-1">
               <label className="text-sm font-medium">En oferta</label>
-              <select value={draft.onSale ? "yes" : "no"} onChange={(e) => setDraft((d) => ({ ...d, onSale: e.target.value === "yes" }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm">
+              <select value={draft.onSale ? "yes" : "no"} onChange={(e) => setDraft((d) => ({ ...d, onSale: e.target.value === "yes" }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
                 <option value="no">No</option>
                 <option value="yes">Si</option>
               </select>
@@ -370,7 +373,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
 
             <div className="grid gap-1">
               <label className="text-sm font-medium">Precio oferta</label>
-              <input type="number" value={draft.salePrice ?? ""} onChange={(e) => setDraft((d) => ({ ...d, salePrice: e.target.value === "" ? null : Number(e.target.value) }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" />
+              <input type="number" value={draft.salePrice ?? ""} onChange={(e) => setDraft((d) => ({ ...d, salePrice: e.target.value === "" ? null : Number(e.target.value) }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
           </div>
 

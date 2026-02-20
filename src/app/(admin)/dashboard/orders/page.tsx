@@ -25,8 +25,13 @@ export default async function OrdersPage() {
       id: d.id,
       publicCode: data.publicCode as string,
       status: data.status as string,
+      customerName: (data.customer?.name as string | undefined) ?? "",
       email: (data.customer?.email as string | undefined) ?? "",
+      phone: (data.customer?.phone as string | undefined) ?? "",
       totalToPay: (data.totals?.totalToPay as number | undefined) ?? 0,
+      paymentMethod: (data.payment?.method as string | undefined) ?? "",
+      receiptImageUrl: (data.payment?.receiptImageUrl as string | undefined) ?? "",
+      shipping: data.shipping ?? null,
       reservedUntilMs: toMs(data.reservedUntil),
       createdAtMs: toMs(data.createdAt),
     };

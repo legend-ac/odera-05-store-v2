@@ -33,6 +33,7 @@ export type ProductDoc = {
 };
 
 export type OrderStatus =
+  | "PENDING_VALIDATION"
   | "SCHEDULED"
   | "PAYMENT_SENT"
   | "PAID"
@@ -80,7 +81,12 @@ export type OrderDoc = {
   itemsSnapshots: OrderItemSnapshot[];
   totals: { subtotal: number; discountAmount?: number; shippingCost?: number; totalToPay: number };
   couponCode?: string;
-  payment: { operationCode?: string; method?: "YAPE" | "PLIN" | "OTHER"; paymentSentAt?: unknown };
+  payment: {
+    method?: "YAPE" | "PLIN" | "OTHER";
+    receiptImageUrl?: string;
+    operationCode?: string;
+    paymentSentAt?: unknown;
+  };
   createdAt: unknown;
   updatedAt: unknown;
 };

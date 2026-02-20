@@ -39,6 +39,10 @@ export const createOrderSchema = z.object({
     email: z.string().email().max(200),
     phone: z.string().min(6).max(40),
   }),
+  payment: z.object({
+    method: z.enum(["YAPE", "PLIN"]),
+    receiptImageUrl: z.string().url().max(1000),
+  }),
   shipping: shippingSchema,
   couponCode: z.string().min(3).max(40).optional(),
 });

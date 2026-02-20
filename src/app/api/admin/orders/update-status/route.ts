@@ -41,13 +41,11 @@ export async function POST(req: Request) {
       const before = snap.data() as any;
       const currentStatus = before.status as string;
 
-      // Basic validation of transitions
       const terminal = ["DELIVERED", "CANCELLED", "CANCELLED_EXPIRED"];
       if (terminal.includes(currentStatus) && nextStatus !== currentStatus) {
         throw new Error("ORDER_ALREADY_TERMINAL");
       }
 
-      // Cancel logic (restock only if before PAID)
       if (nextStatus === "CANCELLED") {
         if (currentStatus === "PAID" || currentStatus === "SHIPPED" || currentStatus === "DELIVERED") {
           throw new Error("CANNOT_CANCEL_AFTER_PAID");
@@ -90,8 +88,6 @@ export async function POST(req: Request) {
         tx.update(orderRef, { status: nextStatus, updatedAt: now });
       }
 
-      const after = { ...before, status: nextStatus };
-
       const auditRef = adminDb.collection("auditLogs").doc();
       tx.set(auditRef, {
         actor: { uid: admin.uid, email: admin.email },
@@ -109,12 +105,15 @@ export async function POST(req: Request) {
       };
     });
 
-    // Email (best effort)
-    if (result.customerEmail && result.publicCode) {
+    if (result.customerEmail && result.publicCode && (nextStatus === "PAID" || nextStatus === "SHIPPED")) {
+      const text =
+        nextStatus === "PAID"
+          ? `Tu pedido ${result.publicCode} fue confirmado como PAGADO.`
+          : `Tu pedido ${result.publicCode} fue enviado.`;
       await sendTransactionalEmail({
         to: result.customerEmail,
-        subject: `ODERA 05 STORE — Estado actualizado (${result.publicCode})`,
-        text: `Tu pedido ${result.publicCode} cambió a estado: ${nextStatus}`,
+        subject: `ODERA 05 STORE - Actualizacion de pedido (${result.publicCode})`,
+        text,
       });
     }
 

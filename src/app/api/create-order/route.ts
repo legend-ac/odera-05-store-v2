@@ -8,6 +8,7 @@ import { getRequestIp, getUserAgent } from "@/lib/server/ip";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 import { randomToken } from "@/lib/server/random";
 import { sendTransactionalEmail } from "@/lib/server/email";
+import { getServerEnv } from "@/lib/env";
 import type { ProductDoc } from "@/types/firestore";
 
 export const runtime = "nodejs";
@@ -18,6 +19,36 @@ type ProductRefData = ProductDoc & { variants: { id: string; size?: string; colo
 function pickUnitPrice(p: ProductRefData): number {
   if (p.onSale && typeof p.salePrice === "number") return p.salePrice;
   return p.price;
+}
+
+function shippingToText(shipping: any): string {
+  if (!shipping) return "-";
+  if (shipping.method === "LIMA_DELIVERY") {
+    return [
+      "Tipo de envio: Delivery Lima Metropolitana",
+      `Recibe: ${shipping.receiverName}`,
+      `DNI: ${shipping.receiverDni}`,
+      `Telefono: ${shipping.receiverPhone}`,
+      `Distrito: ${shipping.district}`,
+      `Direccion: ${shipping.addressLine1}`,
+      shipping.reference ? `Referencia: ${shipping.reference}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  return [
+    "Tipo de envio: Agencia provincia",
+    `Recoge: ${shipping.receiverName}`,
+    `DNI: ${shipping.receiverDni}`,
+    `Telefono: ${shipping.receiverPhone}`,
+    `Departamento: ${shipping.department}`,
+    `Provincia: ${shipping.province}`,
+    `Agencia: ${shipping.agencyName}`,
+    `Direccion agencia: ${shipping.agencyAddress}`,
+    shipping.reference ? `Referencia: ${shipping.reference}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export async function POST(req: Request) {
@@ -46,7 +77,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "VALIDATION_ERROR", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const { items, customer, shipping, couponCode } = parsed.data;
+    const { items, customer, payment, shipping, couponCode } = parsed.data;
 
     const merged = new Map<string, { productId: string; variantId: string; qty: number }>();
     for (const it of items) {
@@ -159,14 +190,18 @@ export async function POST(req: Request) {
       const orderDoc = {
         publicCode,
         trackingToken,
-        status: "SCHEDULED",
+        status: "PENDING_VALIDATION",
         reservedUntil,
         customer,
         shipping,
         itemsSnapshots,
         couponCode: isCouponValid ? normalizedCoupon : undefined,
         totals: { subtotal, discountAmount, shippingCost, totalToPay },
-        payment: {},
+        payment: {
+          method: payment.method,
+          receiptImageUrl: payment.receiptImageUrl,
+          paymentSentAt: now,
+        },
         createdAt: now,
         updatedAt: now,
       };
@@ -179,7 +214,7 @@ export async function POST(req: Request) {
         action: "ORDER_CREATED",
         target: { type: "order", id: orderRef.id, publicCode },
         before: null,
-        after: { status: "SCHEDULED" },
+        after: { status: "PENDING_VALIDATION" },
         meta: { ip, userAgent: ua, shippingMethod: shipping.method },
         createdAt: new Date(),
       });
@@ -189,6 +224,7 @@ export async function POST(req: Request) {
         publicCode,
         trackingToken,
         reservedUntilMs: reservedUntil.toMillis(),
+        itemsSnapshots,
         discountAmount,
         shippingCost,
         totalToPay,
@@ -220,21 +256,43 @@ export async function POST(req: Request) {
 
     const settingsSnap = await adminDb.doc("settings/store").get();
     const storeName = settingsSnap.exists ? (settingsSnap.data()?.storeName as string | undefined) : undefined;
+    const env = getServerEnv();
+    const businessEmail = (settingsSnap.exists ? (settingsSnap.data()?.publicContactEmail as string | undefined) : undefined) || env.SMTP_USER;
+
+    const orderLines = ((result as any).itemsSnapshots ?? [])
+      .map((it: any) => `- ${it.nameSnapshot} x ${it.qty} - S/ ${(Number(it.unitPriceSnapshot ?? 0) * Number(it.qty ?? 0)).toFixed(2)}`)
+      .join("\n");
+
+    const mailDetail =
+      `Pedido: ${result.publicCode}\n` +
+      `Estado: Pendiente de validacion de pago\n\n` +
+      `Cliente\n` +
+      `Nombre: ${customer.name}\n` +
+      `Correo: ${customer.email}\n` +
+      `Telefono: ${customer.phone}\n\n` +
+      `${shippingToText(shipping)}\n\n` +
+      `Metodo de pago: ${payment.method}\n` +
+      `Comprobante: ${payment.receiptImageUrl}\n\n` +
+      `Productos:\n${orderLines}\n\n` +
+      `Descuento: S/ ${((result as any).discountAmount ?? 0).toFixed(2)}\n` +
+      `Envio: S/ ${((result as any).shippingCost ?? 0).toFixed(2)}\n` +
+      `Total: S/ ${((result as any).totalToPay ?? 0).toFixed(2)}\n\n` +
+      `Clave de seguimiento: ${result.trackingToken}`;
 
     if (!wasIdempotent) {
       await sendTransactionalEmail({
         to: customer.email,
-        subject: `${storeName ?? "ODERA 05 STORE"} - Pedido ${result.publicCode}`,
-        text:
-          `Tu pedido fue creado.\n\n` +
-          `Codigo: ${result.publicCode}\n` +
-          `Clave de seguimiento: ${result.trackingToken}\n` +
-          `Reserva valida hasta: ${new Date(result.reservedUntilMs).toLocaleString("es-PE")}\n` +
-          `Descuento: S/ ${(result as any).discountAmount ?? 0}\n` +
-          `Costo de envio: S/ ${result.shippingCost}\n` +
-          `Total a pagar: S/ ${result.totalToPay}\n\n` +
-          `Puedes enviar tu pago desde la seccion Mis pedidos del sitio.`,
+        subject: `${storeName ?? "ODERA 05 STORE"} - Pedido ${result.publicCode} (Pendiente de validacion)`,
+        text: `Tu pedido fue registrado correctamente.\n\n${mailDetail}`,
       });
+
+      if (businessEmail) {
+        await sendTransactionalEmail({
+          to: businessEmail,
+          subject: `Nuevo pedido ${result.publicCode} - ${storeName ?? "ODERA 05 STORE"}`,
+          text: mailDetail,
+        });
+      }
     }
 
     return NextResponse.json(result, { status: 200 });

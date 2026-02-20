@@ -56,22 +56,22 @@ export default function CatalogPage() {
   }, [token]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
+    <div className="mx-auto max-w-5xl px-4 py-8 md:py-10 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Catalogo</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Catalogo</h1>
         <p className="text-sm text-neutral-600">Encuentra tus productos por nombre, marca o palabra clave.</p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="panel p-3 md:p-4 flex gap-2">
         <input
           value={qText}
           onChange={(e) => setQText(e.target.value)}
           placeholder="Buscar (ej. nike, polera, negro)"
-          className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm"
+          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
         />
         <button
           onClick={() => setQText("")}
-          className="px-3 py-2 rounded-md border border-neutral-300 text-sm"
+          className="px-3 py-2 rounded-md border border-slate-300 text-sm bg-white hover:bg-slate-50"
           type="button"
         >
           Limpiar
@@ -82,7 +82,7 @@ export default function CatalogPage() {
       {!items ? <div className="text-sm text-neutral-500">Cargando productos...</div> : null}
 
       {items && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {items.map((p) => (
             <ProductCard key={p.id} p={p} />
           ))}

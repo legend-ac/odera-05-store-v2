@@ -9,6 +9,7 @@ type TrackResponse = {
   orderId: string;
   publicCode: string;
   status: string;
+  customer?: { name?: string; email?: string; phone?: string };
   reservedUntilMs: number | null;
   itemsSnapshots: { nameSnapshot: string; qty: number; unitPriceSnapshot: number }[];
   totals: { subtotal: number; discountAmount?: number; shippingCost?: number; totalToPay: number } | null;
@@ -39,6 +40,7 @@ type TrackResponse = {
 
 function statusLabel(status: string) {
   const map: Record<string, string> = {
+    PENDING_VALIDATION: "Pendiente de validacion de pago",
     SCHEDULED: "Pedido registrado",
     PAYMENT_SENT: "Pago enviado",
     PAID: "Pago confirmado",

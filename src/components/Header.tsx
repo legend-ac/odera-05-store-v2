@@ -32,11 +32,14 @@ export default function Header() {
   const count = items.reduce((acc, x) => acc + x.qty, 0);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/92 backdrop-blur-md">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-3">
           <span className="w-8 h-8 rounded-md bg-slate-900 text-white grid place-items-center text-xs font-bold">O5</span>
-          <span className="font-semibold tracking-tight">ODERA 05 STORE</span>
+          <span className="flex flex-col leading-tight">
+            <span className="font-semibold tracking-tight text-slate-900">ODERA 05 STORE</span>
+            <span className="hidden sm:block text-[11px] text-slate-500">Tienda oficial en linea</span>
+          </span>
         </Link>
 
         <button

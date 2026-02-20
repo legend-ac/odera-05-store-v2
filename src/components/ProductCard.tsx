@@ -19,7 +19,7 @@ export default function ProductCard({ p }: { p: ProductCardData }) {
   return (
     <Link
       href={`/p/${p.id}`}
-      className="group panel overflow-hidden transition-transform duration-200 hover:-translate-y-0.5"
+      className="group panel overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.10)]"
     >
       <div className="aspect-square bg-slate-50 flex items-center justify-center overflow-hidden relative">
         {p.imageUrl ? (
@@ -34,7 +34,7 @@ export default function ProductCard({ p }: { p: ProductCardData }) {
         ) : null}
       </div>
 
-      <div className="p-3 flex flex-col gap-1">
+      <div className="p-3 flex flex-col gap-2">
         <div className="text-sm font-semibold truncate text-slate-900">{p.name}</div>
         <div className="text-sm">
           <span className="font-semibold text-slate-900">{formatPEN(price)}</span>
@@ -42,6 +42,7 @@ export default function ProductCard({ p }: { p: ProductCardData }) {
             <span className="text-xs text-slate-500 ml-2 line-through">{formatPEN(p.price)}</span>
           ) : null}
         </div>
+        <span className="text-[11px] text-slate-500">Ver detalle y variantes</span>
       </div>
     </Link>
   );

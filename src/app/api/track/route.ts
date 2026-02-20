@@ -45,6 +45,7 @@ export async function POST(req: Request) {
         orderId: doc.id,
         publicCode: data.publicCode,
         status: data.status,
+        customer: data.customer ?? null,
         reservedUntilMs: tsToMillis(data.reservedUntil),
         itemsSnapshots: data.itemsSnapshots ?? [],
         totals: data.totals ?? null,
