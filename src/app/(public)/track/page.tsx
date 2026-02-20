@@ -2,8 +2,10 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { doc, getDoc } from "firebase/firestore";
 import { apiPost } from "@/lib/apiClient";
 import { formatPEN } from "@/lib/money";
+import { db } from "@/lib/firebase/client";
 
 type TrackResponse = {
   orderId: string;
@@ -61,6 +63,18 @@ function shippingLabel(shipping: TrackResponse["shipping"]): string {
   return `Agencia provincia - ${shipping.department}, ${shipping.province} (${shipping.agencyName}) - Recoge: ${shipping.receiverName}`;
 }
 
+function onlyDigits(v: string): string {
+  return v.replace(/\D+/g, "");
+}
+
+function shippingAddressText(shipping: TrackResponse["shipping"]): string {
+  if (!shipping) return "-";
+  if (shipping.method === "LIMA_DELIVERY") {
+    return `${shipping.district} - ${shipping.addressLine1}${shipping.reference ? ` (Ref: ${shipping.reference})` : ""}`;
+  }
+  return `${shipping.department}, ${shipping.province} - Agencia ${shipping.agencyName} (${shipping.agencyAddress})${shipping.reference ? ` (Ref: ${shipping.reference})` : ""}`;
+}
+
 function TrackPageInner() {
   const searchParams = useSearchParams();
 
@@ -76,6 +90,7 @@ function TrackPageInner() {
   const [busyPay, setBusyPay] = useState(false);
   const [payMsg, setPayMsg] = useState<string | null>(null);
   const [copyMsg, setCopyMsg] = useState<string | null>(null);
+  const [businessWhatsapp, setBusinessWhatsapp] = useState("");
 
   const expired = useMemo(() => {
     if (!data?.reservedUntilMs) return false;
@@ -140,6 +155,62 @@ function TrackPageInner() {
     void load(qCode, qToken);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "settings", "store"));
+        if (!mounted || !snap.exists()) return;
+        const raw = String(snap.data()?.publicWhatsapp ?? "");
+        if (!raw) return;
+        if (raw.startsWith("http://") || raw.startsWith("https://")) {
+          setBusinessWhatsapp(raw);
+          return;
+        }
+        const digits = onlyDigits(raw);
+        if (digits) setBusinessWhatsapp(`https://wa.me/${digits}`);
+      } catch {
+        // Ignore and keep flow usable.
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const waText = useMemo(() => {
+    if (!data) return "";
+    const name = data.customer?.name ?? data.shipping?.receiverName ?? "-";
+    const phone = data.customer?.phone ?? data.shipping?.receiverPhone ?? "-";
+    const address = shippingAddressText(data.shipping);
+    const paymentMethod = data.payment?.method ?? "-";
+    const items = (data.itemsSnapshots ?? [])
+      .map((it) => `- ${it.nameSnapshot} x${it.qty} (S/ ${(Number(it.unitPriceSnapshot) * Number(it.qty)).toFixed(2)})`)
+      .join("\n");
+    const total = data.totals?.totalToPay ?? 0;
+    return [
+      `Pedido: ${data.publicCode}`,
+      `Clave de seguimiento: ${trackingToken || "-"}`,
+      `Nombre: ${name}`,
+      `Telefono: ${phone}`,
+      `Direccion: ${address}`,
+      `Metodo de pago: ${paymentMethod}`,
+      "",
+      "Productos:",
+      items || "-",
+      "",
+      `Total: S/ ${Number(total).toFixed(2)}`,
+      "",
+      "Adjunto mi comprobante",
+    ].join("\n");
+  }, [data, trackingToken]);
+
+  const waHref = useMemo(() => {
+    if (!businessWhatsapp || !waText) return "";
+    if (businessWhatsapp.includes("wa.me/")) return `${businessWhatsapp}?text=${encodeURIComponent(waText)}`;
+    return businessWhatsapp;
+  }, [businessWhatsapp, waText]);
 
   async function submitPayment() {
     setBusyPay(true);
@@ -260,6 +331,17 @@ function TrackPageInner() {
               ) : null}
             </>
           ) : null}
+
+          <div className="pt-2 border-t border-neutral-200">
+            <div className="text-sm font-medium mb-2">Notificar por WhatsApp</div>
+            {waHref ? (
+              <a href={waHref} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm inline-flex">
+                Enviar mensaje completo por WhatsApp
+              </a>
+            ) : (
+              <div className="text-xs text-neutral-500">Configura el WhatsApp del negocio en Admin &gt; Configuracion.</div>
+            )}
+          </div>
         </div>
       ) : null}
 

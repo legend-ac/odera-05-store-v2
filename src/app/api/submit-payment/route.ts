@@ -104,23 +104,53 @@ export async function POST(req: Request) {
         createdAt: new Date(),
       });
 
-      return { ok: true as const, idempotent: false as const, customerEmail: order.customer?.email as string | undefined };
+      return {
+        ok: true as const,
+        idempotent: false as const,
+        orderId: orderSnap.id,
+        customerEmail: order.customer?.email as string | undefined,
+        customerName: order.customer?.name as string | undefined,
+        customerPhone: order.customer?.phone as string | undefined,
+        publicCode,
+      };
     });
 
     // Email (best effort)
     const email = (result as any).customerEmail as string | undefined;
     if (email) {
-      await sendTransactionalEmail({
+      const mailRes = await sendTransactionalEmail({
         to: email,
         subject: `ODERA 05 STORE - Pago reportado (${publicCode})`,
         text:
           `Recibimos tu reporte de pago.\n\n` +
           `Pedido: ${publicCode}\n` +
+          `Nombre: ${(result as any).customerName ?? "-"}\n` +
+          `Telefono: ${(result as any).customerPhone ?? "-"}\n` +
           `Operacion: ${operationCode}\n` +
           `Metodo: ${method}\n\n` +
-          `Estado actual: PAYMENT_SENT\n` +
+          `Estado actual: Pendiente de validacion de pago\n` +
           `Te notificaremos cuando se confirme.`,
       });
+
+      try {
+        const orderId = (result as any).orderId as string | undefined;
+        if (orderId) {
+          await adminDb.collection("orders").doc(orderId).set(
+            {
+              notifications: {
+                paymentSubmitted: {
+                  customerEmail: mailRes,
+                  sentAt: Timestamp.now(),
+                },
+              },
+            },
+            { merge: true }
+          );
+        }
+      } catch (mailLogErr) {
+        const m = mailLogErr instanceof Error ? mailLogErr.message : String(mailLogErr);
+        console.error("[submit-payment] mail log save failed", m);
+      }
     }
 
     return NextResponse.json({ ok: true, idempotent: (result as any).idempotent ?? false }, { status: 200 });

@@ -86,8 +86,8 @@ function validateDraft(draft: Product): string[] {
 }
 
 async function uploadToCloudinary(blob: Blob, slug: string, filename: string): Promise<string> {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+  const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "").trim();
+  const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
   if (!cloudName || !uploadPreset) {
     throw new Error("CLOUDINARY_NOT_CONFIGURED");
   }
@@ -192,14 +192,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
     try {
       const slug = safeSlug(draft.slug);
       const filename = `${slug}-${Date.now()}.webp`;
-      const provisionalUrl = `/products/${filename}`;
-
-      // Always show something immediately in UI
-      setDraft((d) => ({
-        ...d,
-        images: [...d.images, { url: provisionalUrl, isMain: d.images.length === 0, order: d.images.length, alt: d.name || d.slug }],
-      }));
-      setMsg("Imagen agregada. Intentando subir...");
+      setMsg("Subiendo imagen...");
 
       let blob: Blob = file;
       let width = 0;
@@ -218,33 +211,16 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         console.warn("WebP conversion failed, using original file", convErr);
       }
 
-      try {
-        const url = await uploadToCloudinary(blob, slug, filename);
-        setDraft((d) => ({
-          ...d,
-          images: d.images.map((img) => (img.url === provisionalUrl ? { ...img, url } : img)),
-        }));
-        setMsg(`Imagen subida a Cloudinary (${width}x${height}, ~${sizeKB}KB).`);
-        return;
-      } catch (uploadErr: any) {
-        console.warn("Cloudinary upload failed, fallback to manual URL", uploadErr);
-      }
-
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(objectUrl);
-
-      setMsg(
-        `No se pudo subir automáticamente. Se descargó ${filename} y se agregó ${provisionalUrl}. ` +
-          `${converted ? "Imagen convertida a WebP. " : ""}` +
-          `Coloca ese archivo en public/products y guarda el producto.`
-      );
+      const url = await uploadToCloudinary(blob, slug, filename);
+      setDraft((d) => ({
+        ...d,
+        images: [...d.images, { url, isMain: d.images.length === 0, order: d.images.length, alt: d.name || d.slug }],
+      }));
+      setMsg(`Imagen subida a Cloudinary (${width}x${height}, ~${sizeKB}KB).${converted ? " Convertida a WebP." : ""}`);
     } catch (e) {
+      const m = e instanceof Error ? e.message : "No se pudo subir la imagen.";
       console.warn(e);
-      alert("No se pudo procesar la imagen.");
+      setMsg(`Error de imagen: ${m}`);
     }
   }
 
@@ -408,7 +384,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                       })
                     }
                     className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
-                    placeholder="https://... o /products/..."
+                    placeholder="https://... (URL de Cloudinary)"
                   />
                   <label className="text-sm flex items-center gap-2">
                     <input
@@ -507,9 +483,11 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         </div>
 
         <div className="text-xs text-neutral-500">
-          Seguridad: el endpoint valida con Zod + session cookie + admin claim + CSRF. En modo Spark, URLs de imágenes deben ser https:// o /public.
+          Seguridad: el endpoint valida con Zod + session cookie + admin claim + CSRF. Las imagenes deben quedar con URL https valida (Cloudinary recomendado).
         </div>
       </div>
     </div>
   );
 }
+
+

@@ -1,5 +1,3 @@
-﻿"use client";
-
 import Link from "next/link";
 import { formatPEN } from "@/lib/money";
 

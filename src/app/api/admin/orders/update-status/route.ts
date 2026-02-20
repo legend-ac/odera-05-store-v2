@@ -22,6 +22,49 @@ const ALLOWED_NEXT: Record<string, Set<string>> = {
   CANCELLED_EXPIRED: new Set(),
 };
 
+function shippingToText(shipping: any): string {
+  if (!shipping) return "-";
+  if (shipping.method === "LIMA_DELIVERY") {
+    return [
+      "Tipo de envio: Delivery Lima Metropolitana",
+      `Recibe: ${shipping.receiverName}`,
+      `DNI: ${shipping.receiverDni}`,
+      `Telefono: ${shipping.receiverPhone}`,
+      `Distrito: ${shipping.district}`,
+      `Direccion: ${shipping.addressLine1}`,
+      shipping.reference ? `Referencia: ${shipping.reference}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  return [
+    "Tipo de envio: Agencia provincia",
+    `Recoge: ${shipping.receiverName}`,
+    `DNI: ${shipping.receiverDni}`,
+    `Telefono: ${shipping.receiverPhone}`,
+    `Departamento: ${shipping.department}`,
+    `Provincia: ${shipping.province}`,
+    `Agencia: ${shipping.agencyName}`,
+    `Direccion agencia: ${shipping.agencyAddress}`,
+    shipping.reference ? `Referencia: ${shipping.reference}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function statusToText(status: string): string {
+  const map: Record<string, string> = {
+    PENDING_VALIDATION: "Pendiente de validacion de pago",
+    PAYMENT_SENT: "Pendiente de validacion de pago",
+    PAID: "Pagado",
+    SHIPPED: "Enviado",
+    DELIVERED: "Entregado",
+    CANCELLED: "Cancelado",
+    CANCELLED_EXPIRED: "Cancelado por vencimiento",
+  };
+  return map[status] ?? status;
+}
+
 export async function POST(req: Request) {
   try {
     assertCsrfHeader(req);
@@ -120,19 +163,60 @@ export async function POST(req: Request) {
       return {
         customerEmail: before.customer?.email as string | undefined,
         publicCode: before.publicCode as string | undefined,
+        customerName: before.customer?.name as string | undefined,
+        customerPhone: before.customer?.phone as string | undefined,
+        itemsSnapshots: Array.isArray(before.itemsSnapshots) ? before.itemsSnapshots : [],
+        totals: before.totals ?? null,
+        shipping: before.shipping ?? null,
+        payment: before.payment ?? {},
       };
     });
 
-    if (result.customerEmail && result.publicCode && (nextStatus === "PAID" || nextStatus === "SHIPPED")) {
-      const text =
-        nextStatus === "PAID"
-          ? `Tu pedido ${result.publicCode} fue confirmado como PAGADO.`
-          : `Tu pedido ${result.publicCode} fue enviado.`;
-      await sendTransactionalEmail({
+    if (result.customerEmail && result.publicCode) {
+      const lines = (result.itemsSnapshots ?? [])
+        .map((it: any) => `- ${it.nameSnapshot} x ${it.qty} - S/ ${(Number(it.unitPriceSnapshot ?? 0) * Number(it.qty ?? 0)).toFixed(2)}`)
+        .join("\n");
+      const totals = result.totals ?? {};
+      const detail =
+        `Pedido: ${result.publicCode}\n` +
+        `Estado: ${statusToText(nextStatus)}\n\n` +
+        `Cliente\n` +
+        `Nombre: ${result.customerName ?? "-"}\n` +
+        `Correo: ${result.customerEmail}\n` +
+        `Telefono: ${result.customerPhone ?? "-"}\n\n` +
+        `${shippingToText(result.shipping)}\n\n` +
+        `Metodo de pago: ${result.payment?.method ?? "-"}\n\n` +
+        `Productos:\n${lines || "-"}\n\n` +
+        `Subtotal: S/ ${Number(totals.subtotal ?? 0).toFixed(2)}\n` +
+        `Descuento: S/ ${Number(totals.discountAmount ?? 0).toFixed(2)}\n` +
+        `Envio: S/ ${Number(totals.shippingCost ?? 0).toFixed(2)}\n` +
+        `Total: S/ ${Number(totals.totalToPay ?? 0).toFixed(2)}`;
+
+      const mailRes = await sendTransactionalEmail({
         to: result.customerEmail,
-        subject: `ODERA 05 STORE - Actualizacion de pedido (${result.publicCode})`,
-        text,
+        subject: `ODERA 05 STORE - Estado de pedido ${result.publicCode}: ${statusToText(nextStatus)}`,
+        text: detail,
       });
+
+      try {
+        await adminDb.collection("orders").doc(orderId).set(
+          {
+            notifications: {
+              statusUpdates: {
+                [String(now.toMillis())]: {
+                  nextStatus,
+                  customerEmail: mailRes,
+                  sentAt: now,
+                },
+              },
+            },
+          },
+          { merge: true }
+        );
+      } catch (mailLogErr) {
+        const m = mailLogErr instanceof Error ? mailLogErr.message : String(mailLogErr);
+        console.error("[admin/orders/update-status] mail log save failed", m);
+      }
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });
