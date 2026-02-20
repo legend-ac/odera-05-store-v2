@@ -1,5 +1,20 @@
 import { z } from "zod";
 
+function normalizeEnvString(v: string | undefined): string | undefined {
+  if (typeof v !== "string") return v;
+  const trimmed = v.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+function normalizeEnvObject<T extends Record<string, string | undefined>>(raw: T): T {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(raw)) out[k] = normalizeEnvString(v);
+  return out as T;
+}
+
 const serverSchema = z.object({
   FIREBASE_PROJECT_ID: z.string().min(1),
   FIREBASE_CLIENT_EMAIL: z.string().min(1),
@@ -16,7 +31,7 @@ const serverSchema = z.object({
 export type ServerEnv = z.infer<typeof serverSchema>;
 
 export function getServerEnv(): ServerEnv {
-  const raw = {
+  const raw = normalizeEnvObject({
     FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
     FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
     FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
@@ -27,7 +42,7 @@ export function getServerEnv(): ServerEnv {
     STORAGE_MODE: process.env.STORAGE_MODE,
     ADMIN_ALLOWLIST_EMAILS: process.env.ADMIN_ALLOWLIST_EMAILS,
     ENABLE_APP_CHECK_VERIFY: process.env.ENABLE_APP_CHECK_VERIFY,
-  };
+  });
 
   const parsed = serverSchema.safeParse(raw);
   if (!parsed.success) {
@@ -35,12 +50,8 @@ export function getServerEnv(): ServerEnv {
     throw new Error(`Invalid server env: ${msg}`);
   }
 
-  // Accept quoted values and escaped newlines from local/Vercel env formats.
-  let privateKey = parsed.data.FIREBASE_PRIVATE_KEY.trim();
-  if ((privateKey.startsWith('"') && privateKey.endsWith('"')) || (privateKey.startsWith("'") && privateKey.endsWith("'"))) {
-    privateKey = privateKey.slice(1, -1);
-  }
-  privateKey = privateKey.replace(/\\r/g, "\r").replace(/\\n/g, "\n");
+  // Accept escaped newlines from local/Vercel env formats.
+  const privateKey = parsed.data.FIREBASE_PRIVATE_KEY.replace(/\\r/g, "\r").replace(/\\n/g, "\n");
 
   return {
     ...parsed.data,
@@ -63,7 +74,7 @@ const publicSchema = z.object({
 export type PublicEnv = z.infer<typeof publicSchema>;
 
 export function getPublicEnv(): PublicEnv {
-  const raw = {
+  const raw = normalizeEnvObject({
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -73,7 +84,8 @@ export function getPublicEnv(): PublicEnv {
     NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
     NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
-  };
+  });
+
   const parsed = publicSchema.safeParse(raw);
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
