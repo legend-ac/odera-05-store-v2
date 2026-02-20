@@ -21,9 +21,16 @@ type ItemPreview = {
   lineTotal: number;
 };
 
+type StorePaymentInstructions = {
+  yapeName?: string;
+  yapeNumber?: string;
+  plinName?: string;
+  plinNumber?: string;
+};
+
 async function uploadReceiptToCloudinary(file: File): Promise<string> {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+  const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "").trim();
+  const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
   if (!cloudName || !uploadPreset) throw new Error("CLOUDINARY_NOT_CONFIGURED");
 
   const form = new FormData();
@@ -73,6 +80,7 @@ export default function CheckoutPage() {
   const [subtotal, setSubtotal] = useState(0);
   const [loadingTotals, setLoadingTotals] = useState(false);
   const [couponCode, setCouponCode] = useState("");
+  const [paymentInstructions, setPaymentInstructions] = useState<StorePaymentInstructions>({});
 
   useEffect(() => {
     let mounted = true;
@@ -112,6 +120,28 @@ export default function CheckoutPage() {
       mounted = false;
     };
   }, [items]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "settings", "store"));
+        if (!mounted || !snap.exists()) return;
+        const data = snap.data() as any;
+        setPaymentInstructions({
+          yapeName: String(data?.paymentInstructions?.yapeName ?? ""),
+          yapeNumber: String(data?.paymentInstructions?.yapeNumber ?? ""),
+          plinName: String(data?.paymentInstructions?.plinName ?? ""),
+          plinNumber: String(data?.paymentInstructions?.plinNumber ?? ""),
+        });
+      } catch {
+        // Public checkout can continue even if settings are missing.
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const normalizedCoupon = useMemo(() => couponCode.trim().toUpperCase(), [couponCode]);
   const couponValid = normalizedCoupon === "ODERA10";
@@ -278,6 +308,21 @@ export default function CheckoutPage() {
             Plin
           </label>
         </div>
+        <div className="text-sm text-slate-700 rounded-md bg-slate-50 border border-slate-200 p-3">
+          {payMethod === "YAPE" ? (
+            <>
+              <div className="font-medium">Datos para pagar por Yape</div>
+              <div>Nombre: {paymentInstructions.yapeName?.trim() || "Configurar en Admin > Settings"}</div>
+              <div>Número: {paymentInstructions.yapeNumber?.trim() || "Configurar en Admin > Settings"}</div>
+            </>
+          ) : (
+            <>
+              <div className="font-medium">Datos para pagar por Plin</div>
+              <div>Nombre: {paymentInstructions.plinName?.trim() || "Configurar en Admin > Settings"}</div>
+              <div>Número: {paymentInstructions.plinNumber?.trim() || "Configurar en Admin > Settings"}</div>
+            </>
+          )}
+        </div>
 
         <label className="text-sm font-medium">Subir comprobante de pago</label>
         <label className="w-fit text-sm px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer">
@@ -328,4 +373,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
