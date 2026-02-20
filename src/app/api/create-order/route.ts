@@ -258,6 +258,8 @@ export async function POST(req: Request) {
     const storeName = settingsSnap.exists ? (settingsSnap.data()?.storeName as string | undefined) : undefined;
     const env = getServerEnv();
     const businessEmail = (settingsSnap.exists ? (settingsSnap.data()?.publicContactEmail as string | undefined) : undefined) || env.SMTP_USER;
+    const origin = new URL(req.url).origin;
+    const trackingUrl = `${origin}/track?publicCode=${encodeURIComponent(result.publicCode)}&trackingToken=${encodeURIComponent(result.trackingToken)}`;
 
     const orderLines = ((result as any).itemsSnapshots ?? [])
       .map((it: any) => `- ${it.nameSnapshot} x ${it.qty} - S/ ${(Number(it.unitPriceSnapshot ?? 0) * Number(it.qty ?? 0)).toFixed(2)}`)
@@ -277,7 +279,8 @@ export async function POST(req: Request) {
       `Descuento: S/ ${((result as any).discountAmount ?? 0).toFixed(2)}\n` +
       `Envio: S/ ${((result as any).shippingCost ?? 0).toFixed(2)}\n` +
       `Total: S/ ${((result as any).totalToPay ?? 0).toFixed(2)}\n\n` +
-      `Clave de seguimiento: ${result.trackingToken}`;
+      `Clave de seguimiento: ${result.trackingToken}\n` +
+      `Enlace de seguimiento: ${trackingUrl}`;
 
     if (!wasIdempotent) {
       const customerMail = await sendTransactionalEmail({

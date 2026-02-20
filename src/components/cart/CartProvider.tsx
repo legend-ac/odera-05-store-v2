@@ -25,6 +25,7 @@ function normalizeQty(qty: number): number {
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
@@ -46,16 +47,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setItems(safe);
     } catch (e) {
       console.warn("Failed to load cart", e);
+    } finally {
+      setHydrated(true);
     }
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     } catch (e) {
       console.warn("Failed to persist cart", e);
     }
-  }, [items]);
+  }, [items, hydrated]);
 
   const value = useMemo<CartContextValue>(() => {
     return {

@@ -90,6 +90,7 @@ function TrackPageInner() {
   const [busyPay, setBusyPay] = useState(false);
   const [payMsg, setPayMsg] = useState<string | null>(null);
   const [copyMsg, setCopyMsg] = useState<string | null>(null);
+  const [recent, setRecent] = useState<Array<{ publicCode: string; trackingToken: string; ts: number }>>([]);
   const [businessWhatsapp, setBusinessWhatsapp] = useState("");
 
   const expired = useMemo(() => {
@@ -155,6 +156,16 @@ function TrackPageInner() {
     void load(qCode, qToken);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("odera_recent_tracking");
+      const list = raw ? (JSON.parse(raw) as Array<{ publicCode: string; trackingToken: string; ts: number }>) : [];
+      setRecent(Array.isArray(list) ? list.slice(0, 5) : []);
+    } catch {
+      setRecent([]);
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -237,6 +248,28 @@ function TrackPageInner() {
       <h1 className="text-2xl font-semibold">Mis pedidos</h1>
 
       <div className="grid gap-3 border border-neutral-200 rounded-xl p-4">
+        {recent.length ? (
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Pedidos recientes en este dispositivo</label>
+            <div className="flex flex-wrap gap-2">
+              {recent.map((r) => (
+                <button
+                  key={`${r.publicCode}:${r.trackingToken}`}
+                  type="button"
+                  onClick={() => {
+                    setPublicCode(r.publicCode);
+                    setTrackingToken(r.trackingToken);
+                    void load(r.publicCode, r.trackingToken);
+                  }}
+                  className="px-3 py-1.5 rounded-md border border-neutral-300 text-xs"
+                >
+                  {r.publicCode}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <label className="text-sm font-medium">Pegar enlace completo de seguimiento (opcional)</label>
         <div className="flex gap-2">
           <input
