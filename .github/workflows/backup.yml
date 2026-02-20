@@ -1,0 +1,35 @@
+name: Backup - Firestore JSON (artifacts)
+
+on:
+  schedule:
+    # Weekly on Sundays 03:00 UTC
+    - cron: "0 3 * * 0"
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run backup script
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          npm run backup:run
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-backup
+          path: backup/out
+          retention-days: 30

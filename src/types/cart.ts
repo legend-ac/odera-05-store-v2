@@ -1,0 +1,1 @@
+export type CartItem = { productId: string; variantId: string; qty: number };

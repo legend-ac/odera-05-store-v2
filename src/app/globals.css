@@ -1,0 +1,104 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --text: #0f172a;
+  --muted: #475569;
+  --line: #dbe1ea;
+  --brand: #0f172a;
+  --brand-2: #1e293b;
+  --ring: #cbd5e1;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-body), "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(1200px 500px at 15% -10%, #e8ecff 0%, transparent 60%),
+    radial-gradient(900px 400px at 100% 0%, #dff6f0 0%, transparent 55%),
+    var(--bg);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading), "Trebuchet MS", "Segoe UI", sans-serif;
+  letter-spacing: -0.02em;
+}
+
+@layer components {
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+  }
+
+  .btn-brand {
+    @apply px-4 py-2 rounded-md text-sm text-white font-medium transition-all duration-200;
+    background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+  }
+
+  .btn-brand:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.26);
+  }
+
+  .btn-soft {
+    @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
+    border: 1px solid var(--line);
+    background: var(--surface-soft);
+    color: var(--text);
+  }
+
+  .btn-soft:hover {
+    background: #eef2f7;
+  }
+
+  .chip-link {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200;
+    border: 1px solid var(--line);
+    background: #f8fafc;
+  }
+
+  .chip-link:hover {
+    border-color: var(--ring);
+    transform: translateY(-1px);
+  }
+
+  .social-instagram {
+    background: linear-gradient(135deg, #fd1d1d, #e1306c, #f77737);
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .social-tiktok {
+    background: #111827;
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .social-facebook {
+    background: #1877f2;
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .social-whatsapp {
+    background: #25d366;
+    color: #073b1b;
+    border-color: transparent;
+  }
+}
