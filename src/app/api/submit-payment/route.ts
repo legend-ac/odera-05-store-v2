@@ -86,7 +86,9 @@ export async function POST(req: Request) {
 
       tx.update(orderSnap.ref, {
         status: "PAYMENT_SENT",
-        payment: { operationCode, method, paymentSentAt: now },
+        "payment.operationCode": operationCode,
+        "payment.method": method,
+        "payment.paymentSentAt": now,
         updatedAt: now,
       });
 
@@ -110,12 +112,12 @@ export async function POST(req: Request) {
     if (email) {
       await sendTransactionalEmail({
         to: email,
-        subject: `ODERA 05 STORE — Pago reportado (${publicCode})`,
+        subject: `ODERA 05 STORE - Pago reportado (${publicCode})`,
         text:
           `Recibimos tu reporte de pago.\n\n` +
           `Pedido: ${publicCode}\n` +
-          `Operación: ${operationCode}\n` +
-          `Método: ${method}\n\n` +
+          `Operacion: ${operationCode}\n` +
+          `Metodo: ${method}\n\n` +
           `Estado actual: PAYMENT_SENT\n` +
           `Te notificaremos cuando se confirme.`,
       });
@@ -139,3 +141,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: statusMap[msg] ?? 500 });
   }
 }
+

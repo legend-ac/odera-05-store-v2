@@ -6,7 +6,7 @@ import { getServerEnv } from "@/lib/env";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-async function processExpiredForStatus(status: "PENDING_VALIDATION" | "SCHEDULED" | "PAYMENT_SENT", now: Timestamp, limit = 50): Promise<number> {
+async function processExpiredForStatus(status: "SCHEDULED" | "PAYMENT_SENT", now: Timestamp, limit = 50): Promise<number> {
   const q = adminDb.collection("orders").where("status", "==", status).where("reservedUntil", "<", now).limit(limit);
   const qs = await q.get();
   if (qs.empty) return 0;
@@ -92,11 +92,10 @@ export async function POST(req: Request) {
 
     const now = Timestamp.now();
 
-    const a = await processExpiredForStatus("PENDING_VALIDATION", now, 50);
     const b = await processExpiredForStatus("SCHEDULED", now, 50);
     const c = await processExpiredForStatus("PAYMENT_SENT", now, 50);
 
-    return NextResponse.json({ ok: true, processed: a + b + c }, { status: 200 });
+    return NextResponse.json({ ok: true, processed: b + c }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     console.error("[cron/release-expired] error", msg);

@@ -11,6 +11,17 @@ import { sendTransactionalEmail } from "@/lib/server/email";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+const ALLOWED_NEXT: Record<string, Set<string>> = {
+  PENDING_VALIDATION: new Set(["PAID", "CANCELLED"]),
+  SCHEDULED: new Set(["PAYMENT_SENT", "CANCELLED"]),
+  PAYMENT_SENT: new Set(["PAID", "CANCELLED"]),
+  PAID: new Set(["SHIPPED"]),
+  SHIPPED: new Set(["DELIVERED"]),
+  DELIVERED: new Set(),
+  CANCELLED: new Set(),
+  CANCELLED_EXPIRED: new Set(),
+};
+
 export async function POST(req: Request) {
   try {
     assertCsrfHeader(req);
@@ -44,6 +55,13 @@ export async function POST(req: Request) {
       const terminal = ["DELIVERED", "CANCELLED", "CANCELLED_EXPIRED"];
       if (terminal.includes(currentStatus) && nextStatus !== currentStatus) {
         throw new Error("ORDER_ALREADY_TERMINAL");
+      }
+
+      if (nextStatus !== currentStatus) {
+        const allowed = ALLOWED_NEXT[currentStatus] ?? new Set<string>();
+        if (!allowed.has(nextStatus)) {
+          throw new Error("INVALID_STATUS_TRANSITION");
+        }
       }
 
       if (nextStatus === "CANCELLED") {
@@ -126,6 +144,7 @@ export async function POST(req: Request) {
       ORDER_NOT_FOUND: 404,
       ORDER_ALREADY_TERMINAL: 409,
       CANNOT_CANCEL_AFTER_PAID: 409,
+      INVALID_STATUS_TRANSITION: 409,
       CSRF_FAILED: 403,
       NOT_ADMIN: 403,
       AUTH_TOO_OLD: 401,

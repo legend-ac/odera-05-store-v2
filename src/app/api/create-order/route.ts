@@ -332,6 +332,12 @@ export async function POST(req: Request) {
     if (typeof msg === "string" && msg.startsWith("PRODUCT_NOT_FOUND")) {
       return NextResponse.json({ error: "PRODUCT_NOT_FOUND", detail: msg }, { status: 404 });
     }
+    if (typeof msg === "string" && msg.startsWith("PRODUCT_INACTIVE")) {
+      return NextResponse.json({ error: "PRODUCT_INACTIVE", detail: msg }, { status: 409 });
+    }
+    if (typeof msg === "string" && msg.startsWith("VARIANT_NOT_FOUND")) {
+      return NextResponse.json({ error: "VARIANT_NOT_FOUND", detail: msg }, { status: 404 });
+    }
     return NextResponse.json({ error: "SERVER_ERROR", detail: msg }, { status: 500 });
   }
 }

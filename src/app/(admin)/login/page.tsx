@@ -19,7 +19,12 @@ function setCsrfCookieIfMissing(): void {
 function LoginPageInner() {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = useMemo(() => sp.get("next") ?? "/dashboard", [sp]);
+  const next = useMemo(() => {
+    const raw = sp.get("next") ?? "/dashboard";
+    // Prevent open redirects: only internal absolute paths.
+    if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+    return raw;
+  }, [sp]);
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
