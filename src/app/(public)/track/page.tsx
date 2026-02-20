@@ -64,6 +64,7 @@ function shippingLabel(shipping: TrackResponse["shipping"]): string {
 function TrackPageInner() {
   const searchParams = useSearchParams();
 
+  const [trackingUrl, setTrackingUrl] = useState("");
   const [publicCode, setPublicCode] = useState("");
   const [trackingToken, setTrackingToken] = useState("");
   const [data, setData] = useState<TrackResponse | null>(null);
@@ -110,6 +111,25 @@ function TrackPageInner() {
     }
   }
 
+  function applyTrackingUrl() {
+    try {
+      if (!trackingUrl.trim()) return;
+      const u = new URL(trackingUrl.trim());
+      const code = (u.searchParams.get("publicCode") ?? "").trim();
+      const token = (u.searchParams.get("trackingToken") ?? "").trim();
+      if (!code || !token) {
+        setError("El enlace no contiene publicCode y trackingToken.");
+        return;
+      }
+      setError(null);
+      setPublicCode(code);
+      setTrackingToken(token);
+      void load(code, token);
+    } catch {
+      setError("El enlace de seguimiento no es valido.");
+    }
+  }
+
   useEffect(() => {
     const qCode = searchParams.get("publicCode") ?? "";
     const qToken = searchParams.get("trackingToken") ?? "";
@@ -146,6 +166,19 @@ function TrackPageInner() {
       <h1 className="text-2xl font-semibold">Mis pedidos</h1>
 
       <div className="grid gap-3 border border-neutral-200 rounded-xl p-4">
+        <label className="text-sm font-medium">Pegar enlace completo de seguimiento (opcional)</label>
+        <div className="flex gap-2">
+          <input
+            value={trackingUrl}
+            onChange={(e) => setTrackingUrl(e.target.value)}
+            placeholder="https://.../track?publicCode=OD-0001&trackingToken=..."
+            className="border border-neutral-300 rounded-md px-3 py-2 text-sm w-full"
+          />
+          <button type="button" onClick={applyTrackingUrl} className="px-3 py-2 rounded-md border border-neutral-300 text-sm">
+            Cargar
+          </button>
+        </div>
+
         <label className="text-sm font-medium">Codigo de pedido (ejemplo: OD-1234)</label>
         <div className="flex gap-2">
           <input

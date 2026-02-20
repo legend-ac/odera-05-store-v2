@@ -280,18 +280,44 @@ export async function POST(req: Request) {
       `Clave de seguimiento: ${result.trackingToken}`;
 
     if (!wasIdempotent) {
-      await sendTransactionalEmail({
+      const customerMail = await sendTransactionalEmail({
         to: customer.email,
         subject: `${storeName ?? "ODERA 05 STORE"} - Pedido ${result.publicCode} (Pendiente de validacion)`,
         text: `Tu pedido fue registrado correctamente.\n\n${mailDetail}`,
       });
 
+      let businessMail: { ok: true } | { ok: false; error: string } = { ok: true };
       if (businessEmail) {
-        await sendTransactionalEmail({
+        businessMail = await sendTransactionalEmail({
           to: businessEmail,
           subject: `Nuevo pedido ${result.publicCode} - ${storeName ?? "ODERA 05 STORE"}`,
           text: mailDetail,
         });
+      }
+
+      try {
+        await adminDb.collection("orders").doc((result as any).orderId).set(
+          {
+            notifications: {
+              orderCreated: {
+                customerEmail: customerMail,
+                businessEmail: businessMail,
+                sentAt: Timestamp.now(),
+              },
+            },
+          },
+          { merge: true }
+        );
+      } catch (mailLogErr) {
+        const m = mailLogErr instanceof Error ? mailLogErr.message : String(mailLogErr);
+        console.error("[create-order] mail log save failed", m);
+      }
+
+      if (!customerMail.ok) {
+        console.error("[create-order] customer email failed", customerMail.error);
+      }
+      if (businessEmail && !businessMail.ok) {
+        console.error("[create-order] business email failed", businessMail.error);
       }
     }
 
