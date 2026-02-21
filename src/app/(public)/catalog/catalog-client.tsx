@@ -30,12 +30,14 @@ export default function CatalogClient({ initialItems }: { initialItems: ProductC
         const q = query(base, where("status", "==", "active"), where("searchTokens", "array-contains", token), limit(50));
         const snap = await getDocs(q);
 
-        const list: ProductCardData[] = snap.docs.map((d) => {
+        const raw = snap.docs.map((d) => {
           const data = d.data() as any;
           const imgs = Array.isArray(data.images) ? [...data.images] : [];
           const sorted = imgs.sort((a: any, b: any) => Number(a?.order ?? 0) - Number(b?.order ?? 0));
           const imageUrls = sorted.map((x: any) => String(x?.url ?? "")).filter(Boolean);
           const mainUrl = sorted.find((x: any) => x?.isMain)?.url ?? imageUrls[0];
+          const updatedAtMs = typeof data?.updatedAt?.toMillis === "function" ? data.updatedAt.toMillis() : 0;
+          const dedupeKey = String(data?.slug ?? data?.name ?? d.id).trim().toLowerCase();
           return {
             id: d.id,
             name: String(data.name ?? ""),
@@ -44,8 +46,27 @@ export default function CatalogClient({ initialItems }: { initialItems: ProductC
             onSale: Boolean(data.onSale),
             imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
             imageUrls,
+            dedupeKey,
+            updatedAtMs,
           };
         });
+
+        const byLatest = raw.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+        const seen = new Set<string>();
+        const list: ProductCardData[] = [];
+        for (const it of byLatest) {
+          if (seen.has(it.dedupeKey)) continue;
+          seen.add(it.dedupeKey);
+          list.push({
+            id: it.id,
+            name: it.name,
+            price: it.price,
+            salePrice: it.salePrice,
+            onSale: it.onSale,
+            imageUrl: it.imageUrl,
+            imageUrls: it.imageUrls,
+          });
+        }
 
         if (mounted) setItems(list);
       } catch (e) {

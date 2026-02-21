@@ -7,6 +7,7 @@ type SendEmailParams = {
   to: string;
   subject: string;
   text: string;
+  html?: string;
 };
 
 function wait(ms: number): Promise<void> {
@@ -33,6 +34,7 @@ export async function sendTransactionalEmail(params: SendEmailParams): Promise<{
           to: params.to,
           subject: params.subject,
           text: params.text,
+          html: params.html,
         });
         return { ok: true };
       } catch (e) {

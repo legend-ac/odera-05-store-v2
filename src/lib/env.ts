@@ -26,6 +26,7 @@ const serverSchema = z.object({
   STORAGE_MODE: z.enum(["spark_public_only", "firebase_storage"]).default("spark_public_only"),
   ADMIN_ALLOWLIST_EMAILS: z.string().optional(),
   ENABLE_APP_CHECK_VERIFY: z.string().optional(),
+  EMAIL_BRAND_IMAGE_URL: z.string().url().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
@@ -42,6 +43,7 @@ export function getServerEnv(): ServerEnv {
     STORAGE_MODE: process.env.STORAGE_MODE,
     ADMIN_ALLOWLIST_EMAILS: process.env.ADMIN_ALLOWLIST_EMAILS,
     ENABLE_APP_CHECK_VERIFY: process.env.ENABLE_APP_CHECK_VERIFY,
+    EMAIL_BRAND_IMAGE_URL: process.env.EMAIL_BRAND_IMAGE_URL,
   });
 
   const parsed = serverSchema.safeParse(raw);

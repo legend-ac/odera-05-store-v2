@@ -102,7 +102,12 @@ export default function ProductClient({ slug }: { slug: string }) {
         <div className="aspect-square flex items-center justify-center overflow-hidden relative">
           {mainImg ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={mainImg} alt={data.name ?? ""} className="w-full h-full object-cover" />
+            <img
+              src={mainImg}
+              alt={data.name ?? ""}
+              className="w-full h-full object-cover"
+              onError={() => setImgIndex((i) => (i + 1 < galleryUrls.length ? i + 1 : i))}
+            />
           ) : (
             <div className="text-xs text-neutral-500">Sin foto</div>
           )}

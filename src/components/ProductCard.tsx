@@ -1,3 +1,6 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatPEN } from "@/lib/money";
 
@@ -13,6 +16,12 @@ export type ProductCardData = {
 
 export default function ProductCard({ p }: { p: ProductCardData }) {
   const price = p.onSale && typeof p.salePrice === "number" ? p.salePrice : p.price;
+  const candidates = useMemo(() => {
+    const list = [p.imageUrl, ...(p.imageUrls ?? [])].filter((x): x is string => Boolean(x && x.trim()));
+    return Array.from(new Set(list));
+  }, [p.imageUrl, p.imageUrls]);
+  const [idx, setIdx] = useState(0);
+  const current = candidates[idx] ?? "";
 
   return (
     <Link
@@ -20,9 +29,14 @@ export default function ProductCard({ p }: { p: ProductCardData }) {
       className="group panel overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.10)]"
     >
       <div className="aspect-square bg-slate-50 flex items-center justify-center overflow-hidden relative">
-        {p.imageUrl ? (
+        {current ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+          <img
+            src={current}
+            alt={p.name}
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+            onError={() => setIdx((i) => (i + 1 < candidates.length ? i + 1 : i))}
+          />
         ) : (
           <div className="text-xs text-slate-500">Sin imagen</div>
         )}

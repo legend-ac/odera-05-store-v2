@@ -51,6 +51,19 @@ function shippingToText(shipping: any): string {
     .join("\n");
 }
 
+function escapeHtml(v: string): string {
+  return v
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function toHtmlLines(v: string): string {
+  return escapeHtml(v).replaceAll("\n", "<br/>");
+}
+
 export async function POST(req: Request) {
   try {
     await verifyAppCheckIfEnabled(req);
@@ -282,11 +295,32 @@ export async function POST(req: Request) {
       `Clave de seguimiento: ${result.trackingToken}\n` +
       `Enlace de seguimiento: ${trackingUrl}`;
 
+    const logoUrl = env.EMAIL_BRAND_IMAGE_URL;
+    const customerHtml =
+      `<div style="font-family:Arial,sans-serif;background:#f5f7fb;padding:20px">` +
+      `<div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden">` +
+      `${logoUrl ? `<div style="background:#0f172a;padding:16px;text-align:center"><img src="${escapeHtml(logoUrl)}" alt="ODERA 05" style="max-height:120px;max-width:100%;border-radius:10px"/></div>` : ""}` +
+      `<div style="padding:18px 20px">` +
+      `<h2 style="margin:0 0 10px;color:#0f172a">Pedido ${escapeHtml(result.publicCode)}</h2>` +
+      `<p style="margin:0 0 14px;color:#334155">Tu pedido fue registrado correctamente. Estado: <b>Pendiente de validacion de pago</b>.</p>` +
+      `<div style="font-size:14px;line-height:1.55;color:#111827">${toHtmlLines(mailDetail)}</div>` +
+      `</div></div></div>`;
+
+    const businessHtml =
+      `<div style="font-family:Arial,sans-serif;background:#f5f7fb;padding:20px">` +
+      `<div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden">` +
+      `${logoUrl ? `<div style="background:#0f172a;padding:16px;text-align:center"><img src="${escapeHtml(logoUrl)}" alt="ODERA 05" style="max-height:120px;max-width:100%;border-radius:10px"/></div>` : ""}` +
+      `<div style="padding:18px 20px">` +
+      `<h2 style="margin:0 0 10px;color:#0f172a">Nuevo pedido ${escapeHtml(result.publicCode)}</h2>` +
+      `<div style="font-size:14px;line-height:1.55;color:#111827">${toHtmlLines(mailDetail)}</div>` +
+      `</div></div></div>`;
+
     if (!wasIdempotent) {
       const customerMail = await sendTransactionalEmail({
         to: customer.email,
         subject: `${storeName ?? "ODERA 05 STORE"} - Pedido ${result.publicCode} (Pendiente de validacion)`,
         text: `Tu pedido fue registrado correctamente.\n\n${mailDetail}`,
+        html: customerHtml,
       });
 
       let businessMail: { ok: true } | { ok: false; error: string } = { ok: true };
@@ -295,6 +329,7 @@ export async function POST(req: Request) {
           to: businessEmail,
           subject: `Nuevo pedido ${result.publicCode} - ${storeName ?? "ODERA 05 STORE"}`,
           text: mailDetail,
+          html: businessHtml,
         });
       }
 
