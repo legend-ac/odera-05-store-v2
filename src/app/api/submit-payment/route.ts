@@ -6,6 +6,7 @@ import { verifyAppCheckIfEnabled } from "@/lib/server/appCheckVerify";
 import { getRequestIp, getUserAgent } from "@/lib/server/ip";
 import { checkRateLimit } from "@/lib/server/rateLimit";
 import { sendTransactionalEmail } from "@/lib/server/email";
+import { decidePaymentSubmission } from "@/lib/paymentRules";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -56,20 +57,12 @@ export async function POST(req: Request) {
       }
 
       const status = order.status as string;
-      if (status === "CANCELLED" || status === "CANCELLED_EXPIRED") {
-        throw new Error("ORDER_CANCELLED");
-      }
-      if (status === "PAID" || status === "SHIPPED" || status === "DELIVERED") {
-        // already final: do not allow
-        throw new Error("ORDER_ALREADY_FINAL");
-      }
-
-      // If already PAYMENT_SENT, allow idempotency only if same operationCode
-      if (status === "PAYMENT_SENT") {
-        if (order.payment?.operationCode === operationCode) {
-          return { ok: true as const, idempotent: true as const };
-        }
-        throw new Error("PAYMENT_ALREADY_SENT");
+      const decision = decidePaymentSubmission(status, order.payment?.operationCode, operationCode);
+      if (decision === "ORDER_CANCELLED") throw new Error("ORDER_CANCELLED");
+      if (decision === "ORDER_ALREADY_FINAL") throw new Error("ORDER_ALREADY_FINAL");
+      if (decision === "PAYMENT_ALREADY_SENT") throw new Error("PAYMENT_ALREADY_SENT");
+      if (decision === "IDEMPOTENT") {
+        return { ok: true as const, idempotent: true as const };
       }
 
       // Expired check (best effort)

@@ -7,20 +7,10 @@ import { assertCsrfHeader } from "@/lib/server/csrf";
 import { SESSION_COOKIE_NAME, verifyAdminSessionCookie } from "@/lib/server/adminSession";
 import { getRequestIp, getUserAgent } from "@/lib/server/ip";
 import { sendTransactionalEmail } from "@/lib/server/email";
+import { ALLOWED_NEXT, isOrderStatus } from "@/lib/orderStatus";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-const ALLOWED_NEXT: Record<string, Set<string>> = {
-  PENDING_VALIDATION: new Set(["PAID", "CANCELLED"]),
-  SCHEDULED: new Set(["PAYMENT_SENT", "CANCELLED"]),
-  PAYMENT_SENT: new Set(["PAID", "CANCELLED"]),
-  PAID: new Set(["SHIPPED"]),
-  SHIPPED: new Set(["DELIVERED"]),
-  DELIVERED: new Set(),
-  CANCELLED: new Set(),
-  CANCELLED_EXPIRED: new Set(),
-};
 
 function shippingToText(shipping: any): string {
   if (!shipping) return "-";
@@ -101,8 +91,11 @@ export async function POST(req: Request) {
       }
 
       if (nextStatus !== currentStatus) {
-        const allowed = ALLOWED_NEXT[currentStatus] ?? new Set<string>();
-        if (!allowed.has(nextStatus)) {
+        if (!isOrderStatus(currentStatus)) {
+          throw new Error("INVALID_STATUS_TRANSITION");
+        }
+        const allowed = ALLOWED_NEXT[currentStatus];
+        if (!allowed.includes(nextStatus as any)) {
           throw new Error("INVALID_STATUS_TRANSITION");
         }
       }

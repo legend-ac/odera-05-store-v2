@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "format:check": "node -e \"console.log('No formatter configured')\"",
     "admin:set-claim": "tsx scripts/set-admin-claim.ts",
@@ -32,6 +34,8 @@
     "eslint-config-next": "^14.2.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
+    "vitest": "^2.1.8",
+    "@vitest/coverage-v8": "^2.1.8",
     "typescript": "^5.4.5",
     "tsx": "^4.16.2"
   }

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { formatPEN } from "@/lib/money";
+import { ALLOWED_NEXT, isOrderStatus, type OrderStatus } from "@/lib/orderStatus";
 
 type OrderRow = {
   id: string;
@@ -19,8 +20,6 @@ type OrderRow = {
   createdAtMs: number | null;
 };
 
-const STATUS_OPTIONS = ["PENDING_VALIDATION", "PAYMENT_SENT", "PAID", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
-
 const STATUS_LABEL: Record<string, string> = {
   PENDING_VALIDATION: "Pendiente de validación de pago",
   PAYMENT_SENT: "Pendiente de validación de pago",
@@ -31,6 +30,12 @@ const STATUS_LABEL: Record<string, string> = {
   CANCELLED: "Cancelado",
   CANCELLED_EXPIRED: "Cancelado por vencimiento",
 };
+
+function getStatusOptions(currentStatus: string): string[] {
+  if (!isOrderStatus(currentStatus)) return [currentStatus];
+  const allowed = ALLOWED_NEXT[currentStatus];
+  return [currentStatus, ...allowed.filter((s) => s !== currentStatus)];
+}
 
 function shippingLabel(shipping: any): string {
   if (!shipping) return "-";
@@ -118,9 +123,9 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                 value={o.status}
                 onChange={(e) => setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status: e.target.value } : x)))}
               >
-                {STATUS_OPTIONS.map((s) => (
+                {getStatusOptions(o.status).map((s) => (
                   <option key={s} value={s}>
-                    {STATUS_LABEL[s] ?? s}
+                    {STATUS_LABEL[s as OrderStatus] ?? s}
                   </option>
                 ))}
               </select>

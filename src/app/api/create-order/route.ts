@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { Timestamp } from "firebase-admin/firestore";
-import { createHash } from "crypto";
+import { buildIdempotencyDocId } from "@/lib/idempotency";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { createOrderSchema } from "@/schemas/createOrder";
 import { verifyAppCheckIfEnabled } from "@/lib/server/appCheckVerify";
@@ -80,9 +80,7 @@ export async function POST(req: Request) {
     }
 
     const idempotencyKey = req.headers.get("x-idempotency-key");
-    const idemRef = idempotencyKey
-      ? adminDb.collection("orderOps").doc(createHash("sha256").update(`${ip}:${idempotencyKey}`).digest("hex").slice(0, 32))
-      : null;
+    const idemRef = idempotencyKey ? adminDb.collection("orderOps").doc(buildIdempotencyDocId(ip, idempotencyKey)) : null;
 
     const json = (await req.json()) as unknown;
     const parsed = createOrderSchema.safeParse(json);
