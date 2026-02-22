@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const storeSettingsSchema = z.object({
   storeName: z.string().min(2).max(80),
+  homePromoEnabled: z.boolean().optional(),
   publicContactEmail: z.union([z.literal(""), z.string().email().max(200)]),
   publicWhatsapp: z.union([z.literal(""), z.string().min(3).max(40)]),
   socialLinks: z

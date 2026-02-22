@@ -5,6 +5,7 @@ import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 
 type Settings = {
   storeName: string;
+  homePromoEnabled?: boolean;
   publicContactEmail: string;
   publicWhatsapp: string;
   socialLinks: {
@@ -58,6 +59,15 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
         <div className="grid gap-1 panel p-3 md:p-4">
           <label className="text-sm font-medium">Nombre tienda</label>
           <input value={s.storeName} onChange={(e) => setS((p) => ({ ...p, storeName: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+          <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={Boolean(s.homePromoEnabled)}
+              onChange={(e) => setS((p) => ({ ...p, homePromoEnabled: e.target.checked }))}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            Mostrar bloque de promoción en Inicio (cupón y envío gratis)
+          </label>
         </div>
 
         <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4">
