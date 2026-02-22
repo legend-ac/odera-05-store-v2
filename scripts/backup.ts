@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
  * scripts/backup.ts
  * Exports key Firestore collections to JSON files (GitHub Actions artifact).
@@ -8,6 +8,8 @@
  *
  * Requires:
  *   FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
+ * Optional:
+ *   FIRESTORE_DATABASE_ID (defaults to "(default)")
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -60,12 +62,15 @@ async function main() {
   const projectId = requireEnv("FIREBASE_PROJECT_ID");
   const clientEmail = requireEnv("FIREBASE_CLIENT_EMAIL");
   const privateKey = requireEnv("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n");
+  const firestoreDatabaseIdRaw = process.env.FIRESTORE_DATABASE_ID || "(default)";
+  const firestoreDatabaseId =
+    firestoreDatabaseIdRaw === "default" ? "(default)" : firestoreDatabaseIdRaw;
 
   if (!getApps().length) {
     initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
   }
 
-  const db = getFirestore();
+  const db = getFirestore(getApps()[0]!, firestoreDatabaseId);
   const today = new Date().toISOString().slice(0, 10);
   const outDir = path.join(process.cwd(), "backup", "out", today);
   fs.mkdirSync(outDir, { recursive: true });
@@ -78,7 +83,7 @@ async function main() {
     console.log(`Exported ${c}: ${data.length} docs`);
   }
 
-  console.log(`✅ Backup written to ${outDir}`);
+  console.log(`Backup written to ${outDir} (db: ${firestoreDatabaseId})`);
 }
 
 main().catch((e) => {
