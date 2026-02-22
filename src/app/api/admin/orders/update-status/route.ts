@@ -8,6 +8,8 @@ import { SESSION_COOKIE_NAME, verifyAdminSessionCookie } from "@/lib/server/admi
 import { getRequestIp, getUserAgent } from "@/lib/server/ip";
 import { sendTransactionalEmail } from "@/lib/server/email";
 import { ALLOWED_NEXT, isOrderStatus } from "@/lib/orderStatus";
+import { renderOrderEmail } from "@/lib/server/emailTemplates";
+import { formatPEN } from "@/lib/money";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -156,6 +158,7 @@ export async function POST(req: Request) {
       return {
         customerEmail: before.customer?.email as string | undefined,
         publicCode: before.publicCode as string | undefined,
+        trackingToken: before.trackingToken as string | undefined,
         customerName: before.customer?.name as string | undefined,
         customerPhone: before.customer?.phone as string | undefined,
         itemsSnapshots: Array.isArray(before.itemsSnapshots) ? before.itemsSnapshots : [],
@@ -166,10 +169,26 @@ export async function POST(req: Request) {
     });
 
     if (result.customerEmail && result.publicCode) {
+      const origin = new URL(req.url).origin;
+      const trackingUrl =
+        result.trackingToken
+          ? `${origin}/t/${encodeURIComponent(result.publicCode)}/${encodeURIComponent(result.trackingToken)}`
+          : `${origin}/track?publicCode=${encodeURIComponent(result.publicCode)}`;
+
       const lines = (result.itemsSnapshots ?? [])
         .map((it: any) => `- ${it.nameSnapshot} x ${it.qty} - S/ ${(Number(it.unitPriceSnapshot ?? 0) * Number(it.qty ?? 0)).toFixed(2)}`)
         .join("\n");
       const totals = result.totals ?? {};
+      const lineItems = (result.itemsSnapshots ?? []).map((it: any) => {
+        const unit = Number(it.unitPriceSnapshot ?? 0);
+        const qty = Number(it.qty ?? 0);
+        return {
+          name: String(it.nameSnapshot ?? "Producto"),
+          qty,
+          unitPrice: formatPEN(unit),
+          lineTotal: formatPEN(unit * qty),
+        };
+      });
       const detail =
         `Pedido: ${result.publicCode}\n` +
         `Estado: ${statusToText(nextStatus)}\n\n` +
@@ -183,12 +202,32 @@ export async function POST(req: Request) {
         `Subtotal: S/ ${Number(totals.subtotal ?? 0).toFixed(2)}\n` +
         `Descuento: S/ ${Number(totals.discountAmount ?? 0).toFixed(2)}\n` +
         `Envio: S/ ${Number(totals.shippingCost ?? 0).toFixed(2)}\n` +
-        `Total: S/ ${Number(totals.totalToPay ?? 0).toFixed(2)}`;
+        `Total: S/ ${Number(totals.totalToPay ?? 0).toFixed(2)}\n\n` +
+        `Enlace de seguimiento: ${trackingUrl}`;
+
+      const html = renderOrderEmail({
+        storeName: "ODERA 05 STORE",
+        title: `Estado de pedido ${result.publicCode}`,
+        publicCode: result.publicCode,
+        statusLabel: statusToText(nextStatus),
+        customerName: result.customerName ?? "-",
+        customerEmail: result.customerEmail,
+        customerPhone: result.customerPhone ?? "-",
+        items: lineItems,
+        subtotal: formatPEN(Number(totals.subtotal ?? 0)),
+        discount: formatPEN(Number(totals.discountAmount ?? 0)),
+        shipping: formatPEN(Number(totals.shippingCost ?? 0)),
+        total: formatPEN(Number(totals.totalToPay ?? 0)),
+        paymentMethod: String(result.payment?.method ?? "-"),
+        trackingUrl,
+        receiptUrl: typeof result.payment?.receiptImageUrl === "string" ? result.payment.receiptImageUrl : undefined,
+      });
 
       const mailRes = await sendTransactionalEmail({
         to: result.customerEmail,
         subject: `ODERA 05 STORE - Estado de pedido ${result.publicCode}: ${statusToText(nextStatus)}`,
         text: detail,
+        html,
       });
 
       try {

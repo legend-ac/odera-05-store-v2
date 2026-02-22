@@ -5,6 +5,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useCart } from "@/components/cart/CartProvider";
 import { formatPEN } from "@/lib/money";
+import { notify } from "@/lib/toast";
 
 type Variant = { id: string; size?: string; color?: string; sku?: string; stock: number };
 type Img = { url: string; alt?: string; isMain: boolean; order: number };
@@ -175,7 +176,7 @@ export default function ProductClient({ slug }: { slug: string }) {
             onClick={() => {
               const safeQty = Math.min(50, Math.max(1, Math.floor(qty || 1)));
               addItem({ productId: data.id, variantId, qty: safeQty });
-              alert("Producto agregado al carrito");
+              notify.success("Producto agregado al carrito");
             }}
             className="px-4 py-2 rounded-md bg-black text-white text-sm disabled:opacity-50"
           >

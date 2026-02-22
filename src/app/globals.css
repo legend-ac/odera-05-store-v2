@@ -21,7 +21,7 @@ body {
 }
 
 body {
-  font-family: var(--font-body), "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(--font-sans), "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: var(--text);
   background:
     radial-gradient(1200px 500px at 10% -10%, #e8edff 0%, transparent 60%),
@@ -33,7 +33,7 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-heading), "Trebuchet MS", "Segoe UI", sans-serif;
+  font-family: var(--font-display), "Trebuchet MS", "Segoe UI", sans-serif;
   letter-spacing: -0.02em;
 }
 
