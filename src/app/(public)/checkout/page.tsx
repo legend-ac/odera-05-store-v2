@@ -8,6 +8,8 @@ import { apiPost, makeIdempotencyKey } from "@/lib/apiClient";
 import type { CreateOrderResponse } from "@/schemas/createOrder";
 import { db } from "@/lib/firebase/client";
 import { formatPEN } from "@/lib/money";
+import { notify } from "@/lib/toast";
+import { safeHostname } from "@/lib/safeUrl";
 
 type ShippingMethod = "LIMA_DELIVERY" | "AGENCIA_PROVINCIA";
 type PayMethod = "YAPE" | "PLIN";
@@ -339,9 +341,45 @@ export default function CheckoutPage() {
           />
         </label>
         {receiptUrl ? (
-          <a href={receiptUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-700 break-all underline">
-            Comprobante cargado: {receiptUrl}
-          </a>
+          <div className="mt-3 rounded-2xl border bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold">Comprobante cargado</div>
+                <div className="text-xs text-slate-500">{safeHostname(receiptUrl)}</div>
+              </div>
+
+              <div className="flex gap-2">
+                <a
+                  href={receiptUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl bg-black px-3 py-2 text-xs font-semibold text-white hover:opacity-90"
+                >
+                  Ver comprobante
+                </a>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(receiptUrl);
+                      notify.success("Link copiado");
+                    } catch {
+                      notify.error("No se pudo copiar el link");
+                    }
+                  }}
+                  className="rounded-xl border px-3 py-2 text-xs font-semibold hover:bg-slate-50"
+                >
+                  Copiar
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3 overflow-hidden rounded-xl border bg-slate-50">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={receiptUrl} alt="Comprobante" className="max-h-72 w-full object-contain" />
+            </div>
+          </div>
         ) : (
           <div className="text-xs text-slate-500">Debes subir el comprobante para confirmar el pedido.</div>
         )}

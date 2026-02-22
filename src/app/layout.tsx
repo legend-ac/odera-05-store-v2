@@ -5,14 +5,16 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 
-const headingFont = Sora({
+const display = Sora({
   subsets: ["latin"],
-  variable: "--font-heading",
+  variable: "--font-display",
+  display: "swap",
 });
 
-const bodyFont = Plus_Jakarta_Sans({
+const sans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -22,8 +24,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body className={`${headingFont.variable} ${bodyFont.variable}`}>
+    <html lang="es" className={`${sans.variable} ${display.variable}`}>
+      <body className="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased">
         <Providers>
           <div className="min-h-dvh flex flex-col">
             <Header />

@@ -9,6 +9,8 @@ import { checkRateLimit } from "@/lib/server/rateLimit";
 import { randomToken } from "@/lib/server/random";
 import { sendTransactionalEmail } from "@/lib/server/email";
 import { getServerEnv } from "@/lib/env";
+import { formatPEN } from "@/lib/money";
+import { renderOrderEmail } from "@/lib/server/emailTemplates";
 import type { ProductDoc } from "@/types/firestore";
 
 export const runtime = "nodejs";
@@ -49,19 +51,6 @@ function shippingToText(shipping: any): string {
   ]
     .filter(Boolean)
     .join("\n");
-}
-
-function escapeHtml(v: string): string {
-  return v
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function toHtmlLines(v: string): string {
-  return escapeHtml(v).replaceAll("\n", "<br/>");
 }
 
 export async function POST(req: Request) {
@@ -270,7 +259,17 @@ export async function POST(req: Request) {
     const env = getServerEnv();
     const businessEmail = (settingsSnap.exists ? (settingsSnap.data()?.publicContactEmail as string | undefined) : undefined) || env.SMTP_USER;
     const origin = new URL(req.url).origin;
-    const trackingUrl = `${origin}/track?publicCode=${encodeURIComponent(result.publicCode)}&trackingToken=${encodeURIComponent(result.trackingToken)}`;
+    const trackingUrl = `${origin}/t/${encodeURIComponent(result.publicCode)}/${encodeURIComponent(result.trackingToken)}`;
+    const lineItems = ((result as any).itemsSnapshots ?? []).map((it: any) => {
+      const unit = Number(it.unitPriceSnapshot ?? 0);
+      const qty = Number(it.qty ?? 0);
+      return {
+        name: String(it.nameSnapshot ?? "Producto"),
+        qty,
+        unitPrice: formatPEN(unit),
+        lineTotal: formatPEN(unit * qty),
+      };
+    });
 
     const orderLines = ((result as any).itemsSnapshots ?? [])
       .map((it: any) => `- ${it.nameSnapshot} x ${it.qty} - S/ ${(Number(it.unitPriceSnapshot ?? 0) * Number(it.qty ?? 0)).toFixed(2)}`)
@@ -292,31 +291,36 @@ export async function POST(req: Request) {
       `Total: S/ ${((result as any).totalToPay ?? 0).toFixed(2)}\n\n` +
       `Clave de seguimiento: ${result.trackingToken}\n` +
       `Enlace de seguimiento: ${trackingUrl}`;
-
-    const logoUrl = env.EMAIL_BRAND_IMAGE_URL;
-    const customerHtml =
-      `<div style="font-family:Arial,sans-serif;background:#f5f7fb;padding:20px">` +
-      `<div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden">` +
-      `${logoUrl ? `<div style="background:#0f172a;padding:16px;text-align:center"><img src="${escapeHtml(logoUrl)}" alt="ODERA 05" style="max-height:120px;max-width:100%;border-radius:10px"/></div>` : ""}` +
-      `<div style="padding:18px 20px">` +
-      `<h2 style="margin:0 0 10px;color:#0f172a">Pedido ${escapeHtml(result.publicCode)}</h2>` +
-      `<p style="margin:0 0 14px;color:#334155">Tu pedido fue registrado correctamente. Estado: <b>Pendiente de validacion de pago</b>.</p>` +
-      `<div style="font-size:14px;line-height:1.55;color:#111827">${toHtmlLines(mailDetail)}</div>` +
-      `</div></div></div>`;
-
-    const businessHtml =
-      `<div style="font-family:Arial,sans-serif;background:#f5f7fb;padding:20px">` +
-      `<div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden">` +
-      `${logoUrl ? `<div style="background:#0f172a;padding:16px;text-align:center"><img src="${escapeHtml(logoUrl)}" alt="ODERA 05" style="max-height:120px;max-width:100%;border-radius:10px"/></div>` : ""}` +
-      `<div style="padding:18px 20px">` +
-      `<h2 style="margin:0 0 10px;color:#0f172a">Nuevo pedido ${escapeHtml(result.publicCode)}</h2>` +
-      `<div style="font-size:14px;line-height:1.55;color:#111827">${toHtmlLines(mailDetail)}</div>` +
-      `</div></div></div>`;
+    const store = storeName ?? "ODERA 05 STORE";
+    const htmlBase = {
+      storeName: store,
+      publicCode: result.publicCode,
+      statusLabel: "Pendiente de validacion de pago",
+      customerName: customer.name,
+      customerEmail: customer.email,
+      customerPhone: customer.phone,
+      items: lineItems,
+      subtotal: formatPEN(Number((result as any).totalToPay ?? 0) + Number((result as any).discountAmount ?? 0) - Number((result as any).shippingCost ?? 0)),
+      discount: formatPEN(Number((result as any).discountAmount ?? 0)),
+      shipping: formatPEN(Number((result as any).shippingCost ?? 0)),
+      total: formatPEN(Number((result as any).totalToPay ?? 0)),
+      paymentMethod: payment.method,
+      trackingUrl,
+      receiptUrl: payment.receiptImageUrl,
+    };
+    const customerHtml = renderOrderEmail({
+      ...htmlBase,
+      title: `${store} - Pedido ${result.publicCode}`,
+    });
+    const businessHtml = renderOrderEmail({
+      ...htmlBase,
+      title: `Nuevo pedido ${result.publicCode} - ${store}`,
+    });
 
     if (!wasIdempotent) {
       const customerMail = await sendTransactionalEmail({
         to: customer.email,
-        subject: `${storeName ?? "ODERA 05 STORE"} - Pedido ${result.publicCode} (Pendiente de validacion)`,
+        subject: `${store} - Pedido ${result.publicCode} (Pendiente de validacion)`,
         text: `Tu pedido fue registrado correctamente.\n\n${mailDetail}`,
         html: customerHtml,
       });
@@ -325,7 +329,7 @@ export async function POST(req: Request) {
       if (businessEmail) {
         businessMail = await sendTransactionalEmail({
           to: businessEmail,
-          subject: `Nuevo pedido ${result.publicCode} - ${storeName ?? "ODERA 05 STORE"}`,
+          subject: `Nuevo pedido ${result.publicCode} - ${store}`,
           text: mailDetail,
           html: businessHtml,
         });

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { apiPost } from "@/lib/apiClient";
 import { db } from "@/lib/firebase/client";
+import { buildWhatsAppMessage } from "@/lib/whatsappMessage";
 
 type TrackResponse = {
   publicCode: string;
@@ -25,14 +26,6 @@ function normalizeWhatsappTarget(raw: string): string {
   if (!value) return "";
   const digits = onlyDigits(value);
   return digits ? `https://wa.me/${digits}` : "";
-}
-
-function shippingAddressText(shipping: any): string {
-  if (!shipping) return "-";
-  if (shipping.method === "LIMA_DELIVERY") {
-    return `${shipping.district} - ${shipping.addressLine1}${shipping.reference ? ` (Ref: ${shipping.reference})` : ""}`;
-  }
-  return `${shipping.department}, ${shipping.province} - Agencia ${shipping.agencyName} (${shipping.agencyAddress})${shipping.reference ? ` (Ref: ${shipping.reference})` : ""}`;
 }
 
 function ConfirmPageInner() {
@@ -97,33 +90,33 @@ function ConfirmPageInner() {
     return `${window.location.origin}/track?publicCode=${encodeURIComponent(publicCode)}&trackingToken=${encodeURIComponent(trackingToken)}`;
   }, [publicCode, trackingToken]);
 
+  const trackingShortUrl = useMemo(() => {
+    if (!publicCode || !trackingToken) return "";
+    if (typeof window === "undefined") return `/t/${encodeURIComponent(publicCode)}/${encodeURIComponent(trackingToken)}`;
+    return `${window.location.origin}/t/${encodeURIComponent(publicCode)}/${encodeURIComponent(trackingToken)}`;
+  }, [publicCode, trackingToken]);
+
   const waText = useMemo(() => {
     if (!data) return "";
-    const name = data.customer?.name ?? data.shipping?.receiverName ?? "-";
-    const phone = data.customer?.phone ?? data.shipping?.receiverPhone ?? "-";
-    const address = shippingAddressText(data.shipping);
+    const name = data.customer?.name ?? "-";
     const method = data.payment?.method ?? "-";
-    const items = (data.itemsSnapshots ?? [])
-      .map((it) => `- ${it.nameSnapshot} x${it.qty} (S/ ${(Number(it.unitPriceSnapshot) * Number(it.qty)).toFixed(2)})`)
-      .join("\n");
-    const total = data.totals?.totalToPay ?? 0;
-    return [
-      `Pedido: ${data.publicCode}`,
-      `Enlace de seguimiento: ${trackingUrl || "-"}`,
-      `Clave de seguimiento: ${trackingToken || "-"}`,
-      `Nombre: ${name}`,
-      `Telefono: ${phone}`,
-      `Direccion: ${address}`,
-      `Metodo de pago: ${method}`,
-      "",
-      "Productos:",
-      items || "-",
-      "",
-      `Total: S/ ${Number(total).toFixed(2)}`,
-      "",
-      "Adjunto mi comprobante",
-    ].join("\n");
-  }, [data, trackingToken, trackingUrl]);
+    const total = Number(data.totals?.totalToPay ?? 0);
+    const storeName = String(settings?.storeName ?? "ODERA 05 STORE");
+
+    return buildWhatsAppMessage({
+      storeName,
+      publicCode: data.publicCode,
+      customerName: name,
+      paymentMethod: method,
+      total,
+      trackingShortUrl: trackingShortUrl || trackingUrl || "-",
+      items: (data.itemsSnapshots ?? []).map((it) => ({
+        name: it.nameSnapshot,
+        qty: Number(it.qty ?? 0),
+        lineTotal: Number(it.unitPriceSnapshot ?? 0) * Number(it.qty ?? 0),
+      })),
+    });
+  }, [data, settings?.storeName, trackingShortUrl, trackingUrl]);
 
   const waHref = useMemo(() => {
     if (!businessWhatsapp || !waText) return "";
