@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * scripts/backup.ts
  * Exports key Firestore collections to JSON files (GitHub Actions artifact).
