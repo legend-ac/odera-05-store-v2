@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -6,6 +6,9 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useCart } from "@/components/cart/CartProvider";
 import { formatPEN } from "@/lib/money";
+import { Card, CardBody } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/fields";
 
 type ProductData = {
   id: string;
@@ -69,70 +72,70 @@ export default function CartPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Carrito</h1>
-        <button
-          type="button"
-          onClick={clear}
-          className="text-sm px-3 py-2 rounded-md border border-neutral-300"
-          disabled={!items.length}
-        >
+        <h1 className="text-2xl md:text-3xl font-bold">Carrito</h1>
+        <Button type="button" variant="secondary" onClick={clear} disabled={!items.length}>
           Vaciar carrito
-        </button>
+        </Button>
       </div>
 
-      {loading ? <div className="text-sm text-neutral-500">Actualizando carrito...</div> : null}
+      {loading ? <div className="text-sm text-slate-500">Actualizando carrito...</div> : null}
 
       {!items.length ? (
-        <div className="text-sm text-neutral-600">
-          Tu carrito esta vacio. <Link href="/catalog" className="underline">Ir al catalogo</Link>
-        </div>
+        <Card>
+          <CardBody className="text-sm text-slate-600">
+            Tu carrito esta vacio.{" "}
+            <Link href="/catalog" className="font-semibold text-blue-700 hover:text-blue-800">
+              Ir al catalogo
+            </Link>
+          </CardBody>
+        </Card>
       ) : null}
 
       {items.length ? (
         <div className="flex flex-col gap-3">
           {lines.map(({ it, p, v, unit, subtotal }) => (
-            <div key={`${it.productId}:${it.variantId}`} className="border border-neutral-200 rounded-xl p-4 flex gap-4">
-              <div className="flex-1">
-                <div className="font-medium">{p?.name ?? it.productId}</div>
-                <div className="text-sm text-neutral-600">
-                  Variante: {v ? `${v.size ?? ""} ${v.color ?? ""}`.trim() || v.id : it.variantId}
+            <Card key={`${it.productId}:${it.variantId}`}>
+              <CardBody className="flex gap-4">
+                <div className="flex-1">
+                  <div className="font-semibold">{p?.name ?? it.productId}</div>
+                  <div className="text-sm text-slate-600">
+                    Variante: {v ? `${v.size ?? ""} ${v.color ?? ""}`.trim() || v.id : it.variantId}
+                  </div>
+                  <div className="text-sm">Precio: {formatPEN(unit)}</div>
+                  <div className="text-sm font-medium">Subtotal: {formatPEN(subtotal)}</div>
                 </div>
-                <div className="text-sm">Precio: {formatPEN(unit)}</div>
-                <div className="text-sm">Subtotal: {formatPEN(subtotal)}</div>
-              </div>
 
-              <div className="flex flex-col items-end gap-2">
-                <input
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={it.qty}
-                  onChange={(e) => setQty(it.productId, it.variantId, Number(e.target.value))}
-                  className="border border-neutral-300 rounded-md px-2 py-1 text-sm w-20 text-right"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeItem(it.productId, it.variantId)}
-                  className="text-sm px-3 py-2 rounded-md border border-neutral-300"
-                >
-                  Quitar
-                </button>
-              </div>
-            </div>
+                <div className="flex flex-col items-end gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={it.qty}
+                    onChange={(e) => setQty(it.productId, it.variantId, Number(e.target.value))}
+                    className="w-20 text-right"
+                  />
+                  <Button type="button" variant="ghost" onClick={() => removeItem(it.productId, it.variantId)}>
+                    Quitar
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
           ))}
         </div>
       ) : null}
 
       {items.length ? (
-        <div className="border border-neutral-200 rounded-xl p-4 flex items-center justify-between">
-          <div className="text-sm text-neutral-600">Total</div>
-          <div className="text-lg font-semibold">{formatPEN(total)}</div>
-        </div>
+        <Card>
+          <CardBody className="flex items-center justify-between">
+            <div className="text-sm text-slate-600">Total</div>
+            <div className="text-xl font-bold">{formatPEN(total)}</div>
+          </CardBody>
+        </Card>
       ) : null}
 
       {items.length ? (
         <div className="flex justify-end">
-          <Link href="/checkout" className="px-4 py-2 rounded-md bg-black text-white text-sm">
+          <Link href="/checkout" className="btn-brand">
             Continuar compra
           </Link>
         </div>

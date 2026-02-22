@@ -1,18 +1,18 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   color-scheme: light;
-  --bg: #f4f6fb;
-  --surface: #ffffff;
-  --surface-soft: #f7f9fd;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --line: #e2e8f0;
   --text: #0f172a;
-  --muted: #334155;
-  --line: #d8e0ec;
-  --brand: #0b132b;
-  --brand-2: #1c2541;
-  --ring: #b7c5dd;
+  --muted: #475569;
+  --primary: #020617;
+  --sale: #e11d48;
+  --success: #059669;
+  --info: #2563eb;
 }
 
 html,
@@ -22,60 +22,64 @@ body {
 
 body {
   font-family: var(--font-sans), "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg);
   color: var(--text);
-  background:
-    radial-gradient(1200px 500px at 10% -10%, #e8edff 0%, transparent 60%),
-    radial-gradient(900px 400px at 100% 0%, #e4f4ff 0%, transparent 55%),
-    var(--bg);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-display), "Trebuchet MS", "Segoe UI", sans-serif;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display), var(--font-sans), "Segoe UI", sans-serif;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+*:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 @layer components {
   .panel {
-    background: var(--surface);
+    background: var(--card);
     border: 1px solid var(--line);
     border-radius: 1rem;
-    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
   }
 
   .btn-brand {
-    @apply px-4 py-2 rounded-md text-sm text-white font-semibold transition-all duration-200;
-    background: linear-gradient(135deg, var(--brand), var(--brand-2));
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+    @apply inline-flex items-center justify-center rounded-xl bg-black px-4 py-2.5 text-sm font-semibold text-white transition duration-200;
   }
 
   .btn-brand:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.26);
+    @apply bg-slate-900;
   }
 
   .btn-soft {
-    @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
-    border: 1px solid var(--line);
-    background: var(--surface-soft);
-    color: var(--text);
+    @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition duration-200;
   }
 
   .btn-soft:hover {
-    background: #eef2f7;
+    @apply bg-slate-50 text-slate-900;
   }
 
   .chip-link {
-    @apply inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200;
-    border: 1px solid var(--line);
-    background: #f8fafc;
+    @apply inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition duration-200;
   }
 
   .chip-link:hover {
-    border-color: var(--ring);
-    transform: translateY(-1px);
+    @apply border-slate-300 bg-slate-50 text-slate-900;
   }
 
   .social-instagram {
@@ -85,7 +89,7 @@ h4 {
   }
 
   .social-tiktok {
-    background: #111827;
+    background: #0f172a;
     color: #fff;
     border-color: transparent;
   }
@@ -97,8 +101,8 @@ h4 {
   }
 
   .social-whatsapp {
-    background: #25d366;
-    color: #073b1b;
+    background: #22c55e;
+    color: #042f2e;
     border-color: transparent;
   }
 }

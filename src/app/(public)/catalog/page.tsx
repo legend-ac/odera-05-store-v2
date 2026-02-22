@@ -47,7 +47,13 @@ async function loadInitialCatalog(): Promise<ProductCardData[]> {
   return list;
 }
 
-export default async function CatalogPage() {
+export default async function CatalogPage({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
   const initialItems = await loadInitialCatalog();
-  return <CatalogClient initialItems={initialItems} />;
+  const q = searchParams?.q;
+  const initialQuery = Array.isArray(q) ? q[0] ?? "" : q ?? "";
+  return <CatalogClient initialItems={initialItems} initialQuery={initialQuery} />;
 }

@@ -5,10 +5,22 @@ import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import ProductCard, { type ProductCardData } from "@/components/ProductCard";
 import { normalizeToken } from "@/lib/searchTokens";
+import { Card, CardBody } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input, Select } from "@/components/ui/fields";
 
-export default function CatalogClient({ initialItems }: { initialItems: ProductCardData[] }) {
-  const [qText, setQText] = useState("");
+type SortType = "latest" | "price-asc" | "price-desc" | "name";
+
+export default function CatalogClient({
+  initialItems,
+  initialQuery,
+}: {
+  initialItems: ProductCardData[];
+  initialQuery: string;
+}) {
+  const [qText, setQText] = useState(initialQuery ?? "");
   const token = useMemo(() => normalizeToken(qText).split(/\s+/g).filter(Boolean)[0] ?? "", [qText]);
+  const [sortBy, setSortBy] = useState<SortType>("latest");
   const [items, setItems] = useState<ProductCardData[] | null>(initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,41 +92,71 @@ export default function CatalogClient({ initialItems }: { initialItems: ProductC
     };
   }, [token, initialItems]);
 
+  const sortedItems = useMemo(() => {
+    const list = [...(items ?? [])];
+    if (sortBy === "name") return list.sort((a, b) => a.name.localeCompare(b.name));
+    if (sortBy === "price-asc") {
+      return list.sort((a, b) => {
+        const pa = a.onSale && typeof a.salePrice === "number" ? a.salePrice : a.price;
+        const pb = b.onSale && typeof b.salePrice === "number" ? b.salePrice : b.price;
+        return pa - pb;
+      });
+    }
+    if (sortBy === "price-desc") {
+      return list.sort((a, b) => {
+        const pa = a.onSale && typeof a.salePrice === "number" ? a.salePrice : a.price;
+        const pb = b.onSale && typeof b.salePrice === "number" ? b.salePrice : b.price;
+        return pb - pa;
+      });
+    }
+    return list;
+  }, [items, sortBy]);
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 md:py-10 flex flex-col gap-6">
+    <div className="mx-auto max-w-6xl px-4 py-8 md:py-10 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Catalogo</h1>
-        <p className="text-sm text-neutral-600">Encuentra tus productos por nombre, marca o palabra clave.</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Catalogo</h1>
+        <p className="text-sm text-slate-600">Encuentra tus productos por nombre, marca o palabra clave.</p>
       </div>
 
-      <div className="panel p-3 md:p-4 flex gap-2">
-        <input
-          value={qText}
-          onChange={(e) => setQText(e.target.value)}
-          placeholder="Buscar (ej. nike, polera, negro)"
-          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
-        />
-        <button
-          onClick={() => setQText("")}
-          className="px-3 py-2 rounded-md border border-slate-300 text-sm bg-white hover:bg-slate-50"
-          type="button"
-        >
-          Limpiar
-        </button>
-      </div>
+      <Card>
+        <CardBody className="flex flex-col gap-3">
+          <div className="grid gap-2 md:grid-cols-[1fr_190px_120px]">
+            <Input
+              value={qText}
+              onChange={(e) => setQText(e.target.value)}
+              placeholder="Buscar (ej. nike, polera, negro)"
+            />
+            <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
+              <option value="latest">Mas recientes</option>
+              <option value="price-asc">Precio: menor a mayor</option>
+              <option value="price-desc">Precio: mayor a menor</option>
+              <option value="name">Nombre A-Z</option>
+            </Select>
+            <Button type="button" variant="secondary" onClick={() => setQText("")}>
+              Limpiar
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setQText("zapatillas")} className="chip-link">Zapatillas</button>
+            <button type="button" onClick={() => setQText("oferta")} className="chip-link">Ofertas</button>
+            <button type="button" onClick={() => setQText("futbol")} className="chip-link">Futbol</button>
+          </div>
+        </CardBody>
+      </Card>
 
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
-      {!items ? <div className="text-sm text-neutral-500">Cargando productos...</div> : null}
+      {!items ? <div className="text-sm text-slate-500">Cargando productos...</div> : null}
 
       {items && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {items.map((p) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          {sortedItems.map((p) => (
             <ProductCard key={p.id} p={p} />
           ))}
         </div>
       )}
 
-      {items && !items.length ? <div className="text-sm text-neutral-500">Aun no hay productos publicados.</div> : null}
+      {items && !items.length ? <div className="text-sm text-slate-500">Aun no hay productos publicados.</div> : null}
     </div>
   );
 }

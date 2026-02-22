@@ -51,7 +51,7 @@ export default async function FeaturedProducts() {
     const items = await loadFeatured();
     if (!items.length) return <div className="text-sm text-slate-500">Pronto publicaremos nuevos productos.</div>;
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
         {items.map((p) => (
           <ProductCard key={p.id} p={p} />
         ))}

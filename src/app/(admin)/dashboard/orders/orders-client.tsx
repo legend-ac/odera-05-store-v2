@@ -4,6 +4,10 @@ import { useMemo, useState } from "react";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { formatPEN } from "@/lib/money";
 import { ALLOWED_NEXT, isOrderStatus, type OrderStatus } from "@/lib/orderStatus";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardBody } from "@/components/ui/card";
+import { Select } from "@/components/ui/fields";
 
 type OrderRow = {
   id: string;
@@ -21,9 +25,9 @@ type OrderRow = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  PENDING_VALIDATION: "Pendiente de validación de pago",
-  PAYMENT_SENT: "Pendiente de validación de pago",
-  SCHEDULED: "Pendiente de validación de pago",
+  PENDING_VALIDATION: "Pendiente de validacion de pago",
+  PAYMENT_SENT: "Pago enviado",
+  SCHEDULED: "Programado",
   PAID: "Pagado",
   SHIPPED: "Enviado",
   DELIVERED: "Entregado",
@@ -45,6 +49,13 @@ function shippingLabel(shipping: any): string {
   return `Agencia ${shipping.agencyName} - ${shipping.department}/${shipping.province}`;
 }
 
+function toneForStatus(status: string): "default" | "sale" | "success" | "info" {
+  if (status === "PAID" || status === "SHIPPED" || status === "DELIVERED") return "success";
+  if (status === "PENDING_VALIDATION" || status === "PAYMENT_SENT" || status === "SCHEDULED") return "info";
+  if (status === "CANCELLED" || status === "CANCELLED_EXPIRED") return "sale";
+  return "default";
+}
+
 export default function OrdersClient({ initialOrders }: { initialOrders: OrderRow[] }) {
   const [orders, setOrders] = useState<OrderRow[]>(initialOrders);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -62,7 +73,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
     try {
       await apiPost("/api/admin/orders/update-status", { orderId, nextStatus }, { csrfCookieName: CSRF_COOKIE_NAME });
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o)));
-      setMsg("Estado actualizado.");
+      setMsg("Estado actualizado correctamente.");
     } catch (e) {
       const m = e instanceof Error ? e.message : "Error";
       setMsg(`Error: ${m}`);
@@ -75,86 +86,84 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-slate-900">Pedidos</h1>
-          <p className="text-sm text-slate-600">Revisa datos completos, comprobante y estado del pedido.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900">Pedidos</h1>
+          <p className="text-sm text-slate-600">Gestiona estado, comprobante y datos de entrega.</p>
         </div>
         <div className="text-xs text-slate-600 flex flex-wrap gap-2">
           {counts.map(([s, n]) => (
-            <span key={s} className="px-2 py-1 rounded-md bg-slate-100 border border-slate-200">
+            <Badge key={s} tone={toneForStatus(s)}>
               {STATUS_LABEL[s] ?? s}: {n}
-            </span>
+            </Badge>
           ))}
         </div>
       </div>
 
-      {msg ? <div className="panel p-3 text-sm text-slate-700">{msg}</div> : null}
+      {msg ? (
+        <Card>
+          <CardBody className="py-3 text-sm text-slate-700">{msg}</CardBody>
+        </Card>
+      ) : null}
 
       <div className="grid gap-3">
         {orders.map((o) => (
-          <div key={o.id} className="panel p-4 grid gap-3">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-              <div>
-                <div className="font-semibold text-slate-900">{o.publicCode}</div>
-                <div className="text-xs text-slate-600">{o.customerName} · {o.email} · {o.phone}</div>
+          <Card key={o.id}>
+            <CardBody className="grid gap-3">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div>
+                  <div className="font-semibold text-slate-900">{o.publicCode}</div>
+                  <div className="text-xs text-slate-600">{o.customerName} - {o.email} - {o.phone}</div>
+                </div>
+                <Badge tone={toneForStatus(o.status)}>{STATUS_LABEL[o.status] ?? o.status}</Badge>
               </div>
-              <div className="text-xs px-2 py-1 rounded-md bg-slate-100 border border-slate-200 w-fit">
-                {STATUS_LABEL[o.status] ?? o.status}
-              </div>
-            </div>
 
-            <div className="grid md:grid-cols-3 gap-3 text-sm">
-              <div>
-                <div className="text-slate-500">Total</div>
-                <div className="font-semibold">{formatPEN(o.totalToPay)}</div>
+              <div className="grid md:grid-cols-3 gap-3 text-sm">
+                <div>
+                  <div className="text-slate-500">Total</div>
+                  <div className="font-semibold">{formatPEN(o.totalToPay)}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Metodo</div>
+                  <div className="font-medium">{o.paymentMethod || "-"}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Envio</div>
+                  <div className="font-medium">{shippingLabel(o.shipping)}</div>
+                </div>
               </div>
-              <div>
-                <div className="text-slate-500">Método</div>
-                <div className="font-medium">{o.paymentMethod || "-"}</div>
-              </div>
-              <div>
-                <div className="text-slate-500">Envío</div>
-                <div className="font-medium">{shippingLabel(o.shipping)}</div>
-              </div>
-            </div>
 
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-              <select
-                className="border border-slate-300 rounded-md px-2 py-2 text-sm"
-                value={o.status}
-                onChange={(e) => setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status: e.target.value } : x)))}
-              >
-                {getStatusOptions(o.status).map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_LABEL[s as OrderStatus] ?? s}
-                  </option>
-                ))}
-              </select>
-
-              <button
-                type="button"
-                onClick={() => updateStatus(o.id, o.status)}
-                disabled={busyId === o.id}
-                className="px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50"
-              >
-                {busyId === o.id ? "Guardando..." : "Guardar estado"}
-              </button>
-
-              {o.receiptImageUrl ? (
-                <a
-                  href={o.receiptImageUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50"
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                <Select
+                  className="md:w-72"
+                  value={o.status}
+                  onChange={(e) => setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status: e.target.value } : x)))}
                 >
-                  Ver comprobante
-                </a>
-              ) : (
-                <span className="text-xs text-slate-500">Sin comprobante</span>
-              )}
-            </div>
-          </div>
+                  {getStatusOptions(o.status).map((s) => (
+                    <option key={s} value={s}>
+                      {STATUS_LABEL[s as OrderStatus] ?? s}
+                    </option>
+                  ))}
+                </Select>
+
+                <Button type="button" variant="secondary" onClick={() => updateStatus(o.id, o.status)} disabled={busyId === o.id}>
+                  {busyId === o.id ? "Guardando..." : "Guardar estado"}
+                </Button>
+
+                {o.receiptImageUrl ? (
+                  <a href={o.receiptImageUrl} target="_blank" rel="noreferrer" className="btn-soft">
+                    Ver comprobante
+                  </a>
+                ) : (
+                  <span className="text-xs text-slate-500">Sin comprobante</span>
+                )}
+              </div>
+            </CardBody>
+          </Card>
         ))}
-        {!orders.length ? <div className="panel p-4 text-sm text-slate-600">Sin pedidos</div> : null}
+        {!orders.length ? (
+          <Card>
+            <CardBody className="text-sm text-slate-600">Sin pedidos</CardBody>
+          </Card>
+        ) : null}
       </div>
     </div>
   );
