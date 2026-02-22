@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import { usePathname, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/fields";
-import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/layout";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -49,16 +48,6 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-      <div className="border-b border-slate-100 bg-slate-50">
-        <Container className="py-2">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <Badge tone="success">Envio gratis desde S/200</Badge>
-            <Badge tone="info">Compra segura y seguimiento real</Badge>
-            <Badge tone="default">Atencion directa por WhatsApp</Badge>
-          </div>
-        </Container>
-      </div>
-
       <Container className="py-3 flex items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-md bg-slate-900 text-white grid place-items-center text-xs font-bold">O5</span>

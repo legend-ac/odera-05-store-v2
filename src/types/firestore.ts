@@ -93,6 +93,7 @@ export type OrderDoc = {
 
 export type StoreSettingsDoc = {
   storeName: string;
+  homePromoEnabled?: boolean;
   publicContactEmail: string;
   publicWhatsapp: string;
   socialLinks?: { instagram?: string; tiktok?: string; facebook?: string; whatsapp?: string };

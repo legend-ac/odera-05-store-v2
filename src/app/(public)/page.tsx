@@ -4,6 +4,7 @@ import HomeSocialLinks from "@/components/HomeSocialLinks";
 import { Card, CardBody } from "@/components/ui/card";
 import { Container, Section } from "@/components/ui/layout";
 import { Badge } from "@/components/ui/badge";
+import { adminDb } from "@/lib/server/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,17 @@ const trustItems = [
   { title: "Pagos claros", desc: "Yape y Plin con validacion manual segura." },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  let homePromoEnabled = true;
+  try {
+    const settingsSnap = await adminDb.doc("settings/store").get();
+    if (settingsSnap.exists) {
+      homePromoEnabled = Boolean(settingsSnap.data()?.homePromoEnabled ?? true);
+    }
+  } catch {
+    homePromoEnabled = true;
+  }
+
   return (
     <Container className="py-8 md:py-10">
       <div className="flex flex-col gap-8 md:gap-10">
@@ -54,21 +65,23 @@ export default function HomePage() {
           </Card>
         </Section>
 
-        <Section className="py-0">
-          <Card className="bg-gradient-to-r from-emerald-50 via-white to-sky-50">
-            <CardBody className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Promocion activa</p>
-                <p className="text-sm text-slate-700">
-                  Usa el cupon <b>ODERA10</b> y recibe 10% de descuento.
-                </p>
-              </div>
-              <div className="text-sm text-slate-700">
-                Envio gratis por compras desde <b>S/ 200</b>.
-              </div>
-            </CardBody>
-          </Card>
-        </Section>
+        {homePromoEnabled ? (
+          <Section className="py-0">
+            <Card className="bg-gradient-to-r from-emerald-50 via-white to-sky-50">
+              <CardBody className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Promocion activa</p>
+                  <p className="text-sm text-slate-700">
+                    Usa el cupon <b>ODERA10</b> y recibe 10% de descuento.
+                  </p>
+                </div>
+                <div className="text-sm text-slate-700">
+                  Envio gratis por compras desde <b>S/ 200</b>.
+                </div>
+              </CardBody>
+            </Card>
+          </Section>
+        ) : null}
 
         <Section className="py-0 flex flex-col gap-4">
           <div className="flex items-end justify-between gap-3">

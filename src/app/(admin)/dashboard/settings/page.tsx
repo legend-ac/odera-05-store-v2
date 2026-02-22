@@ -17,6 +17,7 @@ export default async function SettingsPage() {
   const initial = data
       ? {
           storeName: String(data.storeName ?? "ODERA 05 STORE"),
+          homePromoEnabled: Boolean(data.homePromoEnabled ?? true),
           publicContactEmail: String(data.publicContactEmail ?? ""),
           publicWhatsapp: String(data.publicWhatsapp ?? ""),
           socialLinks: {
@@ -34,6 +35,7 @@ export default async function SettingsPage() {
       }
       : {
           storeName: "ODERA 05 STORE",
+          homePromoEnabled: true,
           publicContactEmail: "",
           publicWhatsapp: "",
           socialLinks: { instagram: "", tiktok: "", facebook: "", whatsapp: "" },
