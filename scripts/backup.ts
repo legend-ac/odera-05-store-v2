@@ -77,7 +77,7 @@ async function main() {
   for (const candidate of databaseCandidates) {
     try {
       const candidateDb = getFirestore(getApps()[0]!, candidate);
-      await candidateDb.collection("__backup_healthcheck__").limit(1).get();
+      await candidateDb.collection("backup_healthcheck").limit(1).get();
       db = candidateDb;
       firestoreDatabaseId = candidate;
       break;
