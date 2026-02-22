@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatPEN } from "@/lib/money";
+import { Badge } from "@/components/ui/badge";
 
 export type ProductCardData = {
   id: string;
@@ -26,35 +27,39 @@ export default function ProductCard({ p }: { p: ProductCardData }) {
   return (
     <Link
       href={`/p/${p.id}`}
-      className="group panel overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.10)]"
+      className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
     >
-      <div className="aspect-square bg-slate-50 flex items-center justify-center overflow-hidden relative">
+      <div className="relative aspect-[4/5] bg-slate-100 overflow-hidden">
         {current ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={current}
             alt={p.name}
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={() => setIdx((i) => (i + 1 < candidates.length ? i + 1 : i))}
           />
         ) : (
-          <div className="text-xs text-slate-500">Sin imagen</div>
+          <div className="h-full w-full grid place-items-center text-xs text-slate-500">Sin imagen</div>
         )}
 
         {p.onSale && typeof p.salePrice === "number" ? (
-          <span className="absolute top-2 left-2 text-[11px] px-2 py-1 rounded-md bg-emerald-600 text-white">Oferta</span>
+          <div className="absolute left-3 top-3">
+            <Badge tone="sale">Oferta</Badge>
+          </div>
         ) : null}
       </div>
 
-      <div className="p-3 flex flex-col gap-2">
+      <div className="p-4">
         <div className="text-sm font-semibold truncate text-slate-900">{p.name}</div>
-        <div className="text-sm">
-          <span className="font-semibold text-slate-900">{formatPEN(price)}</span>
+        <div className="mt-2 flex items-end gap-2">
+          <span className="text-lg font-bold text-slate-900">{formatPEN(price)}</span>
           {p.onSale && typeof p.salePrice === "number" ? (
-            <span className="text-xs text-slate-500 ml-2 line-through">{formatPEN(p.price)}</span>
+            <span className="text-xs text-slate-400 line-through">{formatPEN(p.price)}</span>
           ) : null}
         </div>
-        <span className="text-[11px] text-slate-500">Ver detalle y variantes</span>
+        <div className="mt-3 text-xs font-medium text-slate-500 group-hover:text-slate-700">
+          Ver detalle y variantes
+        </div>
       </div>
     </Link>
   );

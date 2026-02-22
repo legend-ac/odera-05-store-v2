@@ -1,19 +1,21 @@
-﻿import "./globals.css";
+import "./globals.css";
 import type { Metadata } from "next";
-import { Sora, Plus_Jakarta_Sans } from "next/font/google";
+import { Roboto, Roboto_Condensed } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 
-const display = Sora({
+const display = Roboto_Condensed({
   subsets: ["latin"],
   variable: "--font-display",
+  weight: ["400", "500", "700"],
   display: "swap",
 });
 
-const sans = Plus_Jakarta_Sans({
+const sans = Roboto({
   subsets: ["latin"],
   variable: "--font-sans",
+  weight: ["400", "500", "700"],
   display: "swap",
 });
 
@@ -25,7 +27,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${sans.variable} ${display.variable}`}>
-      <body className="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased">
+      <body className="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased selection:bg-blue-100 selection:text-blue-900">
         <Providers>
           <div className="min-h-dvh flex flex-col">
             <Header />
