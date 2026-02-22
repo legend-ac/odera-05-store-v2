@@ -2,6 +2,7 @@
 /**
  * scripts/backup.ts
  * Exports key Firestore collections to JSON files (GitHub Actions artifact).
+ * Compatible with GitHub Linux runners (Node 20 + tsx).
  *
  * Usage:
  *   npm run backup:run
