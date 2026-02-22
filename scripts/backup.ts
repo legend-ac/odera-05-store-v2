@@ -63,9 +63,7 @@ async function main() {
   const projectId = requireEnv("FIREBASE_PROJECT_ID");
   const clientEmail = requireEnv("FIREBASE_CLIENT_EMAIL");
   const privateKey = requireEnv("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n");
-  const firestoreDatabaseIdRaw = process.env.FIRESTORE_DATABASE_ID || "(default)";
-  const firestoreDatabaseId =
-    firestoreDatabaseIdRaw === "default" ? "(default)" : firestoreDatabaseIdRaw;
+  const firestoreDatabaseId = process.env.FIRESTORE_DATABASE_ID || "default";
 
   if (!getApps().length) {
     initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
