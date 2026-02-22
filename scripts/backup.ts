@@ -63,13 +63,29 @@ async function main() {
   const projectId = requireEnv("FIREBASE_PROJECT_ID");
   const clientEmail = requireEnv("FIREBASE_CLIENT_EMAIL");
   const privateKey = requireEnv("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n");
-  const firestoreDatabaseId = process.env.FIRESTORE_DATABASE_ID || "default";
+  const preferredDatabaseId = process.env.FIRESTORE_DATABASE_ID || "default";
 
   if (!getApps().length) {
     initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
   }
 
-  const db = getFirestore(getApps()[0]!, firestoreDatabaseId);
+  const databaseCandidates = Array.from(
+    new Set([preferredDatabaseId, preferredDatabaseId === "default" ? "(default)" : "default"]),
+  );
+  let firestoreDatabaseId = databaseCandidates[0]!;
+  let db = getFirestore(getApps()[0]!, firestoreDatabaseId);
+  for (const candidate of databaseCandidates) {
+    try {
+      const candidateDb = getFirestore(getApps()[0]!, candidate);
+      await candidateDb.collection("__backup_healthcheck__").limit(1).get();
+      db = candidateDb;
+      firestoreDatabaseId = candidate;
+      break;
+    } catch (e: any) {
+      if (e?.code === 5) continue;
+      throw e;
+    }
+  }
   const today = new Date().toISOString().slice(0, 10);
   const outDir = path.join(process.cwd(), "backup", "out", today);
   fs.mkdirSync(outDir, { recursive: true });
