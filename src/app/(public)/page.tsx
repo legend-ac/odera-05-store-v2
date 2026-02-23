@@ -11,18 +11,18 @@ export const dynamic = "force-dynamic";
 const trustItems = [
   {
     title: "Compra protegida",
-    desc: "Pedido registrado en tiempo real y validacion manual de pago.",
-    value: "Segura",
+    desc: "Pedido registrado y validacion manual del pago en cada compra.",
+    value: "100% segura",
   },
   {
     title: "Atencion humana",
-    desc: "Soporte directo por WhatsApp y redes oficiales.",
-    value: "Directa",
+    desc: "Soporte real por WhatsApp para ayudarte antes y despues de pagar.",
+    value: "Respuesta real",
   },
   {
     title: "Despacho nacional",
-    desc: "Delivery en Lima y envios por agencia a provincia.",
-    value: "Rapido",
+    desc: "Delivery en Lima y envio por agencia a todo Peru.",
+    value: "Cobertura nacional",
   },
 ];
 
@@ -56,22 +56,22 @@ export default async function HomePage() {
     <Container className="py-7 md:py-10">
       <div className="flex flex-col gap-8 md:gap-10">
         <Section className="py-0">
-          <Card className="overflow-hidden border border-slate-200 bg-[radial-gradient(1200px_500px_at_90%_-10%,#dbeafe_0%,transparent_55%),radial-gradient(900px_420px_at_-10%_120%,#dcfce7_0%,transparent_50%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] panel-soft-hover">
-            <CardBody className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] md:p-8 p-5">
+          <Card className="overflow-hidden border border-slate-200 bg-[radial-gradient(980px_520px_at_100%_-20%,rgba(59,130,246,.28)_0%,rgba(59,130,246,0)_55%),radial-gradient(900px_520px_at_-10%_120%,rgba(16,185,129,.24)_0%,rgba(16,185,129,0)_52%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] panel-soft-hover">
+            <CardBody className="grid gap-7 lg:grid-cols-[1.12fr_0.88fr] md:p-8 p-5">
               <div className="flex flex-col gap-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone="info" className="w-fit rounded-xl">Retail peruano oficial</Badge>
-                  <Badge tone="success" className="w-fit rounded-xl">Atencion real post-venta</Badge>
+                  <Badge tone="info" className="w-fit rounded-xl">Marca peruana</Badge>
+                  <Badge tone="success" className="w-fit rounded-xl">Confianza verificada</Badge>
                 </div>
 
                 <div className="space-y-3">
-                  <h1 className="text-3xl md:text-5xl font-display font-bold leading-[1.02] text-slate-900">
-                    Estilo real para
+                  <h1 className="text-3xl md:text-5xl font-display font-bold leading-[0.98] text-slate-900">
+                    Compra con
                     <br />
-                    calle y deporte
+                    estilo y confianza
                   </h1>
                   <p className="text-slate-600 max-w-xl text-[15px] md:text-base">
-                    Compra zapatillas y ropa con una experiencia clara, rapida y confiable. Tu pedido queda trazado de inicio a fin para que siempre sepas su estado.
+                    ODERA 05 combina una experiencia visual premium con procesos claros: pedido registrado, pago validado y seguimiento en tiempo real.
                   </p>
                 </div>
 
@@ -80,45 +80,43 @@ export default async function HomePage() {
                   <Link href="/track" className="btn-soft">Seguir mi pedido</Link>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 pt-2 max-w-xl">
-                  <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
-                    <p className="text-[11px] text-slate-500">Cupon</p>
-                    <p className="text-sm font-semibold text-slate-900">{homePromo.couponCode}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 max-w-2xl">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2">
+                    <p className="text-[11px] text-emerald-700">Cupon activo</p>
+                    <p className="text-sm font-semibold text-emerald-900">{homePromo.couponCode}</p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
-                    <p className="text-[11px] text-slate-500">Envio gratis</p>
-                    <p className="text-sm font-semibold text-slate-900">Desde S/{homePromo.freeShippingFrom}</p>
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/80 px-3 py-2">
+                    <p className="text-[11px] text-blue-700">Envio gratis</p>
+                    <p className="text-sm font-semibold text-blue-900">Desde S/{homePromo.freeShippingFrom}</p>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
                     <p className="text-[11px] text-slate-500">Seguimiento</p>
-                    <p className="text-sm font-semibold text-slate-900">En tiempo real</p>
+                    <p className="text-sm font-semibold text-slate-900">Estado en tiempo real</p>
                   </div>
                 </div>
               </div>
 
               <div className="relative">
-                <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-blue-100/60 via-sky-100/40 to-emerald-100/55 blur-2xl" />
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-5 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-900 text-white p-5">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-300">Coleccion destacada</p>
-                    <p className="mt-2 text-2xl font-display font-bold">ODERA 05</p>
-                    <p className="mt-1 text-sm text-slate-200">Nuevos ingresos en zapatillas urbanas y deportivas.</p>
+                <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-blue-200/60 via-sky-200/40 to-emerald-200/55 blur-2xl" />
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white/92 p-4 md:p-5 shadow-[0_18px_45px_rgba(15,23,42,0.14)]">
+                  <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-white p-5">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-300">Identidad oficial ODERA 05</p>
+                    <p className="mt-2 text-2xl font-display font-bold">Retail visual premium</p>
+                    <p className="mt-1 text-sm text-slate-200">Interfaz clara, compra segura y experiencia mobile-first.</p>
                     <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                      <span className="rounded-lg bg-white/10 px-2 py-1">Stock validado</span>
-                      <span className="rounded-lg bg-white/10 px-2 py-1">Pago confirmado</span>
-                      <span className="rounded-lg bg-white/10 px-2 py-1">Canales oficiales</span>
-                      <span className="rounded-lg bg-white/10 px-2 py-1">Compra segura</span>
+                      <span className="rounded-lg bg-white/10 px-2 py-1">Stock controlado</span>
+                      <span className="rounded-lg bg-white/10 px-2 py-1">Pago auditado</span>
+                      <span className="rounded-lg bg-white/10 px-2 py-1">Tracking activo</span>
+                      <span className="rounded-lg bg-white/10 px-2 py-1">Soporte humano</span>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-2">
+                  <div className="mt-4 grid sm:grid-cols-3 gap-2.5">
                     {trustItems.map((item) => (
-                      <div key={item.title} className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                          <p className="text-xs text-slate-600 mt-0.5">{item.desc}</p>
-                        </div>
-                        <span className="text-xs font-semibold rounded-lg border border-slate-300 px-2 py-1 text-slate-700 bg-white">{item.value}</span>
+                      <div key={item.title} className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                        <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">{item.desc}</p>
+                        <span className="mt-2 inline-flex rounded-lg border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">{item.value}</span>
                       </div>
                     ))}
                   </div>

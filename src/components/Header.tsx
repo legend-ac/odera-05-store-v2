@@ -49,11 +49,11 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/92 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur-md">
       <Container className="py-3 flex items-center justify-between gap-3 md:gap-5">
-        <Link href="/" className="flex items-center gap-3 rounded-xl pr-2 transition hover:bg-slate-100/70">
-          <span className="w-10 h-10 rounded-xl bg-slate-900 text-white grid place-items-center text-xs font-bold shadow-sm">O5</span>
+        <Link href="/" className="flex items-center gap-3 rounded-xl px-1 py-1 transition hover:bg-slate-100/70">
+          <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 text-white grid place-items-center text-xs font-bold shadow-sm">O5</span>
           <span className="flex flex-col leading-tight">
-            <span className="font-semibold tracking-tight text-slate-900">ODERA 05 STORE</span>
-            <span className="hidden sm:block text-[11px] text-slate-500">Tienda oficial en linea</span>
+            <span className="font-semibold tracking-tight text-slate-900 whitespace-nowrap">ODERA 05 STORE</span>
+            <span className="hidden lg:block text-[11px] text-slate-500">Tienda oficial online</span>
           </span>
         </Link>
 
