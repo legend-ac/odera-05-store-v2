@@ -47,25 +47,31 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-      <Container className="py-3 flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-md bg-slate-900 text-white grid place-items-center text-xs font-bold">O5</span>
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_8px_24px_rgba(15,23,42,0.05)] backdrop-blur-md">
+      <Container className="py-3 flex items-center justify-between gap-3 md:gap-5">
+        <Link href="/" className="flex items-center gap-3 rounded-xl pr-2 transition hover:bg-slate-100/70">
+          <span className="w-10 h-10 rounded-lg bg-slate-900 text-white grid place-items-center text-xs font-bold">O5</span>
           <span className="flex flex-col leading-tight">
             <span className="font-semibold tracking-tight text-slate-900">ODERA 05 STORE</span>
-            <span className="hidden sm:block text-[11px] text-slate-500">Retail online oficial</span>
+            <span className="hidden sm:block text-[11px] text-slate-500">Tienda oficial en linea</span>
           </span>
         </Link>
 
-        <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 w-full max-w-md">
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar productos..." />
+        <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 w-full max-w-xl">
+          <div className="relative w-full">
+            <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Busca por nombre o marca..." className="pl-9" />
+          </div>
           <button type="submit" className="btn-soft px-4 py-2.5">Buscar</button>
         </form>
 
         <button
           type="button"
           aria-label="Abrir menu"
-          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-slate-200 text-slate-700"
+          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-slate-200 bg-white text-slate-700"
           onClick={() => setOpen((v) => !v)}
         >
           <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
@@ -73,10 +79,10 @@ export default function Header() {
           </svg>
         </button>
 
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-1.5">
           <NavLink href="/catalog">Catalogo</NavLink>
           <NavLink href="/track">Mis pedidos</NavLink>
-          <Link href="/cart" className="relative text-sm px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100">
+          <Link href="/cart" className="relative text-sm px-3 py-2 rounded-xl border border-transparent text-slate-700 hover:border-slate-200 hover:bg-slate-50">
             Carrito
             {count > 0 ? (
               <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-rose-600 text-white text-[11px] grid place-items-center">
