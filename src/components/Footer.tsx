@@ -11,11 +11,15 @@ export default function Footer() {
   }
 
   return (
-    <footer className="border-t border-slate-200 bg-white/95">
-      <Container className="py-10 grid md:grid-cols-3 gap-8 text-sm">
-        <div className="flex flex-col gap-2">
+    <footer className="mt-10 border-t border-slate-200 bg-white/95">
+      <Container className="py-10 grid md:grid-cols-4 gap-8 text-sm">
+        <div className="flex flex-col gap-3">
           <p className="font-bold text-slate-900">ODERA 05 STORE</p>
           <p className="text-slate-600">Tienda peruana con experiencia retail y atencion por canales oficiales.</p>
+          <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 w-fit">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Compra protegida y seguimiento real
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -31,6 +35,12 @@ export default function Footer() {
           <p className="text-slate-600">Stock y estado de pedido en tiempo real.</p>
           <p className="text-slate-600">Despachos a Lima y provincias.</p>
         </div>
+
+        <div className="flex flex-col gap-2">
+          <p className="font-bold text-slate-900">Soporte</p>
+          <p className="text-slate-600">Horario de respuesta rapido por WhatsApp y redes.</p>
+          <p className="text-slate-600">Seguimiento con codigo y clave de seguridad.</p>
+        </div>
       </Container>
 
       <div className="border-t border-slate-200">
@@ -42,3 +52,4 @@ export default function Footer() {
     </footer>
   );
 }
+
