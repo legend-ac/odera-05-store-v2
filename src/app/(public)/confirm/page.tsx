@@ -125,21 +125,25 @@ function ConfirmPageInner() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Pedido confirmado</h1>
-      <div className="panel p-4">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Pedido confirmado</h1>
+        <p className="text-sm text-slate-600 mt-1">Guarda estos datos para consultar el estado cuando lo necesites.</p>
+      </div>
+
+      <div className="panel p-5 rounded-2xl border-slate-200">
         <div className="text-sm text-slate-600">Numero de pedido</div>
-        <div className="text-xl font-semibold break-all">{publicCode || "-"}</div>
-        <button type="button" onClick={() => copyText(publicCode, "Numero de pedido")} className="mt-2 px-3 py-2 text-sm rounded-md border border-slate-300">
+        <div className="text-2xl font-bold text-slate-900 break-all">{publicCode || "-"}</div>
+        <button type="button" onClick={() => copyText(publicCode, "Numero de pedido")} className="mt-2 px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
           Copiar numero
         </button>
 
         <div className="mt-4 text-sm text-slate-600">Clave de seguimiento</div>
-        <div className="font-mono text-sm break-all">{trackingToken || "-"}</div>
-        <button type="button" onClick={() => copyText(trackingToken, "Clave de seguimiento")} className="mt-2 px-3 py-2 text-sm rounded-md border border-slate-300">
+        <div className="font-mono text-sm break-all bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 mt-1">{trackingToken || "-"}</div>
+        <button type="button" onClick={() => copyText(trackingToken, "Clave de seguimiento")} className="mt-2 px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
           Copiar clave
         </button>
         {trackingUrl ? (
-          <a href={trackingUrl} className="mt-2 ml-2 inline-flex px-3 py-2 text-sm rounded-md border border-slate-300">
+          <a href={trackingUrl} className="mt-2 ml-2 inline-flex px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
             Abrir mi seguimiento
           </a>
         ) : null}
@@ -147,8 +151,8 @@ function ConfirmPageInner() {
         {copyMsg ? <div className="mt-2 text-xs text-emerald-700">{copyMsg}</div> : null}
       </div>
 
-      <div className="panel p-4">
-        <div className="font-medium mb-2">Siguiente paso</div>
+      <div className="panel p-5 rounded-2xl border-slate-200">
+        <div className="font-semibold text-slate-900 mb-2">Siguiente paso</div>
         <p className="text-sm text-slate-700">
           Tu pedido quedo en estado <b>Pendiente de validacion de pago</b>. El boton de WhatsApp incluye todos los datos de seguimiento para no perder informacion.
         </p>

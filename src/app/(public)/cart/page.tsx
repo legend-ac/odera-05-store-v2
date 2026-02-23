@@ -68,12 +68,18 @@ export default function CartPage() {
   }, [items, products]);
 
   const total = useMemo(() => lines.reduce((acc, x) => acc + x.subtotal, 0), [lines]);
+  const totalItems = useMemo(() => items.reduce((acc, x) => acc + x.qty, 0), [items]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold">Carrito</h1>
-        <Button type="button" variant="secondary" onClick={clear} disabled={!items.length}>
+    <div className="mx-auto max-w-6xl px-4 py-8 flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Carrito de compras</h1>
+          <p className="text-sm text-slate-600 mt-1">
+            {items.length ? `${totalItems} producto(s) listos para continuar tu compra.` : "Tu carrito esta vacio por ahora."}
+          </p>
+        </div>
+        <Button type="button" variant="secondary" onClick={clear} disabled={!items.length} className="rounded-xl">
           Vaciar carrito
         </Button>
       </div>
@@ -81,63 +87,94 @@ export default function CartPage() {
       {loading ? <div className="text-sm text-slate-500">Actualizando carrito...</div> : null}
 
       {!items.length ? (
-        <Card>
-          <CardBody className="text-sm text-slate-600">
-            Tu carrito esta vacio.{" "}
-            <Link href="/catalog" className="font-semibold text-blue-700 hover:text-blue-800">
-              Ir al catalogo
-            </Link>
+        <Card className="rounded-3xl">
+          <CardBody className="text-sm text-slate-600 py-10">
+            <div className="max-w-md mx-auto text-center flex flex-col gap-3">
+              <div className="text-base font-semibold text-slate-900">Aun no agregaste productos</div>
+              <p>Explora el catalogo y agrega tus favoritos para finalizar el pedido.</p>
+              <div>
+                <Link href="/catalog" className="btn-brand inline-flex">
+                  Ver catalogo
+                </Link>
+              </div>
+            </div>
           </CardBody>
         </Card>
       ) : null}
 
       {items.length ? (
-        <div className="flex flex-col gap-3">
-          {lines.map(({ it, p, v, unit, subtotal }) => (
-            <Card key={`${it.productId}:${it.variantId}`}>
-              <CardBody className="flex gap-4">
-                <div className="flex-1">
-                  <div className="font-semibold">{p?.name ?? it.productId}</div>
-                  <div className="text-sm text-slate-600">
-                    Variante: {v ? `${v.size ?? ""} ${v.color ?? ""}`.trim() || v.id : it.variantId}
-                  </div>
-                  <div className="text-sm">Precio: {formatPEN(unit)}</div>
-                  <div className="text-sm font-medium">Subtotal: {formatPEN(subtotal)}</div>
-                </div>
+        <div className="grid lg:grid-cols-[1fr_320px] gap-4 items-start">
+          <div className="flex flex-col gap-3">
+            {lines.map(({ it, p, v, unit, subtotal }) => {
+              const mainImage = p?.images?.find((img) => img?.isMain) ?? p?.images?.[0];
+              const imageSrc = mainImage?.url ? String(mainImage.url) : "";
 
-                <div className="flex flex-col items-end gap-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={it.qty}
-                    onChange={(e) => setQty(it.productId, it.variantId, Number(e.target.value))}
-                    className="w-20 text-right"
-                  />
-                  <Button type="button" variant="ghost" onClick={() => removeItem(it.productId, it.variantId)}>
-                    Quitar
-                  </Button>
-                </div>
-              </CardBody>
-            </Card>
-          ))}
+              return (
+                <Card key={`${it.productId}:${it.variantId}`} className="rounded-2xl border-slate-200">
+                  <CardBody className="flex flex-col sm:flex-row gap-4">
+                    <div className="h-24 w-24 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 shrink-0">
+                      {imageSrc ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={imageSrc} alt={p?.name ?? "Producto"} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full grid place-items-center text-[11px] text-slate-400">Sin imagen</div>
+                      )}
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="font-semibold text-slate-900">{p?.name ?? it.productId}</div>
+                      <div className="text-sm text-slate-600 mt-0.5">
+                        Variante: {v ? `${v.size ?? ""} ${v.color ?? ""}`.trim() || v.id : it.variantId}
+                      </div>
+                      <div className="text-sm mt-1">Precio unitario: {formatPEN(unit)}</div>
+                      <div className="text-sm font-medium text-slate-900 mt-1">Subtotal: {formatPEN(subtotal)}</div>
+                    </div>
+
+                    <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={it.qty}
+                        onChange={(e) => setQty(it.productId, it.variantId, Number(e.target.value))}
+                        className="w-24 text-right rounded-xl"
+                      />
+                      <Button type="button" variant="ghost" onClick={() => removeItem(it.productId, it.variantId)}>
+                        Quitar
+                      </Button>
+                    </div>
+                  </CardBody>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Card className="rounded-2xl border-slate-200 lg:sticky lg:top-24">
+            <CardBody className="flex flex-col gap-3">
+              <div className="text-lg font-semibold text-slate-900">Resumen</div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600">Productos</span>
+                <span className="font-medium text-slate-900">{totalItems}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-600 text-sm">Total</span>
+                <span className="text-2xl font-bold text-slate-900">{formatPEN(total)}</span>
+              </div>
+              <div className="text-xs text-slate-500">El stock final se confirma al crear el pedido.</div>
+              <Link href="/checkout" className="btn-brand justify-center">
+                Continuar compra
+              </Link>
+              <Link href="/catalog" className="text-center text-sm font-medium text-slate-700 hover:text-slate-900">
+                Seguir comprando
+              </Link>
+            </CardBody>
+          </Card>
         </div>
       ) : null}
 
       {items.length ? (
-        <Card>
-          <CardBody className="flex items-center justify-between">
-            <div className="text-sm text-slate-600">Total</div>
-            <div className="text-xl font-bold">{formatPEN(total)}</div>
-          </CardBody>
-        </Card>
-      ) : null}
-
-      {items.length ? (
-        <div className="flex justify-end">
-          <Link href="/checkout" className="btn-brand">
-            Continuar compra
-          </Link>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-800">
+          Compra protegida: pedido registrado, validacion de pago manual y seguimiento por codigo.
         </div>
       ) : null}
     </div>

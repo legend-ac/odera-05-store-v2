@@ -244,10 +244,13 @@ function TrackPageInner() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Mis pedidos</h1>
+    <div className="mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Seguimiento de pedido</h1>
+        <p className="text-sm text-slate-600 mt-1">Consulta el estado en tiempo real con tu codigo y clave.</p>
+      </div>
 
-      <div className="grid gap-3 border border-neutral-200 rounded-xl p-4">
+      <div className="grid gap-3 border border-slate-200 rounded-2xl p-4 bg-white">
         {recent.length ? (
           <div className="grid gap-2">
             <label className="text-sm font-medium">Pedidos recientes en este dispositivo</label>
@@ -261,7 +264,7 @@ function TrackPageInner() {
                     setTrackingToken(r.trackingToken);
                     void load(r.publicCode, r.trackingToken);
                   }}
-                  className="px-3 py-1.5 rounded-md border border-neutral-300 text-xs"
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs hover:bg-slate-50"
                 >
                   {r.publicCode}
                 </button>
@@ -276,9 +279,9 @@ function TrackPageInner() {
             value={trackingUrl}
             onChange={(e) => setTrackingUrl(e.target.value)}
             placeholder="https://.../track?publicCode=OD-0001&trackingToken=..."
-            className="border border-neutral-300 rounded-md px-3 py-2 text-sm w-full"
+            className="border border-slate-300 rounded-xl px-3 py-2 text-sm w-full"
           />
-          <button type="button" onClick={applyTrackingUrl} className="px-3 py-2 rounded-md border border-neutral-300 text-sm">
+          <button type="button" onClick={applyTrackingUrl} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
             Cargar
           </button>
         </div>
@@ -288,9 +291,9 @@ function TrackPageInner() {
           <input
             value={publicCode}
             onChange={(e) => setPublicCode(e.target.value)}
-            className="border border-neutral-300 rounded-md px-3 py-2 text-sm w-full"
+            className="border border-slate-300 rounded-xl px-3 py-2 text-sm w-full"
           />
-          <button type="button" onClick={() => copyText(publicCode, "Codigo")} className="px-3 py-2 rounded-md border border-neutral-300 text-sm">
+          <button type="button" onClick={() => copyText(publicCode, "Codigo")} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
             Copiar
           </button>
         </div>
@@ -300,14 +303,14 @@ function TrackPageInner() {
           <input
             value={trackingToken}
             onChange={(e) => setTrackingToken(e.target.value)}
-            className="border border-neutral-300 rounded-md px-3 py-2 text-sm font-mono w-full"
+            className="border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono w-full"
           />
-          <button type="button" onClick={() => copyText(trackingToken, "Clave")} className="px-3 py-2 rounded-md border border-neutral-300 text-sm">
+          <button type="button" onClick={() => copyText(trackingToken, "Clave")} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
             Copiar
           </button>
         </div>
 
-        <button type="button" onClick={() => load()} disabled={busy} className="px-4 py-2 rounded-md bg-black text-white text-sm disabled:opacity-50">
+        <button type="button" onClick={() => load()} disabled={busy} className="btn-brand disabled:opacity-50">
           {busy ? "Buscando..." : "Consultar pedido"}
         </button>
 
@@ -316,10 +319,10 @@ function TrackPageInner() {
       </div>
 
       {data ? (
-        <div className="border border-neutral-200 rounded-xl p-4 flex flex-col gap-3">
+        <div className="border border-slate-200 rounded-2xl p-5 flex flex-col gap-3 bg-white">
           <div className="flex items-center justify-between">
-            <div className="font-medium">Pedido {data.publicCode}</div>
-            <div className="text-sm px-2 py-1 rounded-md bg-neutral-100">{statusLabel(data.status)}</div>
+            <div className="font-semibold text-slate-900">Pedido {data.publicCode}</div>
+            <div className="text-sm px-2 py-1 rounded-xl bg-slate-100">{statusLabel(data.status)}</div>
           </div>
 
           {data.shipping ? <div className="text-sm text-neutral-700">Envio: {shippingLabel(data.shipping)}</div> : null}
@@ -368,7 +371,7 @@ function TrackPageInner() {
           <div className="pt-2 border-t border-neutral-200">
             <div className="text-sm font-medium mb-2">Notificar por WhatsApp</div>
             {waHref ? (
-              <a href={waHref} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm inline-flex">
+              <a href={waHref} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm inline-flex font-semibold">
                 Enviar mensaje completo por WhatsApp
               </a>
             ) : (
@@ -379,14 +382,14 @@ function TrackPageInner() {
       ) : null}
 
       {data && (data.status === "SCHEDULED" || data.status === "PAYMENT_SENT") ? (
-        <div className="border border-neutral-200 rounded-xl p-4 flex flex-col gap-3">
+        <div className="border border-slate-200 rounded-2xl p-5 flex flex-col gap-3 bg-white">
           <div className="font-medium">Enviar comprobante</div>
 
           <label className="text-sm font-medium">Codigo de operacion</label>
-          <input value={operationCode} onChange={(e) => setOperationCode(e.target.value)} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" />
+          <input value={operationCode} onChange={(e) => setOperationCode(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
 
           <label className="text-sm font-medium">Medio de pago</label>
-          <select value={method} onChange={(e) => setMethod(e.target.value as any)} className="border border-neutral-300 rounded-md px-3 py-2 text-sm w-48">
+          <select value={method} onChange={(e) => setMethod(e.target.value as any)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm w-48">
             <option value="YAPE">Yape</option>
             <option value="PLIN">Plin</option>
             <option value="OTHER">Otro</option>
@@ -396,7 +399,7 @@ function TrackPageInner() {
             type="button"
             onClick={submitPayment}
             disabled={busyPay || !operationCode}
-            className="px-4 py-2 rounded-md bg-black text-white text-sm disabled:opacity-50"
+            className="btn-brand disabled:opacity-50"
           >
             {busyPay ? "Enviando..." : "Enviar comprobante"}
           </button>

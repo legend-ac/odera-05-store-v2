@@ -170,6 +170,7 @@ export default function CheckoutPage() {
     try {
       const url = await uploadReceiptToCloudinary(file);
       setReceiptUrl(url);
+      notify.success("Comprobante subido");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "No se pudo subir el comprobante.";
       setError(msg);
@@ -231,23 +232,26 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Finalizar compra</h1>
-
-      {!items.length ? <div className="text-sm text-neutral-600">Tu carrito está vacío.</div> : null}
-
-      <div className="panel p-4 grid gap-3">
-        <div className="font-medium">1) Datos personales</div>
-        <label className="text-sm font-medium">Nombre completo</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
-        <label className="text-sm font-medium">Correo</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
-        <label className="text-sm font-medium">Teléfono</label>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+    <div className="mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Finalizar compra</h1>
+        <p className="text-sm text-slate-600 mt-1">Revisa tus datos para registrar el pedido sin errores.</p>
       </div>
 
-      <div className="panel p-4 flex flex-col gap-3">
-        <div className="font-medium">2) Tipo de envío y dirección</div>
+      {!items.length ? <div className="text-sm text-neutral-600">Tu carrito esta vacio.</div> : null}
+
+      <div className="panel p-4 grid gap-3 rounded-2xl border-slate-200">
+        <div className="font-medium text-slate-900">1) Datos personales</div>
+        <label className="text-sm font-medium">Nombre completo</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+        <label className="text-sm font-medium">Correo</label>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+        <label className="text-sm font-medium">Telefono</label>
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+      </div>
+
+      <div className="panel p-4 flex flex-col gap-3 rounded-2xl border-slate-200">
+        <div className="font-medium text-slate-900">2) Tipo de envio y direccion</div>
         <div className="flex flex-col gap-2 text-sm">
           <label className="flex items-center gap-2">
             <input type="radio" checked={shippingMethod === "LIMA_DELIVERY"} onChange={() => setShippingMethod("LIMA_DELIVERY")} />
@@ -255,51 +259,51 @@ export default function CheckoutPage() {
           </label>
           <label className="flex items-center gap-2">
             <input type="radio" checked={shippingMethod === "AGENCIA_PROVINCIA"} onChange={() => setShippingMethod("AGENCIA_PROVINCIA")} />
-            Provincia - Envío por agencia
+            Provincia - Envio por agencia
           </label>
         </div>
 
         <label className="text-sm font-medium">Nombre de quien recibe/recoge</label>
-        <input value={receiverName} onChange={(e) => setReceiverName(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+        <input value={receiverName} onChange={(e) => setReceiverName(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
 
         <div className="grid md:grid-cols-2 gap-3">
           <div className="grid gap-1">
             <label className="text-sm font-medium">DNI</label>
-            <input value={receiverDni} onChange={(e) => setReceiverDni(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input value={receiverDni} onChange={(e) => setReceiverDni(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
           </div>
           <div className="grid gap-1">
-            <label className="text-sm font-medium">Teléfono</label>
-            <input value={receiverPhone} onChange={(e) => setReceiverPhone(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <label className="text-sm font-medium">Telefono</label>
+            <input value={receiverPhone} onChange={(e) => setReceiverPhone(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
           </div>
         </div>
 
         {shippingMethod === "LIMA_DELIVERY" ? (
           <>
             <label className="text-sm font-medium">Distrito</label>
-            <input value={district} onChange={(e) => setDistrict(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Dirección</label>
-            <input value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input value={district} onChange={(e) => setDistrict(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+            <label className="text-sm font-medium">Direccion</label>
+            <input value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             <label className="text-sm font-medium">Referencia (opcional)</label>
-            <input value={addressReference} onChange={(e) => setAddressReference(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input value={addressReference} onChange={(e) => setAddressReference(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
           </>
         ) : (
           <>
             <label className="text-sm font-medium">Departamento</label>
-            <input value={department} onChange={(e) => setDepartment(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input value={department} onChange={(e) => setDepartment(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             <label className="text-sm font-medium">Provincia</label>
-            <input value={province} onChange={(e) => setProvince(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input value={province} onChange={(e) => setProvince(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             <label className="text-sm font-medium">Agencia (ej. Shalom)</label>
-            <input value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Dirección de agencia</label>
-            <input value={agencyAddress} onChange={(e) => setAgencyAddress(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+            <label className="text-sm font-medium">Direccion de agencia</label>
+            <input value={agencyAddress} onChange={(e) => setAgencyAddress(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             <label className="text-sm font-medium">Referencia (opcional)</label>
-            <input value={agencyReference} onChange={(e) => setAgencyReference(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input value={agencyReference} onChange={(e) => setAgencyReference(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
           </>
         )}
       </div>
 
-      <div className="panel p-4 grid gap-3">
-        <div className="font-medium">3) Pago y comprobante</div>
+      <div className="panel p-4 grid gap-3 rounded-2xl border-slate-200">
+        <div className="font-medium text-slate-900">3) Pago y comprobante</div>
         <div className="grid md:grid-cols-2 gap-2 text-sm">
           <label className="flex items-center gap-2">
             <input type="radio" checked={payMethod === "YAPE"} onChange={() => setPayMethod("YAPE")} />
@@ -310,24 +314,24 @@ export default function CheckoutPage() {
             Plin
           </label>
         </div>
-        <div className="text-sm text-slate-700 rounded-md bg-slate-50 border border-slate-200 p-3">
+        <div className="text-sm text-slate-700 rounded-xl bg-slate-50 border border-slate-200 p-3">
           {payMethod === "YAPE" ? (
             <>
               <div className="font-medium">Datos para pagar por Yape</div>
               <div>Nombre: {paymentInstructions.yapeName?.trim() || "Configurar en Admin > Settings"}</div>
-              <div>Número: {paymentInstructions.yapeNumber?.trim() || "Configurar en Admin > Settings"}</div>
+              <div>Numero: {paymentInstructions.yapeNumber?.trim() || "Configurar en Admin > Settings"}</div>
             </>
           ) : (
             <>
               <div className="font-medium">Datos para pagar por Plin</div>
               <div>Nombre: {paymentInstructions.plinName?.trim() || "Configurar en Admin > Settings"}</div>
-              <div>Número: {paymentInstructions.plinNumber?.trim() || "Configurar en Admin > Settings"}</div>
+              <div>Numero: {paymentInstructions.plinNumber?.trim() || "Configurar en Admin > Settings"}</div>
             </>
           )}
         </div>
 
         <label className="text-sm font-medium">Subir comprobante de pago</label>
-        <label className="w-fit text-sm px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer">
+        <label className="w-fit text-sm px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer">
           {receiptBusy ? "Subiendo comprobante..." : "Seleccionar imagen"}
           <input
             type="file"
@@ -385,22 +389,36 @@ export default function CheckoutPage() {
         )}
       </div>
 
-      <div className="panel p-4 text-sm grid gap-2">
-        <div className="font-medium mb-1">4) Resumen del pedido</div>
+      <div className="panel p-4 text-sm grid gap-2 rounded-2xl border-slate-200">
+        <div className="font-medium mb-1 text-slate-900">4) Resumen del pedido</div>
         {itemsPreview.map((it) => (
           <div key={`${it.productId}:${it.variantId}`} className="flex items-center justify-between">
-            <span>{it.name} x {it.qty}</span>
+            <span>
+              {it.name} x {it.qty}
+            </span>
             <span>{formatPEN(it.lineTotal)}</span>
           </div>
         ))}
         <div className="grid gap-1 pt-2">
-          <label className="text-sm font-medium">Cupón (opcional)</label>
-          <input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="ODERA10" className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+          <label className="text-sm font-medium">Cupon (opcional)</label>
+          <input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="ODERA10" className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
         </div>
-        <div className="flex items-center justify-between"><span>Subtotal</span><span>{loadingTotals ? "Calculando..." : formatPEN(subtotal)}</span></div>
-        <div className="flex items-center justify-between"><span>Descuento</span><span>{loadingTotals ? "Calculando..." : discountAmount > 0 ? `-${formatPEN(discountAmount)}` : formatPEN(0)}</span></div>
-        <div className="flex items-center justify-between"><span>Envío</span><span>{loadingTotals ? "Calculando..." : shippingCost === 0 ? "Gratis" : formatPEN(shippingCost)}</span></div>
-        <div className="flex items-center justify-between font-semibold"><span>Total</span><span>{loadingTotals ? "Calculando..." : formatPEN(totalToPay)}</span></div>
+        <div className="flex items-center justify-between">
+          <span>Subtotal</span>
+          <span>{loadingTotals ? "Calculando..." : formatPEN(subtotal)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span>Descuento</span>
+          <span>{loadingTotals ? "Calculando..." : discountAmount > 0 ? `-${formatPEN(discountAmount)}` : formatPEN(0)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span>Envio</span>
+          <span>{loadingTotals ? "Calculando..." : shippingCost === 0 ? "Gratis" : formatPEN(shippingCost)}</span>
+        </div>
+        <div className="flex items-center justify-between font-semibold">
+          <span>Total</span>
+          <span>{loadingTotals ? "Calculando..." : formatPEN(totalToPay)}</span>
+        </div>
       </div>
 
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
