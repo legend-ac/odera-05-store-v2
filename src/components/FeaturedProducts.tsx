@@ -49,7 +49,13 @@ async function loadFeatured(): Promise<ProductCardData[]> {
 export default async function FeaturedProducts() {
   try {
     const items = await loadFeatured();
-    if (!items.length) return <div className="text-sm text-slate-500">Pronto publicaremos nuevos productos.</div>;
+    if (!items.length) {
+      return (
+        <div className="panel rounded-2xl border-slate-200 p-6 text-center text-sm text-slate-600">
+          Pronto publicaremos nuevos productos destacados.
+        </div>
+      );
+    }
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
         {items.map((p) => (

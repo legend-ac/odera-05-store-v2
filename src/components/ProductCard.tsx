@@ -29,7 +29,7 @@ export default function ProductCard({ p }: { p: ProductCardData }) {
   return (
     <Link
       href={`/p/${p.id}`}
-      className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_40px_rgba(15,23,42,0.14)]"
+      className="group panel-soft-hover fade-in-up overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_18px_40px_rgba(15,23,42,0.14)]"
     >
       <div className="relative aspect-[4/5] bg-slate-100 overflow-hidden">
         {current ? (

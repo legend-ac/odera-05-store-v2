@@ -115,18 +115,14 @@ export default function CatalogClient({
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:py-10 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Catalogo</h1>
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Catalogo</h1>
         <p className="text-sm text-slate-600">Encuentra tus productos por nombre, marca o palabra clave.</p>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl border-slate-200 panel-soft-hover">
         <CardBody className="flex flex-col gap-3">
           <div className="grid gap-2 md:grid-cols-[1fr_190px_120px]">
-            <Input
-              value={qText}
-              onChange={(e) => setQText(e.target.value)}
-              placeholder="Buscar (ej. nike, polera, negro)"
-            />
+            <Input value={qText} onChange={(e) => setQText(e.target.value)} placeholder="Buscar (ej. nike, polera, negro)" />
             <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
               <option value="latest">Mas recientes</option>
               <option value="price-asc">Precio: menor a mayor</option>
@@ -155,15 +151,20 @@ export default function CatalogClient({
         </div>
       ) : null}
 
-      {error ? <div className="text-sm text-red-600">{error}</div> : null}
+      {error ? (
+        <Card className="rounded-2xl border-rose-200 bg-rose-50">
+          <CardBody className="text-sm text-rose-700">{error}</CardBody>
+        </Card>
+      ) : null}
+
       {!items ? (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <div className="aspect-[4/5] bg-slate-100 animate-pulse" />
+              <div className="aspect-[4/5] skeleton" />
               <div className="p-4 space-y-2">
-                <div className="h-4 w-4/5 rounded bg-slate-100 animate-pulse" />
-                <div className="h-4 w-1/2 rounded bg-slate-100 animate-pulse" />
+                <div className="h-4 w-4/5 rounded skeleton" />
+                <div className="h-4 w-1/2 rounded skeleton" />
               </div>
             </div>
           ))}
@@ -179,12 +180,14 @@ export default function CatalogClient({
       )}
 
       {items && !items.length ? (
-        <Card>
+        <Card className="rounded-2xl border-slate-200">
           <CardBody className="py-10 text-center">
-            <p className="text-base font-semibold text-slate-900">No encontramos productos con esa búsqueda</p>
+            <p className="text-base font-semibold text-slate-900">No encontramos productos con esa busqueda</p>
             <p className="text-sm text-slate-600 mt-1">Prueba con otra palabra o limpia el filtro.</p>
             <div className="mt-4">
-              <Button type="button" variant="secondary" onClick={() => setQText("")}>Ver todo el catalogo</Button>
+              <Button type="button" variant="secondary" onClick={() => setQText("")}>
+                Ver todo el catalogo
+              </Button>
             </div>
           </CardBody>
         </Card>
