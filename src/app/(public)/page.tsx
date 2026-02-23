@@ -9,44 +9,22 @@ import { adminDb } from "@/lib/server/firebaseAdmin";
 export const dynamic = "force-dynamic";
 
 const trustItems = [
-  { title: "Compra protegida", desc: "Confirmacion inmediata y seguimiento real del pedido.", icon: "shield" },
-  { title: "Atencion humana", desc: "Soporte rapido por WhatsApp y redes oficiales.", icon: "chat" },
-  { title: "Despacho nacional", desc: "Lima por delivery y provincia por agencia.", icon: "truck" },
-  { title: "Pagos claros", desc: "Yape y Plin con validacion manual segura.", icon: "card" },
+  {
+    title: "Compra protegida",
+    desc: "Pedido registrado en tiempo real y validacion manual de pago.",
+    value: "Segura",
+  },
+  {
+    title: "Atencion humana",
+    desc: "Soporte directo por WhatsApp y redes oficiales.",
+    value: "Directa",
+  },
+  {
+    title: "Despacho nacional",
+    desc: "Delivery en Lima y envios por agencia a provincia.",
+    value: "Rapido",
+  },
 ];
-
-function TrustIcon({ name }: { name: string }) {
-  if (name === "shield") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5 text-blue-700" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M12 3 4 7v6c0 5 3.5 7.5 8 8 4.5-.5 8-3 8-8V7z" />
-        <path d="m9 12 2 2 4-4" />
-      </svg>
-    );
-  }
-  if (name === "chat") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5 text-emerald-700" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.3-4.3A8 8 0 1 1 21 12Z" />
-      </svg>
-    );
-  }
-  if (name === "truck") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5 text-indigo-700" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7z" />
-        <circle cx="5.5" cy="18.5" r="2.5" />
-        <circle cx="18.5" cy="18.5" r="2.5" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 text-rose-700" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="6" width="18" height="12" rx="2" />
-      <path d="M3 10h18" />
-    </svg>
-  );
-}
 
 export default async function HomePage() {
   let homePromoEnabled = true;
@@ -63,89 +41,81 @@ export default async function HomePage() {
     <Container className="py-7 md:py-10">
       <div className="flex flex-col gap-8 md:gap-10">
         <Section className="py-0">
-          <Card className="overflow-hidden border border-slate-200 bg-[radial-gradient(circle_at_top_left,_#f0f9ff,_#f8fafc_40%,_#ffffff)]">
-            <CardBody className="grid gap-8 md:grid-cols-[1.35fr_1fr] md:p-8 p-5">
+          <Card className="overflow-hidden border border-slate-200 bg-[radial-gradient(1200px_500px_at_90%_-10%,#dbeafe_0%,transparent_55%),radial-gradient(900px_420px_at_-10%_120%,#dcfce7_0%,transparent_50%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] panel-soft-hover">
+            <CardBody className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] md:p-8 p-5">
               <div className="flex flex-col gap-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone="info" className="w-fit">Retail peruano oficial</Badge>
-                  <Badge tone="success" className="w-fit">Atencion real</Badge>
+                  <Badge tone="info" className="w-fit rounded-xl">Retail peruano oficial</Badge>
+                  <Badge tone="success" className="w-fit rounded-xl">Atencion real post-venta</Badge>
                 </div>
+
                 <div className="space-y-3">
-                  <h1 className="text-3xl md:text-5xl font-bold leading-[1.05] text-slate-900">ODERA 05 STORE</h1>
+                  <h1 className="text-3xl md:text-5xl font-display font-bold leading-[1.02] text-slate-900">
+                    Estilo real para
+                    <br />
+                    calle y deporte
+                  </h1>
                   <p className="text-slate-600 max-w-xl text-[15px] md:text-base">
-                    Compra zapatillas y ropa con una experiencia clara, moderna y segura. Tu pedido queda registrado en
-                    tiempo real para que siempre sepas en que estado esta.
+                    Compra zapatillas y ropa con una experiencia clara, rapida y confiable. Tu pedido queda trazado de inicio a fin para que siempre sepas su estado.
                   </p>
                 </div>
+
                 <div className="flex flex-wrap gap-3 pt-1">
                   <Link href="/catalog" className="btn-brand">Ver catalogo</Link>
                   <Link href="/track" className="btn-soft">Seguir mi pedido</Link>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
-                  <Badge tone="success" className="justify-center rounded-xl">Pago confirmado</Badge>
-                  <Badge tone="info" className="justify-center rounded-xl">Atencion por WhatsApp</Badge>
-                  <Badge tone="default" className="justify-center rounded-xl">Seguimiento simple</Badge>
-                  <Badge tone="sale" className="justify-center rounded-xl">Promos activas</Badge>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
-                  <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                    <p className="text-xs text-slate-500">Entrega</p>
-                    <p className="text-sm font-semibold text-slate-900">Lima y provincias</p>
+
+                <div className="grid grid-cols-3 gap-3 pt-2 max-w-xl">
+                  <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
+                    <p className="text-[11px] text-slate-500">Cupon</p>
+                    <p className="text-sm font-semibold text-slate-900">ODERA10</p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                    <p className="text-xs text-slate-500">Estado</p>
-                    <p className="text-sm font-semibold text-slate-900">Seguimiento real</p>
+                  <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
+                    <p className="text-[11px] text-slate-500">Envio gratis</p>
+                    <p className="text-sm font-semibold text-slate-900">Desde S/200</p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                    <p className="text-xs text-slate-500">Validacion</p>
-                    <p className="text-sm font-semibold text-slate-900">Pago manual seguro</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                    <p className="text-xs text-slate-500">Atencion</p>
-                    <p className="text-sm font-semibold text-slate-900">Canales oficiales</p>
+                  <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
+                    <p className="text-[11px] text-slate-500">Seguimiento</p>
+                    <p className="text-sm font-semibold text-slate-900">En tiempo real</p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3">
-                {trustItems.map((item) => (
-                  <Card key={item.title} className="shadow-none border-slate-200 bg-white/90">
-                    <CardBody className="p-4 flex items-start gap-3">
-                      <div className="mt-0.5"><TrustIcon name={item.icon} /></div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                        <p className="mt-1 text-xs text-slate-600">{item.desc}</p>
+              <div className="relative">
+                <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-blue-100/60 via-sky-100/40 to-emerald-100/55 blur-2xl" />
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 md:p-5 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-900 text-white p-5">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-300">Coleccion destacada</p>
+                    <p className="mt-2 text-2xl font-display font-bold">ODERA 05</p>
+                    <p className="mt-1 text-sm text-slate-200">Nuevos ingresos en zapatillas urbanas y deportivas.</p>
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                      <span className="rounded-lg bg-white/10 px-2 py-1">Stock validado</span>
+                      <span className="rounded-lg bg-white/10 px-2 py-1">Pago confirmado</span>
+                      <span className="rounded-lg bg-white/10 px-2 py-1">Canales oficiales</span>
+                      <span className="rounded-lg bg-white/10 px-2 py-1">Compra segura</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-2">
+                    {trustItems.map((item) => (
+                      <div key={item.title} className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                          <p className="text-xs text-slate-600 mt-0.5">{item.desc}</p>
+                        </div>
+                        <span className="text-xs font-semibold rounded-lg border border-slate-300 px-2 py-1 text-slate-700 bg-white">{item.value}</span>
                       </div>
-                    </CardBody>
-                  </Card>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-        </Section>
-
-        <Section className="py-0">
-          <Card className="bg-white border border-slate-200">
-            <CardBody className="p-4 md:p-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-emerald-100 text-emerald-700 grid place-items-center">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 7 9 18l-5-5" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Compra con respaldo real</p>
-                  <p className="text-xs md:text-sm text-slate-600">Seguimiento del pedido, validacion manual y atencion directa.</p>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <Link href="/track" className="btn-soft w-fit">Consultar mi pedido</Link>
             </CardBody>
           </Card>
         </Section>
 
         {homePromoEnabled ? (
           <Section className="py-0">
-            <Card className="bg-gradient-to-r from-emerald-50 via-white to-sky-50">
+            <Card className="bg-gradient-to-r from-emerald-50 via-white to-sky-50 border-slate-200 panel-soft-hover">
               <CardBody className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">Promocion activa</p>
@@ -164,10 +134,12 @@ export default async function HomePage() {
         <Section className="py-0 flex flex-col gap-4">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Destacados</h2>
+              <h2 className="text-2xl font-display font-bold text-slate-900">Destacados</h2>
               <p className="text-sm text-slate-600">Productos recomendados por nuestros clientes.</p>
             </div>
-            <Link href="/catalog" className="text-sm text-slate-700 hover:text-slate-900">Ver catalogo completo</Link>
+            <Link href="/catalog" className="text-sm text-slate-700 hover:text-slate-900 font-medium">
+              Ver catalogo completo
+            </Link>
           </div>
           <FeaturedProducts />
         </Section>

@@ -47,10 +47,10 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_8px_24px_rgba(15,23,42,0.05)] backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/92 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur-md">
       <Container className="py-3 flex items-center justify-between gap-3 md:gap-5">
         <Link href="/" className="flex items-center gap-3 rounded-xl pr-2 transition hover:bg-slate-100/70">
-          <span className="w-10 h-10 rounded-lg bg-slate-900 text-white grid place-items-center text-xs font-bold">O5</span>
+          <span className="w-10 h-10 rounded-xl bg-slate-900 text-white grid place-items-center text-xs font-bold shadow-sm">O5</span>
           <span className="flex flex-col leading-tight">
             <span className="font-semibold tracking-tight text-slate-900">ODERA 05 STORE</span>
             <span className="hidden sm:block text-[11px] text-slate-500">Tienda oficial en linea</span>
@@ -65,7 +65,7 @@ export default function Header() {
             </svg>
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Busca por nombre o marca..." className="pl-9" />
           </div>
-          <button type="submit" className="btn-soft px-4 py-2.5">Buscar</button>
+          <button type="submit" className="btn-soft px-4 py-2.5 rounded-xl">Buscar</button>
         </form>
 
         <button
@@ -82,10 +82,10 @@ export default function Header() {
         <nav className="hidden md:flex items-center gap-1.5">
           <NavLink href="/catalog">Catalogo</NavLink>
           <NavLink href="/track">Mis pedidos</NavLink>
-          <Link href="/cart" className="relative text-sm px-3 py-2 rounded-xl border border-transparent text-slate-700 hover:border-slate-200 hover:bg-slate-50">
+          <Link href="/cart" className="relative text-sm px-3 py-2 rounded-xl border border-transparent text-slate-700 hover:border-slate-200 hover:bg-slate-50 font-medium">
             Carrito
             {count > 0 ? (
-              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-rose-600 text-white text-[11px] grid place-items-center">
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-rose-600 text-white text-[11px] grid place-items-center shadow-sm">
                 {count}
               </span>
             ) : null}
