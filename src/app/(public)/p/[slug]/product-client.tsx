@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -270,14 +270,14 @@ export default function ProductClient({ slug }: { slug: string }) {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-bold text-slate-900">Producto agregado</h2>
-                    <p className="text-sm text-slate-600">Tu item ya esta en el carrito.</p>
+                    <p className="text-sm text-slate-600">Tu producto ya esta en el carrito.</p>
                   </div>
                   <button
                     type="button"
                     className="h-9 w-9 rounded-full border border-slate-200 text-slate-500"
                     onClick={() => setShowCartModal(false)}
                   >
-                    ×
+                    &times;
                   </button>
                 </div>
 

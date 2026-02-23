@@ -28,10 +28,25 @@ const trustItems = [
 
 export default async function HomePage() {
   let homePromoEnabled = true;
+  let homePromo = {
+    title: "Promocion activa",
+    message: "Usa el cupon ODERA10 y recibe 10% de descuento.",
+    rightNote: "Envio gratis por compras desde S/ 200.",
+    couponCode: "ODERA10",
+    freeShippingFrom: 200,
+  };
   try {
     const settingsSnap = await adminDb.doc("settings/store").get();
     if (settingsSnap.exists) {
-      homePromoEnabled = Boolean(settingsSnap.data()?.homePromoEnabled ?? true);
+      const storeData = settingsSnap.data() as any;
+      homePromoEnabled = Boolean(storeData?.homePromoEnabled ?? true);
+      homePromo = {
+        title: String(storeData?.homePromo?.title ?? homePromo.title),
+        message: String(storeData?.homePromo?.message ?? homePromo.message),
+        rightNote: String(storeData?.homePromo?.rightNote ?? homePromo.rightNote),
+        couponCode: String(storeData?.homePromo?.couponCode ?? homePromo.couponCode),
+        freeShippingFrom: Number(storeData?.homePromo?.freeShippingFrom ?? homePromo.freeShippingFrom),
+      };
     }
   } catch {
     homePromoEnabled = true;
@@ -68,11 +83,11 @@ export default async function HomePage() {
                 <div className="grid grid-cols-3 gap-3 pt-2 max-w-xl">
                   <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
                     <p className="text-[11px] text-slate-500">Cupon</p>
-                    <p className="text-sm font-semibold text-slate-900">ODERA10</p>
+                    <p className="text-sm font-semibold text-slate-900">{homePromo.couponCode}</p>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
                     <p className="text-[11px] text-slate-500">Envio gratis</p>
-                    <p className="text-sm font-semibold text-slate-900">Desde S/200</p>
+                    <p className="text-sm font-semibold text-slate-900">Desde S/{homePromo.freeShippingFrom}</p>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
                     <p className="text-[11px] text-slate-500">Seguimiento</p>
@@ -118,14 +133,10 @@ export default async function HomePage() {
             <Card className="bg-gradient-to-r from-emerald-50 via-white to-sky-50 border-slate-200 panel-soft-hover">
               <CardBody className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Promocion activa</p>
-                  <p className="text-sm text-slate-700">
-                    Usa el cupon <b>ODERA10</b> y recibe 10% de descuento.
-                  </p>
+                  <p className="text-sm font-semibold text-slate-900">{homePromo.title}</p>
+                  <p className="text-sm text-slate-700">{homePromo.message}</p>
                 </div>
-                <div className="text-sm text-slate-700">
-                  Envio gratis por compras desde <b>S/ 200</b>.
-                </div>
+                <div className="text-sm text-slate-700">{homePromo.rightNote}</div>
               </CardBody>
             </Card>
           </Section>

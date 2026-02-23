@@ -6,6 +6,13 @@ import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 type Settings = {
   storeName: string;
   homePromoEnabled?: boolean;
+  homePromo?: {
+    title?: string;
+    message?: string;
+    rightNote?: string;
+    couponCode?: string;
+    freeShippingFrom?: number;
+  };
   publicContactEmail: string;
   publicWhatsapp: string;
   socialLinks: {
@@ -68,6 +75,59 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
             />
             Mostrar bloque de promoción en Inicio (cupón y envío gratis)
           </label>
+        </div>
+
+        <div className="grid gap-3 panel p-3 md:p-4 rounded-2xl border-slate-200">
+          <div className="font-medium">Promocion de Home (editable)</div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div className="grid gap-1">
+              <label className="text-sm font-medium">Titulo promo</label>
+              <input
+                value={s.homePromo?.title ?? ""}
+                onChange={(e) => setS((p) => ({ ...p, homePromo: { ...p.homePromo, title: e.target.value } }))}
+                className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="grid gap-1">
+              <label className="text-sm font-medium">Codigo cupon</label>
+              <input
+                value={s.homePromo?.couponCode ?? ""}
+                onChange={(e) => setS((p) => ({ ...p, homePromo: { ...p.homePromo, couponCode: e.target.value } }))}
+                className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          <div className="grid gap-1">
+            <label className="text-sm font-medium">Mensaje promo</label>
+            <input
+              value={s.homePromo?.message ?? ""}
+              onChange={(e) => setS((p) => ({ ...p, homePromo: { ...p.homePromo, message: e.target.value } }))}
+              className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div className="grid gap-1">
+              <label className="text-sm font-medium">Texto lateral derecho</label>
+              <input
+                value={s.homePromo?.rightNote ?? ""}
+                onChange={(e) => setS((p) => ({ ...p, homePromo: { ...p.homePromo, rightNote: e.target.value } }))}
+                className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="grid gap-1">
+              <label className="text-sm font-medium">Envio gratis desde (S/)</label>
+              <input
+                type="number"
+                min={0}
+                value={Number(s.homePromo?.freeShippingFrom ?? 0)}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  setS((p) => ({ ...p, homePromo: { ...p.homePromo, freeShippingFrom: Number.isFinite(n) ? n : 0 } }));
+                }}
+                className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4 rounded-2xl border-slate-200">

@@ -18,6 +18,13 @@ export default async function SettingsPage() {
       ? {
           storeName: String(data.storeName ?? "ODERA 05 STORE"),
           homePromoEnabled: Boolean(data.homePromoEnabled ?? true),
+          homePromo: {
+            title: String(data.homePromo?.title ?? "Promocion activa"),
+            message: String(data.homePromo?.message ?? "Usa el cupon ODERA10 y recibe 10% de descuento."),
+            rightNote: String(data.homePromo?.rightNote ?? "Envio gratis por compras desde S/ 200."),
+            couponCode: String(data.homePromo?.couponCode ?? "ODERA10"),
+            freeShippingFrom: Number(data.homePromo?.freeShippingFrom ?? 200),
+          },
           publicContactEmail: String(data.publicContactEmail ?? ""),
           publicWhatsapp: String(data.publicWhatsapp ?? ""),
           socialLinks: {
@@ -36,6 +43,13 @@ export default async function SettingsPage() {
       : {
           storeName: "ODERA 05 STORE",
           homePromoEnabled: true,
+          homePromo: {
+            title: "Promocion activa",
+            message: "Usa el cupon ODERA10 y recibe 10% de descuento.",
+            rightNote: "Envio gratis por compras desde S/ 200.",
+            couponCode: "ODERA10",
+            freeShippingFrom: 200,
+          },
           publicContactEmail: "",
           publicWhatsapp: "",
           socialLinks: { instagram: "", tiktok: "", facebook: "", whatsapp: "" },
