@@ -45,7 +45,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
     <div className="flex flex-col gap-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold text-slate-900">Configuración de tienda</h1>
+          <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Configuracion de tienda</h1>
           <p className="text-sm text-slate-600">Controla datos públicos, redes y medios de pago.</p>
         </div>
         <button type="button" onClick={save} disabled={busy} className="btn-brand disabled:opacity-50">
@@ -53,12 +53,12 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
         </button>
       </div>
 
-      {msg ? <div className="panel p-3 text-sm text-slate-700">{msg}</div> : null}
+      {msg ? <div className="panel p-3 text-sm text-slate-700 rounded-2xl border-slate-200">{msg}</div> : null}
 
       <div className="grid gap-4">
-        <div className="grid gap-1 panel p-3 md:p-4">
+        <div className="grid gap-1 panel p-3 md:p-4 rounded-2xl border-slate-200">
           <label className="text-sm font-medium">Nombre tienda</label>
-          <input value={s.storeName} onChange={(e) => setS((p) => ({ ...p, storeName: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+          <input value={s.storeName} onChange={(e) => setS((p) => ({ ...p, storeName: e.target.value }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
           <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
             <input
               type="checkbox"
@@ -70,59 +70,59 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
           </label>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4">
+        <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4 rounded-2xl border-slate-200">
           <div className="grid gap-1">
             <label className="text-sm font-medium">Correo público</label>
-            <input value={s.publicContactEmail} onChange={(e) => setS((p) => ({ ...p, publicContactEmail: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input value={s.publicContactEmail} onChange={(e) => setS((p) => ({ ...p, publicContactEmail: e.target.value }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
           </div>
           <div className="grid gap-1">
             <label className="text-sm font-medium">WhatsApp público</label>
-            <input value={s.publicWhatsapp} onChange={(e) => setS((p) => ({ ...p, publicWhatsapp: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input value={s.publicWhatsapp} onChange={(e) => setS((p) => ({ ...p, publicWhatsapp: e.target.value }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
           </div>
         </div>
 
-        <div className="border border-neutral-200 rounded-xl p-3 md:p-4">
+        <div className="border border-slate-200 rounded-2xl p-3 md:p-4 bg-white">
           <div className="font-medium mb-2">Redes sociales (URLs)</div>
           <div className="grid md:grid-cols-2 gap-3">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Instagram</label>
-              <input value={s.socialLinks?.instagram ?? ""} onChange={(e) => setS((p) => ({ ...p, socialLinks: { ...p.socialLinks, instagram: e.target.value } }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" placeholder="https://instagram.com/tuusuario" />
+              <input value={s.socialLinks?.instagram ?? ""} onChange={(e) => setS((p) => ({ ...p, socialLinks: { ...p.socialLinks, instagram: e.target.value } }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" placeholder="https://instagram.com/tuusuario" />
             </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">TikTok</label>
-              <input value={s.socialLinks?.tiktok ?? ""} onChange={(e) => setS((p) => ({ ...p, socialLinks: { ...p.socialLinks, tiktok: e.target.value } }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" placeholder="https://www.tiktok.com/@tuusuario" />
+              <input value={s.socialLinks?.tiktok ?? ""} onChange={(e) => setS((p) => ({ ...p, socialLinks: { ...p.socialLinks, tiktok: e.target.value } }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" placeholder="https://www.tiktok.com/@tuusuario" />
             </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">Facebook</label>
-              <input value={s.socialLinks?.facebook ?? ""} onChange={(e) => setS((p) => ({ ...p, socialLinks: { ...p.socialLinks, facebook: e.target.value } }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" placeholder="https://facebook.com/tu-pagina" />
+              <input value={s.socialLinks?.facebook ?? ""} onChange={(e) => setS((p) => ({ ...p, socialLinks: { ...p.socialLinks, facebook: e.target.value } }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" placeholder="https://facebook.com/tu-pagina" />
             </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">WhatsApp link</label>
-              <input value={s.socialLinks?.whatsapp ?? ""} onChange={(e) => setS((p) => ({ ...p, socialLinks: { ...p.socialLinks, whatsapp: e.target.value } }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" placeholder="https://wa.me/51999..." />
+              <input value={s.socialLinks?.whatsapp ?? ""} onChange={(e) => setS((p) => ({ ...p, socialLinks: { ...p.socialLinks, whatsapp: e.target.value } }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" placeholder="https://wa.me/51999..." />
             </div>
           </div>
         </div>
 
-        <div className="border border-neutral-200 rounded-xl p-3 md:p-4">
+        <div className="border border-slate-200 rounded-2xl p-3 md:p-4 bg-white">
           <div className="font-medium mb-2">Instrucciones de pago</div>
 
           <div className="grid md:grid-cols-2 gap-3">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Yape nombre</label>
-              <input value={s.paymentInstructions.yapeName ?? ""} onChange={(e) => setS((p) => ({ ...p, paymentInstructions: { ...p.paymentInstructions, yapeName: e.target.value } }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+              <input value={s.paymentInstructions.yapeName ?? ""} onChange={(e) => setS((p) => ({ ...p, paymentInstructions: { ...p.paymentInstructions, yapeName: e.target.value } }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">Yape número</label>
-              <input value={s.paymentInstructions.yapeNumber ?? ""} onChange={(e) => setS((p) => ({ ...p, paymentInstructions: { ...p.paymentInstructions, yapeNumber: e.target.value } }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+              <input value={s.paymentInstructions.yapeNumber ?? ""} onChange={(e) => setS((p) => ({ ...p, paymentInstructions: { ...p.paymentInstructions, yapeNumber: e.target.value } }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             </div>
 
             <div className="grid gap-1">
               <label className="text-sm font-medium">Plin nombre</label>
-              <input value={s.paymentInstructions.plinName ?? ""} onChange={(e) => setS((p) => ({ ...p, paymentInstructions: { ...p.paymentInstructions, plinName: e.target.value } }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+              <input value={s.paymentInstructions.plinName ?? ""} onChange={(e) => setS((p) => ({ ...p, paymentInstructions: { ...p.paymentInstructions, plinName: e.target.value } }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">Plin número</label>
-              <input value={s.paymentInstructions.plinNumber ?? ""} onChange={(e) => setS((p) => ({ ...p, paymentInstructions: { ...p.paymentInstructions, plinNumber: e.target.value } }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
+              <input value={s.paymentInstructions.plinNumber ?? ""} onChange={(e) => setS((p) => ({ ...p, paymentInstructions: { ...p.paymentInstructions, plinNumber: e.target.value } }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             </div>
           </div>
         </div>

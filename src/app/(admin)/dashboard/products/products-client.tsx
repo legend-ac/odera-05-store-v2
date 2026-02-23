@@ -226,13 +226,13 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
 
   return (
     <div className="grid xl:grid-cols-[300px_1fr] gap-4 md:gap-6">
-      <div className="panel p-3 md:p-4 h-fit">
+      <div className="panel p-3 md:p-4 h-fit rounded-2xl border-slate-200">
         <div className="font-semibold text-slate-900 mb-2">Productos</div>
 
         <div className="flex gap-2 mb-3">
           <button
             type="button"
-            className="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white hover:bg-slate-50"
+            className="px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white hover:bg-slate-50 font-medium"
             onClick={() => {
               setSelectedId("");
               setDraft(emptyProduct());
@@ -243,7 +243,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
           </button>
           <button
             type="button"
-            className="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white hover:bg-slate-50 disabled:opacity-50"
+            className="px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white hover:bg-slate-50 disabled:opacity-50 font-medium"
             disabled={!selected}
             onClick={loadSelected}
           >
@@ -254,7 +254,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         <select
           value={selectedId}
           onChange={(e) => setSelectedId(e.target.value)}
-          className="w-full border border-slate-300 rounded-lg px-2 py-2 text-sm bg-white"
+          className="w-full border border-slate-300 rounded-xl px-2 py-2 text-sm bg-white"
         >
           <option value="">(Selecciona)</option>
           {products.map((p) => (
@@ -272,7 +272,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl md:text-2xl font-semibold text-slate-900">Editor de producto</h1>
+            <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Editor de producto</h1>
             <p className="text-sm text-slate-600">Crea y actualiza productos con variantes e imágenes.</p>
           </div>
           <button
@@ -285,7 +285,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
           </button>
         </div>
 
-        {msg ? <div className="text-sm text-slate-700 panel p-3">{msg}</div> : null}
+        {msg ? <div className="text-sm text-slate-700 panel p-3 rounded-2xl border-slate-200">{msg}</div> : null}
 
         <div className="grid gap-4">
           <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4">

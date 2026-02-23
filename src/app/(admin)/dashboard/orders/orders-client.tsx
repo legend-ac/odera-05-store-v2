@@ -86,7 +86,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-900">Pedidos</h1>
+          <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Pedidos</h1>
           <p className="text-sm text-slate-600">Gestiona estado, comprobante y datos de entrega.</p>
         </div>
         <div className="text-xs text-slate-600 flex flex-wrap gap-2">
@@ -99,14 +99,14 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
       </div>
 
       {msg ? (
-        <Card>
+        <Card className="rounded-2xl border-slate-200">
           <CardBody className="py-3 text-sm text-slate-700">{msg}</CardBody>
         </Card>
       ) : null}
 
       <div className="grid gap-3">
         {orders.map((o) => (
-          <Card key={o.id}>
+          <Card key={o.id} className="rounded-2xl border-slate-200">
             <CardBody className="grid gap-3">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
@@ -133,7 +133,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
 
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
                 <Select
-                  className="md:w-72"
+                  className="md:w-72 rounded-xl"
                   value={o.status}
                   onChange={(e) => setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, status: e.target.value } : x)))}
                 >
@@ -149,7 +149,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                 </Button>
 
                 {o.receiptImageUrl ? (
-                  <a href={o.receiptImageUrl} target="_blank" rel="noreferrer" className="btn-soft">
+                  <a href={o.receiptImageUrl} target="_blank" rel="noreferrer" className="btn-soft rounded-xl">
                     Ver comprobante
                   </a>
                 ) : (
@@ -160,7 +160,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           </Card>
         ))}
         {!orders.length ? (
-          <Card>
+          <Card className="rounded-2xl border-slate-200">
             <CardBody className="text-sm text-slate-600">Sin pedidos</CardBody>
           </Card>
         ) : null}
