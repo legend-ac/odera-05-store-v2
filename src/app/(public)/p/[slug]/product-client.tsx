@@ -179,6 +179,25 @@ export default function ProductClient({ slug }: { slug: string }) {
                 </>
               ) : null}
             </div>
+
+            {galleryUrls.length > 1 ? (
+              <div className="grid grid-cols-5 gap-2 p-3 bg-white border-t border-slate-200">
+                {galleryUrls.slice(0, 10).map((url, i) => (
+                  <button
+                    key={`${url}-${i}`}
+                    type="button"
+                    onClick={() => setImgIndex(i)}
+                    className={[
+                      "aspect-square overflow-hidden rounded-lg border transition",
+                      i === imgIndex ? "border-slate-900 ring-2 ring-slate-200" : "border-slate-200 hover:border-slate-300",
+                    ].join(" ")}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`${data.name ?? ""} ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </CardBody>
         </Card>
 
@@ -192,6 +211,17 @@ export default function ProductClient({ slug }: { slug: string }) {
             <div className="text-3xl font-bold">{formatPEN(unitPrice)}</div>
 
             <div className="text-sm text-slate-600 whitespace-pre-wrap">{String(data.description ?? "")}</div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Compra protegida</p>
+                <p className="text-sm font-medium text-slate-900 mt-1">Pago validado manualmente</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Seguimiento</p>
+                <p className="text-sm font-medium text-slate-900 mt-1">Codigo y clave de seguridad</p>
+              </div>
+            </div>
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold">Variante</label>

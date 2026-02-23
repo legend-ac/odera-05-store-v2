@@ -141,12 +141,34 @@ export default function CatalogClient({
             <button type="button" onClick={() => setQText("zapatillas")} className="chip-link">Zapatillas</button>
             <button type="button" onClick={() => setQText("oferta")} className="chip-link">Ofertas</button>
             <button type="button" onClick={() => setQText("futbol")} className="chip-link">Futbol</button>
+            <button type="button" onClick={() => setQText("running")} className="chip-link">Running</button>
           </div>
         </CardBody>
       </Card>
 
+      {items ? (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-slate-600">
+            {sortedItems.length} {sortedItems.length === 1 ? "producto encontrado" : "productos encontrados"}
+          </p>
+          {token ? <BadgeToken token={token} /> : null}
+        </div>
+      ) : null}
+
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
-      {!items ? <div className="text-sm text-slate-500">Cargando productos...</div> : null}
+      {!items ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="aspect-[4/5] bg-slate-100 animate-pulse" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 w-4/5 rounded bg-slate-100 animate-pulse" />
+                <div className="h-4 w-1/2 rounded bg-slate-100 animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {items && (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -156,7 +178,25 @@ export default function CatalogClient({
         </div>
       )}
 
-      {items && !items.length ? <div className="text-sm text-slate-500">Aun no hay productos publicados.</div> : null}
+      {items && !items.length ? (
+        <Card>
+          <CardBody className="py-10 text-center">
+            <p className="text-base font-semibold text-slate-900">No encontramos productos con esa búsqueda</p>
+            <p className="text-sm text-slate-600 mt-1">Prueba con otra palabra o limpia el filtro.</p>
+            <div className="mt-4">
+              <Button type="button" variant="secondary" onClick={() => setQText("")}>Ver todo el catalogo</Button>
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
     </div>
+  );
+}
+
+function BadgeToken({ token }: { token: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+      Buscando: {token}
+    </span>
   );
 }
