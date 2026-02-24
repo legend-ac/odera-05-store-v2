@@ -4,12 +4,16 @@
 
 :root {
   color-scheme: light;
-  --bg: #f8fafc;
+  --bg: #f3f6fb;
   --card: #ffffff;
-  --line: #e2e8f0;
+  --line: #dbe3ee;
   --text: #0f172a;
   --muted: #475569;
-  --primary: #020617;
+  --primary: #0b1a13;
+  --brand-700: #1f4d1f;
+  --brand-600: #2e6a2f;
+  --brand-500: #3f7f3a;
+  --brand-100: #dcead8;
   --sale: #e11d48;
   --success: #059669;
   --info: #2563eb;
@@ -57,6 +61,21 @@ a:hover {
 }
 
 @layer components {
+  .bg-brand-mesh {
+    background-image:
+      radial-gradient(1200px 480px at 100% -15%, rgba(46, 106, 47, 0.23), transparent 55%),
+      radial-gradient(1000px 500px at -20% 110%, rgba(59, 130, 246, 0.2), transparent 52%),
+      linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+  }
+
+  .panel-premium {
+    border: 1px solid rgba(202, 215, 230, 0.9);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 14px 44px rgba(15, 23, 42, 0.09);
+    backdrop-filter: blur(8px);
+    border-radius: 1.2rem;
+  }
+
   .panel {
     background: var(--card);
     border: 1px solid var(--line);
@@ -72,11 +91,13 @@ a:hover {
   }
 
   .btn-brand {
-    @apply inline-flex items-center justify-center rounded-xl bg-black px-4 py-2.5 text-sm font-semibold text-white transition duration-200;
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition duration-200;
+    background: linear-gradient(135deg, var(--brand-700), var(--brand-500));
   }
 
   .btn-brand:hover {
-    @apply bg-slate-900 shadow-[0_10px_20px_rgba(2,6,23,0.22)];
+    @apply shadow-[0_12px_24px_rgba(15,23,42,0.24)];
+    transform: translateY(-1px);
   }
 
   .btn-soft {

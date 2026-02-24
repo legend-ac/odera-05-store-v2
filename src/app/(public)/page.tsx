@@ -9,21 +9,9 @@ import { adminDb } from "@/lib/server/firebaseAdmin";
 export const dynamic = "force-dynamic";
 
 const trustItems = [
-  {
-    title: "Compra protegida",
-    desc: "Pedido registrado y validacion manual del pago en cada compra.",
-    value: "100% segura",
-  },
-  {
-    title: "Atencion humana",
-    desc: "Soporte real por WhatsApp para ayudarte antes y despues de pagar.",
-    value: "Respuesta real",
-  },
-  {
-    title: "Despacho nacional",
-    desc: "Delivery en Lima y envio por agencia a todo Peru.",
-    value: "Cobertura nacional",
-  },
+  { title: "Compra protegida", desc: "Pago validado manualmente y pedido auditado.", value: "Segura" },
+  { title: "Atencion real", desc: "Soporte humano por WhatsApp durante todo el proceso.", value: "Humana" },
+  { title: "Envios Peru", desc: "Lima por delivery y provincia por agencia.", value: "Nacional" },
 ];
 
 export default async function HomePage() {
@@ -53,83 +41,87 @@ export default async function HomePage() {
   }
 
   return (
-    <Container className="py-7 md:py-10">
-      <div className="flex flex-col gap-8 md:gap-10">
+    <Container className="py-6 md:py-8">
+      <div className="flex flex-col gap-6 md:gap-8">
         <Section className="py-0">
-          <Card className="overflow-hidden border border-slate-200 bg-[radial-gradient(980px_520px_at_100%_-20%,rgba(59,130,246,.28)_0%,rgba(59,130,246,0)_55%),radial-gradient(900px_520px_at_-10%_120%,rgba(16,185,129,.24)_0%,rgba(16,185,129,0)_52%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] panel-soft-hover">
-            <CardBody className="grid gap-7 lg:grid-cols-[1.12fr_0.88fr] md:p-8 p-5">
-              <div className="flex flex-col gap-5">
+          <div className="panel-premium bg-brand-mesh overflow-hidden p-4 sm:p-6 md:p-8">
+            <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="flex flex-col gap-4 md:gap-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone="info" className="w-fit rounded-xl">Marca peruana</Badge>
-                  <Badge tone="success" className="w-fit rounded-xl">Confianza verificada</Badge>
+                  <Badge tone="success" className="rounded-xl">Marca oficial ODERA 05</Badge>
+                  <Badge tone="info" className="rounded-xl">Experiencia premium</Badge>
                 </div>
 
-                <div className="space-y-3">
-                  <h1 className="text-3xl md:text-5xl font-display font-bold leading-[0.98] text-slate-900">
-                    Compra con
+                <div>
+                  <h1 className="text-[2rem] sm:text-[2.6rem] md:text-[3.5rem] leading-[0.94] font-display font-bold text-slate-900">
+                    Zapatillas y ropa
                     <br />
-                    estilo y confianza
+                    con identidad real
                   </h1>
-                  <p className="text-slate-600 max-w-xl text-[15px] md:text-base">
-                    ODERA 05 combina una experiencia visual premium con procesos claros: pedido registrado, pago validado y seguimiento en tiempo real.
+                  <p className="mt-3 text-[15px] md:text-[17px] text-slate-700 max-w-xl">
+                    Compra con diseño moderno, seguimiento claro y atención humana. Cada pedido queda registrado de forma segura desde el inicio.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3 pt-1">
+                <div className="flex flex-wrap gap-2.5">
                   <Link href="/catalog" className="btn-brand">Ver catalogo</Link>
                   <Link href="/track" className="btn-soft">Seguir mi pedido</Link>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 max-w-2xl">
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2">
-                    <p className="text-[11px] text-emerald-700">Cupon activo</p>
-                    <p className="text-sm font-semibold text-emerald-900">{homePromo.couponCode}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
+                    <p className="text-[11px] text-emerald-700">Cupon</p>
+                    <p className="text-sm font-bold text-emerald-900">{homePromo.couponCode}</p>
                   </div>
-                  <div className="rounded-xl border border-blue-200 bg-blue-50/80 px-3 py-2">
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3">
                     <p className="text-[11px] text-blue-700">Envio gratis</p>
-                    <p className="text-sm font-semibold text-blue-900">Desde S/{homePromo.freeShippingFrom}</p>
+                    <p className="text-sm font-bold text-blue-900">Desde S/{homePromo.freeShippingFrom}</p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2">
+                  <div className="rounded-xl border border-slate-200 bg-white/85 p-3 col-span-2 sm:col-span-1">
                     <p className="text-[11px] text-slate-500">Seguimiento</p>
-                    <p className="text-sm font-semibold text-slate-900">Estado en tiempo real</p>
+                    <p className="text-sm font-bold text-slate-900">En tiempo real</p>
                   </div>
                 </div>
               </div>
 
-              <div className="relative">
-                <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-blue-200/60 via-sky-200/40 to-emerald-200/55 blur-2xl" />
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white/92 p-4 md:p-5 shadow-[0_18px_45px_rgba(15,23,42,0.14)]">
-                  <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-white p-5">
-                    <p className="text-[11px] uppercase tracking-wide text-slate-300">Identidad oficial ODERA 05</p>
-                    <p className="mt-2 text-2xl font-display font-bold">Retail visual premium</p>
-                    <p className="mt-1 text-sm text-slate-200">Interfaz clara, compra segura y experiencia mobile-first.</p>
-                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                      <span className="rounded-lg bg-white/10 px-2 py-1">Stock controlado</span>
-                      <span className="rounded-lg bg-white/10 px-2 py-1">Pago auditado</span>
-                      <span className="rounded-lg bg-white/10 px-2 py-1">Tracking activo</span>
-                      <span className="rounded-lg bg-white/10 px-2 py-1">Soporte humano</span>
-                    </div>
-                  </div>
+              <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-[var(--brand-700)] via-[var(--brand-600)] to-[var(--brand-500)] p-4 md:p-5 text-white shadow-[0_18px_35px_rgba(31,77,31,0.35)]">
+                <div className="rounded-xl border border-white/35 p-4 bg-white/5">
+                  <p className="text-[11px] uppercase tracking-[.16em] text-white/85">Identidad oficial</p>
+                  <p className="mt-2 text-3xl font-display font-bold">ODERA 05</p>
+                  <p className="text-sm text-white/90 mt-1">Zapatillas & ropa</p>
+                  <div className="mt-4 h-px bg-white/30" />
+                  <p className="mt-4 text-sm text-white/90 leading-relaxed">
+                    Diseño pensado para convertir mejor en celular y escritorio, con una experiencia limpia y confiable.
+                  </p>
+                </div>
 
-                  <div className="mt-4 grid sm:grid-cols-3 gap-2.5">
-                    {trustItems.map((item) => (
-                      <div key={item.title} className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
-                        <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">{item.desc}</p>
-                        <span className="mt-2 inline-flex rounded-lg border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Stock controlado</span>
+                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Pago auditado</span>
+                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Canales oficiales</span>
+                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Soporte directo</span>
                 </div>
               </div>
-            </CardBody>
-          </Card>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {trustItems.map((item) => (
+                <div key={item.title} className="rounded-xl border border-slate-200 bg-white/85 p-3">
+                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                  <p className="text-xs text-slate-600 mt-1">{item.desc}</p>
+                  <span className="mt-2 inline-flex rounded-lg border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                    {item.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </Section>
 
         {homePromoEnabled ? (
           <Section className="py-0">
-            <Card className="bg-gradient-to-r from-emerald-50 via-white to-sky-50 border-slate-200 panel-soft-hover">
-              <CardBody className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <Card className="bg-gradient-to-r from-emerald-50 via-white to-blue-50 border-slate-200">
+              <CardBody className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">{homePromo.title}</p>
                   <p className="text-sm text-slate-700">{homePromo.message}</p>
@@ -158,3 +150,4 @@ export default async function HomePage() {
     </Container>
   );
 }
+
