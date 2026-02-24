@@ -220,6 +220,8 @@ export async function POST(req: Request) {
         total: formatPEN(Number(totals.totalToPay ?? 0)),
         paymentMethod: String(result.payment?.method ?? "-"),
         trackingUrl,
+        trackingToken: result.trackingToken,
+        shippingSummary: shippingToText(result.shipping),
         receiptUrl: typeof result.payment?.receiptImageUrl === "string" ? result.payment.receiptImageUrl : undefined,
       });
 

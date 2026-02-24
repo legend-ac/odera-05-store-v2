@@ -4,9 +4,12 @@ export function buildWhatsAppMessage(params: {
   storeName: string;
   publicCode: string;
   customerName: string;
+  customerPhone?: string;
   paymentMethod: string;
   total: number;
   trackingShortUrl: string;
+  trackingToken?: string;
+  shippingSummary?: string;
   items: { name: string; qty: number; lineTotal: number }[];
 }) {
   const lines: string[] = [];
@@ -16,7 +19,13 @@ export function buildWhatsAppMessage(params: {
   lines.push("");
 
   lines.push(`Cliente: ${params.customerName}`);
-  lines.push(`Pago: *${params.paymentMethod}*`);
+  if (params.customerPhone) {
+    lines.push(`Telefono: ${params.customerPhone}`);
+  }
+  lines.push(`Metodo de pago: *${params.paymentMethod}*`);
+  if (params.shippingSummary) {
+    lines.push(`Envio: ${params.shippingSummary}`);
+  }
   lines.push("");
 
   lines.push("*Productos*");
@@ -26,10 +35,13 @@ export function buildWhatsAppMessage(params: {
 
   lines.push("");
   lines.push(`Total: *${formatPEN(params.total)}*`);
+  if (params.trackingToken) {
+    lines.push(`Clave de seguimiento: ${params.trackingToken}`);
+  }
   lines.push("");
   lines.push(`Seguimiento: ${params.trackingShortUrl}`);
   lines.push("");
-  lines.push("Gracias por tu compra");
+  lines.push("Adjunto mi comprobante");
 
   return lines.join("\n");
 }

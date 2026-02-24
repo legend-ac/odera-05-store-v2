@@ -306,6 +306,8 @@ export async function POST(req: Request) {
       total: formatPEN(Number((result as any).totalToPay ?? 0)),
       paymentMethod: payment.method,
       trackingUrl,
+      trackingToken: result.trackingToken,
+      shippingSummary: shippingToText(shipping),
       receiptUrl: payment.receiptImageUrl,
     };
     const customerHtml = renderOrderEmail({

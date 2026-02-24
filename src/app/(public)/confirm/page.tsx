@@ -28,6 +28,14 @@ function normalizeWhatsappTarget(raw: string): string {
   return digits ? `https://wa.me/${digits}` : "";
 }
 
+function shippingSummary(shipping: any): string {
+  if (!shipping) return "Sin datos de envio";
+  if (shipping.method === "LIMA_DELIVERY") {
+    return `Delivery Lima - ${shipping.district ?? "-"} - ${shipping.addressLine1 ?? "-"}`;
+  }
+  return `Agencia provincia - ${shipping.department ?? "-"} / ${shipping.province ?? "-"} - ${shipping.agencyName ?? "-"}`;
+}
+
 function ConfirmPageInner() {
   const sp = useSearchParams();
   const publicCode = sp.get("publicCode") ?? "";
@@ -99,6 +107,7 @@ function ConfirmPageInner() {
   const waText = useMemo(() => {
     if (!data) return "";
     const name = data.customer?.name ?? "-";
+    const phone = data.customer?.phone ?? "-";
     const method = data.payment?.method ?? "-";
     const total = Number(data.totals?.totalToPay ?? 0);
     const storeName = String(settings?.storeName ?? "ODERA 05 STORE");
@@ -107,30 +116,41 @@ function ConfirmPageInner() {
       storeName,
       publicCode: data.publicCode,
       customerName: name,
+      customerPhone: phone,
       paymentMethod: method,
       total,
       trackingShortUrl: trackingShortUrl || trackingUrl || "-",
+      trackingToken,
+      shippingSummary: shippingSummary(data.shipping),
       items: (data.itemsSnapshots ?? []).map((it) => ({
         name: it.nameSnapshot,
         qty: Number(it.qty ?? 0),
         lineTotal: Number(it.unitPriceSnapshot ?? 0) * Number(it.qty ?? 0),
       })),
     });
-  }, [data, settings?.storeName, trackingShortUrl, trackingUrl]);
+  }, [data, settings?.storeName, trackingShortUrl, trackingToken, trackingUrl]);
 
   const waHref = useMemo(() => {
     if (!businessWhatsapp || !waText) return "";
     return `${businessWhatsapp}?text=${encodeURIComponent(waText)}`;
   }, [businessWhatsapp, waText]);
 
+  const trackingPack = useMemo(() => {
+    return [
+      `Numero de pedido: ${publicCode || "-"}`,
+      `Clave de seguimiento: ${trackingToken || "-"}`,
+      `Link seguimiento: ${trackingShortUrl || trackingUrl || "-"}`,
+    ].join("\n");
+  }, [publicCode, trackingToken, trackingShortUrl, trackingUrl]);
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 flex flex-col gap-4">
       <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Pedido confirmado</h1>
-        <p className="text-sm text-slate-600 mt-1">Guarda estos datos para consultar el estado cuando lo necesites.</p>
+        <p className="text-sm text-slate-600 mt-1">Guarda estos datos para consultar tu estado cuando lo necesites.</p>
       </div>
 
-      <div className="panel p-5 rounded-2xl border-slate-200">
+      <div className="panel p-5 rounded-2xl border-slate-200 bg-brand-mesh">
         <div className="text-sm text-slate-600">Numero de pedido</div>
         <div className="text-2xl font-bold text-slate-900 break-all">{publicCode || "-"}</div>
         <button type="button" onClick={() => copyText(publicCode, "Numero de pedido")} className="mt-2 px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
@@ -139,14 +159,19 @@ function ConfirmPageInner() {
 
         <div className="mt-4 text-sm text-slate-600">Clave de seguimiento</div>
         <div className="font-mono text-sm break-all bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 mt-1">{trackingToken || "-"}</div>
-        <button type="button" onClick={() => copyText(trackingToken, "Clave de seguimiento")} className="mt-2 px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
-          Copiar clave
-        </button>
-        {trackingUrl ? (
-          <a href={trackingUrl} className="mt-2 ml-2 inline-flex px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
-            Abrir mi seguimiento
-          </a>
-        ) : null}
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button type="button" onClick={() => copyText(trackingToken, "Clave de seguimiento")} className="px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
+            Copiar clave
+          </button>
+          <button type="button" onClick={() => copyText(trackingPack, "Paquete completo de seguimiento")} className="px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
+            Copiar todo
+          </button>
+          {trackingUrl ? (
+            <a href={trackingUrl} className="inline-flex px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
+              Abrir mi seguimiento
+            </a>
+          ) : null}
+        </div>
 
         {copyMsg ? <div className="mt-2 text-xs text-emerald-700">{copyMsg}</div> : null}
       </div>
@@ -157,9 +182,14 @@ function ConfirmPageInner() {
           Tu pedido quedo en estado <b>Pendiente de validacion de pago</b>. El boton de WhatsApp incluye todos los datos de seguimiento para no perder informacion.
         </p>
         {waHref ? (
-          <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand mt-3 inline-flex">
-            Enviar mensaje por WhatsApp
-          </a>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand inline-flex">
+              Enviar mensaje por WhatsApp
+            </a>
+            <button type="button" onClick={() => copyText(waText, "Mensaje de WhatsApp")} className="btn-soft">
+              Copiar mensaje
+            </button>
+          </div>
         ) : (
           <div className="mt-3 text-sm text-slate-600">Configura el WhatsApp del negocio en Admin &gt; Configuracion.</div>
         )}
