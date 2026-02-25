@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { SESSION_COOKIE_NAME, verifyAdminSessionCookie } from "@/lib/server/adminSession";
+import { isOrderStatus } from "@/lib/orderStatus";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -12,15 +13,79 @@ function esc(v: unknown): string {
   return `"${escaped}"`;
 }
 
-export async function GET() {
+function toIso(ts: any): string {
+  if (!ts) return "";
+  if (typeof ts.toDate === "function") return ts.toDate().toISOString();
+  return "";
+}
+
+function toMs(ts: any): number | null {
+  if (!ts) return null;
+  if (typeof ts.toMillis === "function") return ts.toMillis();
+  return null;
+}
+
+export async function GET(req: Request) {
   try {
     const sessionCookie = cookies().get(SESSION_COOKIE_NAME)?.value;
     if (!sessionCookie) return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
     await verifyAdminSessionCookie(sessionCookie);
 
-    const snap = await adminDb.collection("orders").orderBy("createdAt", "desc").limit(1000).get();
+    const url = new URL(req.url);
+    const searchParams = url.searchParams;
 
-    const headers = [
+    const from = String(searchParams.get("from") ?? "").trim();
+    const to = String(searchParams.get("to") ?? "").trim();
+    const statusRaw = String(searchParams.get("status") ?? "").trim().toUpperCase();
+    const status = isOrderStatus(statusRaw) ? statusRaw : "";
+    const templateRaw = String(searchParams.get("template") ?? "detalle").trim().toLowerCase();
+    const template: "detalle" | "resumen" = templateRaw === "resumen" ? "resumen" : "detalle";
+
+    const fromMs = from ? Date.parse(`${from}T00:00:00.000Z`) : NaN;
+    const toMsFilter = to ? Date.parse(`${to}T23:59:59.999Z`) : NaN;
+    const hasFrom = Number.isFinite(fromMs);
+    const hasTo = Number.isFinite(toMsFilter);
+
+    const snap = await adminDb.collection("orders").orderBy("createdAt", "desc").limit(2500).get();
+
+    const rowsRaw = snap.docs.map((d) => {
+      const o = d.data() as any;
+      const createdAtIso = toIso(o?.createdAt);
+      const createdAtMs = toMs(o?.createdAt);
+      const shipping = o?.shipping ?? {};
+      const shippingType = shipping?.method ?? "";
+      const destination =
+        shippingType === "LIMA_DELIVERY"
+          ? `${shipping?.district ?? ""} ${shipping?.addressLine1 ?? ""}`.trim()
+          : `${shipping?.department ?? ""} ${shipping?.province ?? ""} ${shipping?.agencyName ?? ""}`.trim();
+
+      return {
+        publicCode: o?.publicCode ?? "",
+        status: o?.status ?? "",
+        createdAtIso,
+        createdAtMs,
+        customerName: o?.customer?.name ?? "",
+        customerEmail: o?.customer?.email ?? "",
+        customerPhone: o?.customer?.phone ?? "",
+        paymentMethod: o?.payment?.method ?? "",
+        subtotal: Number(o?.totals?.subtotal ?? 0),
+        discount: Number(o?.totals?.discountAmount ?? 0),
+        shippingCost: Number(o?.totals?.shippingCost ?? 0),
+        total: Number(o?.totals?.totalToPay ?? 0),
+        couponCode: o?.couponCode ?? "",
+        shippingType,
+        destination,
+      };
+    });
+
+    const rows = rowsRaw.filter((r) => {
+      if (status && r.status !== status) return false;
+      if (hasFrom && (r.createdAtMs === null || r.createdAtMs < fromMs)) return false;
+      if (hasTo && (r.createdAtMs === null || r.createdAtMs > toMsFilter)) return false;
+      return true;
+    });
+
+    const detailHeaders = [
       "Pedido",
       "Estado",
       "Fecha",
@@ -37,45 +102,84 @@ export async function GET() {
       "Destino",
     ];
 
-    const rows = snap.docs.map((d) => {
-      const o = d.data() as any;
-      const createdAt =
-        typeof o?.createdAt?.toDate === "function"
-          ? o.createdAt.toDate().toISOString()
-          : "";
-      const shipping = o?.shipping ?? {};
-      const shippingType = shipping?.method ?? "";
-      const destination =
-        shippingType === "LIMA_DELIVERY"
-          ? `${shipping?.district ?? ""} ${shipping?.addressLine1 ?? ""}`.trim()
-          : `${shipping?.department ?? ""} ${shipping?.province ?? ""} ${shipping?.agencyName ?? ""}`.trim();
+    let csv = "";
+    if (template === "resumen") {
+      const totalPedidos = rows.length;
+      const ventaTotal = rows.reduce((acc, r) => acc + r.total, 0);
+      const subtotalTotal = rows.reduce((acc, r) => acc + r.subtotal, 0);
+      const descuentoTotal = rows.reduce((acc, r) => acc + r.discount, 0);
+      const envioTotal = rows.reduce((acc, r) => acc + r.shippingCost, 0);
+      const ticketPromedio = totalPedidos > 0 ? ventaTotal / totalPedidos : 0;
 
-      return [
-        o?.publicCode ?? "",
-        o?.status ?? "",
-        createdAt,
-        o?.customer?.name ?? "",
-        o?.customer?.email ?? "",
-        o?.customer?.phone ?? "",
-        o?.payment?.method ?? "",
-        Number(o?.totals?.subtotal ?? 0).toFixed(2),
-        Number(o?.totals?.discountAmount ?? 0).toFixed(2),
-        Number(o?.totals?.shippingCost ?? 0).toFixed(2),
-        Number(o?.totals?.totalToPay ?? 0).toFixed(2),
-        o?.couponCode ?? "",
-        shippingType,
-        destination,
+      const byStatus = new Map<string, { qty: number; total: number }>();
+      const byPayment = new Map<string, { qty: number; total: number }>();
+      for (const r of rows) {
+        const statusKey = r.status || "SIN_ESTADO";
+        const pmKey = r.paymentMethod || "SIN_METODO";
+        const s = byStatus.get(statusKey) ?? { qty: 0, total: 0 };
+        s.qty += 1;
+        s.total += r.total;
+        byStatus.set(statusKey, s);
+        const p = byPayment.get(pmKey) ?? { qty: 0, total: 0 };
+        p.qty += 1;
+        p.total += r.total;
+        byPayment.set(pmKey, p);
+      }
+
+      const generatedAt = new Date().toISOString();
+      const resumenRows: string[][] = [
+        ["Reporte", "Resumen ejecutivo de ventas ODERA 05"],
+        ["Generado", generatedAt],
+        ["Filtro fecha desde", from || "-"],
+        ["Filtro fecha hasta", to || "-"],
+        ["Filtro estado", status || "TODOS"],
+        [""],
+        ["Indicador", "Valor"],
+        ["Pedidos", String(totalPedidos)],
+        ["Subtotal acumulado", subtotalTotal.toFixed(2)],
+        ["Descuento acumulado", descuentoTotal.toFixed(2)],
+        ["Envio acumulado", envioTotal.toFixed(2)],
+        ["Venta total", ventaTotal.toFixed(2)],
+        ["Ticket promedio", ticketPromedio.toFixed(2)],
+        [""],
+        ["Estado", "Cantidad", "Total S/"],
       ];
-    });
+      for (const [k, v] of Array.from(byStatus.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+        resumenRows.push([k, String(v.qty), v.total.toFixed(2)]);
+      }
+      resumenRows.push([""]);
+      resumenRows.push(["Metodo de pago", "Cantidad", "Total S/"]);
+      for (const [k, v] of Array.from(byPayment.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+        resumenRows.push([k, String(v.qty), v.total.toFixed(2)]);
+      }
+      csv = resumenRows.map((r) => r.map(esc).join(",")).join("\n");
+    } else {
+      const detailRows = rows.map((r) => [
+        r.publicCode,
+        r.status,
+        r.createdAtIso,
+        r.customerName,
+        r.customerEmail,
+        r.customerPhone,
+        r.paymentMethod,
+        r.subtotal.toFixed(2),
+        r.discount.toFixed(2),
+        r.shippingCost.toFixed(2),
+        r.total.toFixed(2),
+        r.couponCode,
+        r.shippingType,
+        r.destination,
+      ]);
+      csv = [detailHeaders, ...detailRows].map((r) => r.map(esc).join(",")).join("\n");
+    }
 
-    const csv = [headers, ...rows].map((r) => r.map(esc).join(",")).join("\n");
     const bomCsv = `\uFEFF${csv}`;
 
     return new NextResponse(bomCsv, {
       status: 200,
       headers: {
         "content-type": "text/csv; charset=utf-8",
-        "content-disposition": `attachment; filename="ventas-odera05.csv"`,
+        "content-disposition": `attachment; filename="${template === "resumen" ? "ventas-odera05-resumen.csv" : "ventas-odera05-detalle.csv"}"`,
       },
     });
   } catch (e) {
@@ -87,4 +191,3 @@ export async function GET() {
     return NextResponse.json({ error: msg }, { status: codeToStatus[msg] ?? 500 });
   }
 }
-

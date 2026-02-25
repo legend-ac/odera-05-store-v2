@@ -73,6 +73,10 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [query, setQuery] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const [exportFrom, setExportFrom] = useState("");
+  const [exportTo, setExportTo] = useState("");
+  const [exportStatus, setExportStatus] = useState("ALL");
+  const [exportTemplate, setExportTemplate] = useState<"detalle" | "resumen">("detalle");
 
   const counts = useMemo(() => {
     const m = new Map<string, number>();
@@ -88,6 +92,15 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
       return [o.publicCode, o.customerName, o.email, o.phone].some((x) => (x ?? "").toLowerCase().includes(token));
     });
   }, [orders, query, statusFilter]);
+
+  const exportHref = useMemo(() => {
+    const sp = new URLSearchParams();
+    if (exportFrom) sp.set("from", exportFrom);
+    if (exportTo) sp.set("to", exportTo);
+    if (exportStatus !== "ALL") sp.set("status", exportStatus);
+    sp.set("template", exportTemplate);
+    return `/api/admin/orders/export?${sp.toString()}`;
+  }, [exportFrom, exportTo, exportStatus, exportTemplate]);
 
   async function updateStatus(orderId: string, nextStatus: string) {
     setBusyId(orderId);
@@ -129,9 +142,6 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           <p className="text-sm text-slate-600">Gestiona estado, comprobante y datos de entrega.</p>
         </div>
         <div className="text-xs text-slate-600 flex flex-wrap gap-2 items-center">
-          <a href="/api/admin/orders/export" className="btn-soft">
-            Exportar ventas (CSV)
-          </a>
           <Badge tone="default">Total: {orders.length}</Badge>
           {counts.map(([s, n]) => (
             <button
@@ -166,6 +176,75 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           </Select>
           <Button type="button" variant="secondary" onClick={() => { setQuery(""); setStatusFilter("ALL"); }}>
             Limpiar
+          </Button>
+        </CardBody>
+      </Card>
+
+      <Card className="rounded-2xl border-slate-200">
+        <CardBody className="grid gap-3 md:grid-cols-[180px_180px_1fr_180px_auto_auto] md:items-end">
+          <label className="grid gap-1 text-xs text-slate-600">
+            Desde
+            <input
+              type="date"
+              value={exportFrom}
+              onChange={(e) => setExportFrom(e.target.value)}
+              className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
+            />
+          </label>
+
+          <label className="grid gap-1 text-xs text-slate-600">
+            Hasta
+            <input
+              type="date"
+              value={exportTo}
+              onChange={(e) => setExportTo(e.target.value)}
+              className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
+            />
+          </label>
+
+          <label className="grid gap-1 text-xs text-slate-600">
+            Estado
+            <Select
+              value={exportStatus}
+              onChange={(e) => setExportStatus(e.target.value)}
+              className="rounded-xl min-w-[220px]"
+            >
+              <option value="ALL">Todos los estados</option>
+              {counts.map(([s, n]) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s] ?? s}: {n}
+                </option>
+              ))}
+            </Select>
+          </label>
+
+          <label className="grid gap-1 text-xs text-slate-600">
+            Plantilla
+            <Select
+              value={exportTemplate}
+              onChange={(e) => setExportTemplate(e.target.value === "resumen" ? "resumen" : "detalle")}
+              className="rounded-xl"
+            >
+              <option value="detalle">Detalle</option>
+              <option value="resumen">Resumen ejecutivo</option>
+            </Select>
+          </label>
+
+          <a href={exportHref} className="btn-soft">
+            Exportar CSV
+          </a>
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setExportFrom("");
+              setExportTo("");
+              setExportStatus("ALL");
+              setExportTemplate("detalle");
+            }}
+          >
+            Limpiar export
           </Button>
         </CardBody>
       </Card>
