@@ -85,20 +85,20 @@ export default function HomeSocialLinks() {
   if (!items.length) return null;
 
   return (
-    <section className="panel p-5 md:p-6 flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Nuestras redes</h2>
-        <span className="text-xs text-slate-500">Atención directa</span>
+    <section className="panel p-5 md:p-7 flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-2xl font-display font-bold text-slate-900">Nuestras redes</h2>
+        <p className="text-sm text-slate-600">Atencion directa por nuestros canales oficiales.</p>
       </div>
 
-      <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3">
+      <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2.5 md:gap-3">
         {items.map((x) => (
           <a
             key={x.label}
             href={x.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`chip-link justify-center md:justify-start ${x.className}`}
+            className={`chip-link min-h-11 rounded-2xl px-4 md:px-5 text-sm font-semibold justify-center md:justify-start ${x.className}`}
           >
             {x.icon}
             <span>{x.label}</span>

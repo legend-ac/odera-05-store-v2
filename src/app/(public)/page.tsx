@@ -89,8 +89,8 @@ export default async function HomePage() {
       <div className="flex flex-col gap-6 md:gap-8">
         <Section className="py-0">
           <div className="panel-premium bg-brand-mesh overflow-hidden p-4 sm:p-6 md:p-8">
-            <div className="grid gap-5 md:gap-8 lg:grid-cols-[1.12fr_0.88fr] items-start">
-              <div className="flex flex-col gap-4 md:gap-5">
+            <div className="grid gap-6 md:gap-8 lg:grid-cols-[1.08fr_0.92fr] items-start">
+              <div className="flex flex-col gap-5 md:gap-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
                   <Badge tone="info" className="rounded-xl">Compra facil y segura</Badge>
@@ -107,22 +107,22 @@ export default async function HomePage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2.5">
-                  <Link href="/catalog" className="btn-brand">Ver catalogo</Link>
-                  <Link href="/track" className="btn-soft">Seguir mi pedido</Link>
+                <div className="flex flex-wrap gap-3">
+                  <Link href="/catalog" className="btn-brand h-12 px-6 text-base">Ver catalogo</Link>
+                  <Link href="/track" className="btn-soft h-12 px-6 text-base">Seguir mi pedido</Link>
                 </div>
 
                 <div className={quickChips.length === 2 ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-2 sm:grid-cols-3 gap-2.5"}>
                   {quickChips.map((chip) => (
-                    <div key={chip.key} className={`${chip.className} p-3`}>
+                    <div key={chip.key} className={`${chip.className} p-3.5 md:p-4`}>
                       <p className="text-[11px] text-slate-600">{chip.label}</p>
-                      <p className="text-sm font-bold text-slate-900">{chip.value}</p>
+                      <p className="text-base font-bold text-slate-900">{chip.value}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-[0_14px_28px_rgba(15,23,42,0.12)]">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-[0_14px_28px_rgba(15,23,42,0.12)]">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Como funciona</p>
                   <h3 className="mt-2 text-2xl md:text-[1.9rem] font-display font-bold text-slate-900">Compra en 3 pasos</h3>
@@ -131,15 +131,15 @@ export default async function HomePage() {
                   </p>
                 </div>
                 <div className="mt-4 grid gap-2.5">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3.5">
                     <p className="text-sm font-semibold text-slate-900">1. Elige tu producto</p>
                     <p className="text-xs text-slate-600">Selecciona talla, cantidad y agregalo al carrito.</p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3.5">
                     <p className="text-sm font-semibold text-slate-900">2. Paga y sube tu comprobante</p>
                     <p className="text-xs text-slate-600">Aceptamos Yape y Plin con validacion manual segura.</p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3.5">
                     <p className="text-sm font-semibold text-slate-900">3. Recibe seguimiento en tiempo real</p>
                     <p className="text-xs text-slate-600">Estado visible por codigo y atencion por WhatsApp.</p>
                   </div>
