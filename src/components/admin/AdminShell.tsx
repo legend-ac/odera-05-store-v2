@@ -24,6 +24,7 @@ function NavItem({ href, children }: { href: string; children: React.ReactNode }
 
 export default function AdminShell({ email, children }: { email: string; children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   async function logout() {
     try {
@@ -61,6 +62,9 @@ export default function AdminShell({ email, children }: { email: string; childre
             <div>
               <p className="text-sm font-semibold text-slate-900">Administracion de tienda</p>
               <p className="text-xs text-slate-500">Control de productos, pedidos y configuracion general.</p>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Ruta: {pathname === "/dashboard" ? "Inicio" : pathname.replace("/dashboard/", "").replaceAll("/", " / ")}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <div className="text-xs text-slate-600 truncate max-w-[180px] bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5">{email}</div>
@@ -78,4 +82,3 @@ export default function AdminShell({ email, children }: { email: string; childre
     </div>
   );
 }
-

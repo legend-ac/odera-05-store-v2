@@ -33,7 +33,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default async function DashboardHome() {
   let ordersSnap: any = null;
   try {
-    ordersSnap = await adminDb.collection("orders").orderBy("createdAt", "desc").limit(8).get();
+    ordersSnap = await adminDb.collection("orders").orderBy("createdAt", "desc").limit(120).get();
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (!msg.includes("NOT_FOUND")) throw e;
@@ -50,6 +50,12 @@ export default async function DashboardHome() {
       createdAt: fmt(data.createdAt),
     };
   });
+  const pendingCount = orders.filter((o) => o.status === "PENDING_VALIDATION" || o.status === "PAYMENT_SENT").length;
+  const paidCount = orders.filter((o) => o.status === "PAID" || o.status === "SHIPPED" || o.status === "DELIVERED").length;
+  const cancelledCount = orders.filter((o) => o.status === "CANCELLED" || o.status === "CANCELLED_EXPIRED").length;
+  const grossRecent = orders.reduce((acc, o) => acc + Number(o.total ?? 0), 0);
+  const readyToShip = orders.filter((o) => o.status === "PAID").length;
+  const renderOrders = orders.slice(0, 10);
 
   return (
     <div className="flex flex-col gap-5">
@@ -68,10 +74,18 @@ export default async function DashboardHome() {
         </div>
       </div>
 
+      <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-2 text-xs">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-blue-900">Pendientes de validar: {pendingCount}</div>
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-900">Pagados / enviados: {paidCount}</div>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-900">Cancelados: {cancelledCount}</div>
+        <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-violet-900">Listos para enviar: {readyToShip}</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900">Ventas recientes: S/ {grossRecent.toFixed(2)}</div>
+      </div>
+
       <div className="panel overflow-hidden rounded-2xl border-slate-200">
         <div className="px-4 py-3 bg-slate-50 text-sm font-semibold text-slate-900 border-b border-slate-200">Ultimos pedidos</div>
         <div className="divide-y divide-slate-200">
-          {orders.map((o) => (
+          {renderOrders.map((o) => (
             <div key={o.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <div className="font-medium text-slate-900">{o.publicCode}</div>

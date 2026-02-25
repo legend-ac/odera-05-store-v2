@@ -33,8 +33,29 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
   const [s, setS] = useState<Settings>(initial);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const enabledSocials = [s.socialLinks?.instagram, s.socialLinks?.tiktok, s.socialLinks?.facebook, s.socialLinks?.whatsapp].filter(Boolean).length;
+  const paymentConfigured = Boolean((s.paymentInstructions?.yapeNumber ?? "").trim() || (s.paymentInstructions?.plinNumber ?? "").trim());
+  const promoEnabled = Boolean(s.homePromoEnabled);
+  const couponCode = String(s.homePromo?.couponCode ?? "").trim();
+  const freeShippingFrom = Number(s.homePromo?.freeShippingFrom ?? 0);
+  const [issues, setIssues] = useState<string[]>([]);
+
+  function validateInput(data: Settings): string[] {
+    const errs: string[] = [];
+    if (!(data.storeName ?? "").trim()) errs.push("El nombre de tienda es obligatorio.");
+    if (!(data.publicContactEmail ?? "").includes("@")) errs.push("Correo público inválido.");
+    if (promoEnabled && couponCode && couponCode.length < 4) errs.push("El código de cupón debe tener al menos 4 caracteres.");
+    if (promoEnabled && freeShippingFrom < 0) errs.push("Envío gratis desde no puede ser negativo.");
+    return errs;
+  }
 
   async function save() {
+    const errs = validateInput(s);
+    setIssues(errs);
+    if (errs.length) {
+      setMsg("Corrige los campos marcados antes de guardar.");
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {
@@ -53,17 +74,33 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Configuracion de tienda</h1>
-          <p className="text-sm text-slate-600">Controla datos públicos, redes y medios de pago.</p>
+          <p className="text-sm text-slate-600">Controla datos publicos, redes y medios de pago.</p>
         </div>
         <button type="button" onClick={save} disabled={busy} className="btn-brand disabled:opacity-50">
           {busy ? "Guardando..." : "Guardar"}
         </button>
       </div>
 
+      <div className="grid md:grid-cols-3 gap-2 text-xs">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">Promo Home: {s.homePromoEnabled ? "Activa" : "Oculta"}</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">Redes configuradas: {enabledSocials}/4</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">Medios de pago: {paymentConfigured ? "Listos" : "Pendiente"}</div>
+      </div>
+
       {msg ? <div className="panel p-3 text-sm text-slate-700 rounded-2xl border-slate-200">{msg}</div> : null}
+      {issues.length ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <ul className="list-disc pl-5 space-y-1">
+            {issues.map((it) => (
+              <li key={it}>{it}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="grid gap-4">
         <div className="grid gap-1 panel p-3 md:p-4 rounded-2xl border-slate-200">
+          <div className="text-xs font-semibold uppercase tracking-[.12em] text-slate-500">Identidad base</div>
           <label className="text-sm font-medium">Nombre tienda</label>
           <input value={s.storeName} onChange={(e) => setS((p) => ({ ...p, storeName: e.target.value }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
           <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
@@ -78,6 +115,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
         </div>
 
         <div className="grid gap-3 panel p-3 md:p-4 rounded-2xl border-slate-200">
+          <div className="text-xs font-semibold uppercase tracking-[.12em] text-slate-500">Bloque de promocion Home</div>
           <div className="font-medium">Promocion de Home (editable)</div>
           <div className="grid md:grid-cols-2 gap-3">
             <div className="grid gap-1">
@@ -131,6 +169,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
         </div>
 
         <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4 rounded-2xl border-slate-200">
+          <div className="text-xs font-semibold uppercase tracking-[.12em] text-slate-500 md:col-span-2">Canales de contacto</div>
           <div className="grid gap-1">
             <label className="text-sm font-medium">Correo público</label>
             <input value={s.publicContactEmail} onChange={(e) => setS((p) => ({ ...p, publicContactEmail: e.target.value }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
@@ -188,15 +227,15 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
         </div>
 
         <div className="border border-slate-200 rounded-xl p-3 md:p-4 bg-slate-50">
-          <div className="font-medium mb-2">Políticas actuales de compra y envío</div>
+          <div className="font-medium mb-2">Resumen comercial actual</div>
           <ul className="text-sm text-slate-700 list-disc pl-5 space-y-1">
-            <li>Cupon vigente: <b>ODERA10</b> (10% de descuento).</li>
-            <li>Envio gratis desde <b>S/ 200</b> en productos.</li>
-            <li>Si la compra es menor, costo de envio: <b>S/ 10</b>.</li>
+            <li>Bloque promocional en Home: <b>{promoEnabled ? "Activo" : "Oculto"}</b>.</li>
+            {promoEnabled && couponCode ? <li>Cupon visible: <b>{couponCode}</b>.</li> : <li>Cupon visible: <b>No configurado</b>.</li>}
+            {promoEnabled && freeShippingFrom > 0 ? <li>Envio gratis desde: <b>S/ {freeShippingFrom}</b>.</li> : null}
             <li>Tipos de envio: Delivery Lima Metropolitana o Agencia a provincia.</li>
           </ul>
           <div className="text-xs text-slate-500 mt-2">
-            Esta guia es referencial para el equipo que administra pedidos.
+            Este resumen se arma con tu configuracion actual para evitar textos fijos o desactualizados.
           </div>
         </div>
 

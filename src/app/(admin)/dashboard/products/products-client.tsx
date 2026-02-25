@@ -127,6 +127,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [selectedId, setSelectedId] = useState<string>("");
   const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"" | Product["productType"]>("");
   const [draft, setDraft] = useState<Product>(() => emptyProduct());
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -134,12 +135,20 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
   const selected = useMemo(() => products.find((p) => p.id === selectedId) ?? null, [products, selectedId]);
   const filteredProducts = useMemo(() => {
     const token = query.trim().toLowerCase();
-    if (!token) return products;
-    return products.filter((p) =>
-      [p.slug, p.name, p.brand, p.category, p.productType].some((x) => (x ?? "").toLowerCase().includes(token))
-    );
-  }, [products, query]);
+    return products.filter((p) => {
+      if (typeFilter && p.productType !== typeFilter) return false;
+      if (!token) return true;
+      return [p.slug, p.name, p.brand, p.category, p.productType].some((x) => (x ?? "").toLowerCase().includes(token));
+    });
+  }, [products, query, typeFilter]);
   const activeCount = useMemo(() => products.filter((p) => p.status === "active").length, [products]);
+  const typeCounts = useMemo(() => {
+    return {
+      zapatillas: products.filter((p) => p.productType === "zapatillas").length,
+      ropa: products.filter((p) => p.productType === "ropa").length,
+      accesorios: products.filter((p) => p.productType === "accesorios").length,
+    };
+  }, [products]);
 
   function loadSelected() {
     if (!selected) return;
@@ -244,14 +253,29 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-emerald-800">Activos: {activeCount}</div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">Total: {products.length}</div>
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-2 text-blue-800">Zapatillas: {typeCounts.zapatillas}</div>
+          <div className="rounded-xl border border-violet-200 bg-violet-50 px-2.5 py-2 text-violet-800">Ropa: {typeCounts.ropa}</div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-amber-800 col-span-2">Accesorios: {typeCounts.accesorios}</div>
         </div>
 
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por slug, nombre o marca"
-          className="mb-3 h-10 w-full rounded-xl border border-slate-300 px-3 text-sm"
-        />
+        <div className="mb-3 grid gap-2">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por slug, nombre o marca"
+            className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm"
+          />
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as "" | Product["productType"])}
+            className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm bg-white"
+          >
+            <option value="">Todos los tipos</option>
+            <option value="zapatillas">Zapatillas</option>
+            <option value="ropa">Ropa</option>
+            <option value="accesorios">Accesorios</option>
+          </select>
+        </div>
 
         <div className="flex gap-2 mb-3">
           <button
