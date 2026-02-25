@@ -89,27 +89,27 @@ export default async function HomePage() {
       <div className="flex flex-col gap-6 md:gap-8">
         <Section className="py-0">
           <div className="panel-premium bg-brand-mesh overflow-hidden p-4 sm:p-6 md:p-8">
-            <div className="grid gap-6 md:gap-8 lg:grid-cols-[1.08fr_0.92fr] items-start">
-              <div className="flex flex-col gap-5 md:gap-6">
+            <div className="grid gap-5 md:gap-8 lg:grid-cols-[1.08fr_0.92fr] items-start">
+              <div className="flex flex-col gap-4 md:gap-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
                   <Badge tone="info" className="rounded-xl">Compra facil y segura</Badge>
                 </div>
 
                 <div>
-                  <h1 className="text-[2rem] sm:text-[2.6rem] md:text-[3.5rem] leading-[0.94] font-display font-bold text-slate-900">
+                  <h1 className="text-[1.78rem] sm:text-[2.45rem] md:text-[3.5rem] leading-[0.96] font-display font-bold text-slate-900">
                     Zapatillas y ropa
                     <br />
                     con estilo real
                   </h1>
-                  <p className="mt-3 text-[15px] md:text-[17px] text-slate-700 max-w-xl">
+                  <p className="mt-2.5 text-[14px] sm:text-[15px] md:text-[17px] text-slate-700 max-w-xl">
                     Compra con confianza, seguimiento claro y atencion humana. Tu pedido queda registrado desde el inicio para que siempre sepas en que estado esta.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  <Link href="/catalog" className="btn-brand h-12 px-6 text-base">Ver catalogo</Link>
-                  <Link href="/track" className="btn-soft h-12 px-6 text-base">Seguir mi pedido</Link>
+                <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2.5 sm:gap-3">
+                  <Link href="/catalog" className="btn-brand h-11 sm:h-12 px-5 sm:px-6 text-[17px] sm:text-base w-full sm:w-auto">Ver catalogo</Link>
+                  <Link href="/track" className="btn-soft h-11 sm:h-12 px-5 sm:px-6 text-[17px] sm:text-base w-full sm:w-auto">Seguir mi pedido</Link>
                 </div>
 
                 <div className={quickChips.length === 2 ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-2 sm:grid-cols-3 gap-2.5"}>
@@ -122,7 +122,7 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6 shadow-[0_14px_28px_rgba(15,23,42,0.12)]">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 md:p-6 shadow-[0_14px_28px_rgba(15,23,42,0.12)]">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Como funciona</p>
                   <h3 className="mt-2 text-2xl md:text-[1.9rem] font-display font-bold text-slate-900">Compra en 3 pasos</h3>

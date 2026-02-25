@@ -9,7 +9,7 @@ import { formatPEN } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/fields";
-import ProductCard, { type ProductCardData } from "@/components/ProductCard";
+import type { ProductCardData } from "@/components/ProductCard";
 
 type Variant = { id: string; size?: string; color?: string; sku?: string; stock: number };
 type Img = { url: string; alt?: string; isMain: boolean; order: number };
@@ -318,10 +318,27 @@ export default function ProductClient({ slug }: { slug: string }) {
                 {recommended.length ? (
                   <div className="flex flex-col gap-3">
                     <p className="text-sm font-semibold text-slate-900">Recomendados para ti</p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {recommended.map((it) => (
-                        <ProductCard key={it.id} p={it} />
-                      ))}
+                    <div className="flex gap-2.5 overflow-x-auto pb-1 snap-x snap-mandatory">
+                      {recommended.map((it) => {
+                        const price = it.onSale && typeof it.salePrice === "number" ? it.salePrice : it.price;
+                        const img = it.imageUrl || it.imageUrls?.[0] || "";
+                        return (
+                          <Link
+                            key={it.id}
+                            href={`/p/${it.id}`}
+                            className="snap-start shrink-0 w-[160px] rounded-xl border border-slate-200 bg-white p-2.5 hover:border-slate-300"
+                          >
+                            <div className="aspect-[4/3] overflow-hidden rounded-lg bg-slate-100">
+                              {img ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={img} alt={it.name} className="w-full h-full object-cover" />
+                              ) : null}
+                            </div>
+                            <p className="mt-2 text-xs font-semibold text-slate-900 line-clamp-2 min-h-[2rem]">{it.name}</p>
+                            <p className="mt-1 text-sm font-bold text-slate-900">{formatPEN(price)}</p>
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : null}
