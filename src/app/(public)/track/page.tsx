@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -42,9 +42,9 @@ type TrackResponse = {
 
 function statusLabel(status: string) {
   const map: Record<string, string> = {
-    PENDING_VALIDATION: "Pendiente de validacion de pago",
+    PENDING_VALIDATION: "Pendiente de validación de pago",
     SCHEDULED: "Pedido registrado",
-    PAYMENT_SENT: "Pago enviado",
+    PAYMENT_SENT: "Pago reportado",
     PAID: "Pago confirmado",
     PREPARING: "Preparando pedido",
     SHIPPED: "En camino",
@@ -104,7 +104,7 @@ function TrackPageInner() {
       setCopyMsg(`${label} copiado.`);
       setTimeout(() => setCopyMsg(null), 1800);
     } catch {
-      setCopyMsg("No se pudo copiar. Copialo manualmente.");
+      setCopyMsg("No se pudo copiar. Inténtalo de nuevo.");
       setTimeout(() => setCopyMsg(null), 1800);
     }
   }
@@ -119,9 +119,8 @@ function TrackPageInner() {
     try {
       const res = await apiPost<TrackResponse>("/api/track", { publicCode: code, trackingToken: token });
       setData(res);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "No se pudo consultar el pedido.";
-      setError(msg);
+    } catch {
+      setError("No pudimos encontrar tu pedido. Revisa el número y el código de seguimiento.");
     } finally {
       setBusy(false);
     }
@@ -134,7 +133,7 @@ function TrackPageInner() {
       const code = (u.searchParams.get("publicCode") ?? "").trim();
       const token = (u.searchParams.get("trackingToken") ?? "").trim();
       if (!code || !token) {
-        setError("El enlace no contiene publicCode y trackingToken.");
+        setError("El enlace no contiene los datos de seguimiento necesarios.");
         return;
       }
       setError(null);
@@ -142,7 +141,7 @@ function TrackPageInner() {
       setTrackingToken(token);
       void load(code, token);
     } catch {
-      setError("El enlace de seguimiento no es valido.");
+      setError("El enlace de seguimiento no es válido.");
     }
   }
 
@@ -182,7 +181,7 @@ function TrackPageInner() {
         const digits = onlyDigits(raw);
         if (digits) setBusinessWhatsapp(`https://wa.me/${digits}`);
       } catch {
-        // Ignore and keep flow usable.
+        // ignore
       }
     })();
     return () => {
@@ -202,11 +201,11 @@ function TrackPageInner() {
     const total = data.totals?.totalToPay ?? 0;
     return [
       `Pedido: ${data.publicCode}`,
-      `Clave de seguimiento: ${trackingToken || "-"}`,
+      `Código de seguimiento: ${trackingToken || "-"}`,
       `Nombre: ${name}`,
-      `Telefono: ${phone}`,
-      `Direccion: ${address}`,
-      `Metodo de pago: ${paymentMethod}`,
+      `Teléfono: ${phone}`,
+      `Dirección: ${address}`,
+      `Método de pago: ${paymentMethod}`,
       "",
       "Productos:",
       items || "-",
@@ -233,11 +232,10 @@ function TrackPageInner() {
         operationCode,
         method,
       });
-      setPayMsg(res.idempotent ? "Ese codigo ya estaba registrado para este pedido." : "Pago reportado correctamente.");
+      setPayMsg(res.idempotent ? "Ese código ya estaba registrado para este pedido." : "Comprobante enviado correctamente.");
       await load();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "No se pudo registrar el pago.";
-      setPayMsg(`Error: ${msg}`);
+    } catch {
+      setPayMsg("No se pudo registrar el comprobante. Intenta nuevamente.");
     } finally {
       setBusyPay(false);
     }
@@ -247,7 +245,7 @@ function TrackPageInner() {
     <div className="mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Seguimiento de pedido</h1>
-        <p className="text-sm text-slate-600 mt-1">Consulta el estado en tiempo real con tu codigo y clave.</p>
+        <p className="text-sm text-slate-600 mt-1">Consulta el estado de tu compra con tu número de pedido y código de seguimiento.</p>
       </div>
 
       <div className="grid gap-3 border border-slate-200 rounded-2xl p-4 bg-white">
@@ -273,7 +271,7 @@ function TrackPageInner() {
           </div>
         ) : null}
 
-        <label className="text-sm font-medium">Pegar enlace completo de seguimiento (opcional)</label>
+        <label className="text-sm font-medium">Pegar enlace de seguimiento (opcional)</label>
         <div className="flex gap-2">
           <input
             value={trackingUrl}
@@ -286,26 +284,26 @@ function TrackPageInner() {
           </button>
         </div>
 
-        <label className="text-sm font-medium">Codigo de pedido (ejemplo: OD-1234)</label>
+        <label className="text-sm font-medium">Número de pedido (ejemplo: OD-1234)</label>
         <div className="flex gap-2">
           <input
             value={publicCode}
             onChange={(e) => setPublicCode(e.target.value)}
             className="border border-slate-300 rounded-xl px-3 py-2 text-sm w-full"
           />
-          <button type="button" onClick={() => copyText(publicCode, "Codigo")} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
+          <button type="button" onClick={() => copyText(publicCode, "Número")} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
             Copiar
           </button>
         </div>
 
-        <label className="text-sm font-medium">Clave de seguimiento</label>
+        <label className="text-sm font-medium">Código de seguimiento</label>
         <div className="flex gap-2">
           <input
             value={trackingToken}
             onChange={(e) => setTrackingToken(e.target.value)}
             className="border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono w-full"
           />
-          <button type="button" onClick={() => copyText(trackingToken, "Clave")} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
+          <button type="button" onClick={() => copyText(trackingToken, "Código")} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
             Copiar
           </button>
         </div>
@@ -325,7 +323,7 @@ function TrackPageInner() {
             <div className="text-sm px-2 py-1 rounded-xl bg-slate-100">{statusLabel(data.status)}</div>
           </div>
 
-          {data.shipping ? <div className="text-sm text-neutral-700">Envio: {shippingLabel(data.shipping)}</div> : null}
+          {data.shipping ? <div className="text-sm text-neutral-700">Envío: {shippingLabel(data.shipping)}</div> : null}
 
           {data.reservedUntilMs ? (
             <div className="text-sm text-neutral-600">
@@ -355,7 +353,7 @@ function TrackPageInner() {
                 <span>{data.totals.discountAmount ? `-${formatPEN(data.totals.discountAmount)}` : formatPEN(0)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Envio</span>
+                <span>Envío</span>
                 <span>{data.totals.shippingCost ? formatPEN(data.totals.shippingCost) : "Gratis"}</span>
               </div>
               <div className="flex justify-between font-semibold">
@@ -363,7 +361,7 @@ function TrackPageInner() {
                 <span>{formatPEN(data.totals.totalToPay)}</span>
               </div>
               {data.couponCode ? (
-                <div className="text-xs text-emerald-700">Cupon aplicado: {data.couponCode}</div>
+                <div className="text-xs text-emerald-700">Cupón aplicado: {data.couponCode}</div>
               ) : null}
             </>
           ) : null}
@@ -375,7 +373,7 @@ function TrackPageInner() {
                 Enviar mensaje completo por WhatsApp
               </a>
             ) : (
-              <div className="text-xs text-neutral-500">Configura el WhatsApp del negocio en Admin &gt; Configuracion.</div>
+              <div className="text-xs text-neutral-500">WhatsApp no disponible por el momento.</div>
             )}
           </div>
         </div>
@@ -385,7 +383,7 @@ function TrackPageInner() {
         <div className="border border-slate-200 rounded-2xl p-5 flex flex-col gap-3 bg-white">
           <div className="font-medium">Enviar comprobante</div>
 
-          <label className="text-sm font-medium">Codigo de operacion</label>
+          <label className="text-sm font-medium">Código de operación</label>
           <input value={operationCode} onChange={(e) => setOperationCode(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
 
           <label className="text-sm font-medium">Medio de pago</label>
@@ -405,7 +403,7 @@ function TrackPageInner() {
           </button>
 
           {payMsg ? <div className="text-sm text-neutral-700">{payMsg}</div> : null}
-          <div className="text-xs text-neutral-500">Usa el mismo codigo que aparece en tu comprobante.</div>
+          <div className="text-xs text-neutral-500">Usa el mismo código que aparece en tu comprobante.</div>
         </div>
       ) : null}
     </div>

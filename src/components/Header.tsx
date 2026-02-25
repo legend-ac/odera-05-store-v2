@@ -63,12 +63,12 @@ export default function Header() {
             <BrandMark />
             <span className="min-w-0">
               <span className="block text-sm md:text-base font-semibold tracking-tight text-slate-900 truncate">ODERA 05 STORE</span>
-              <span className="hidden md:block text-[11px] text-slate-500">Zapatillas y ropa original</span>
+              <span className="hidden md:block text-[11px] text-slate-500">Tienda oficial de zapatillas y ropa</span>
             </span>
           </Link>
 
           <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 w-full max-w-2xl justify-self-center">
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre, marca o categoria..." className="h-11" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Busca por nombre, marca o categoría..." className="h-11" />
             <button type="submit" className="btn-soft px-4 h-11">Buscar</button>
           </form>
 
@@ -117,4 +117,3 @@ export default function Header() {
     </header>
   );
 }
-

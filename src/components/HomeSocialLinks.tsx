@@ -88,7 +88,7 @@ export default function HomeSocialLinks() {
     <section className="panel p-5 md:p-6 flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xl font-semibold">Nuestras redes</h2>
-        <span className="text-xs text-slate-500">Atencion directa</span>
+        <span className="text-xs text-slate-500">Atención directa</span>
       </div>
 
       <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3">

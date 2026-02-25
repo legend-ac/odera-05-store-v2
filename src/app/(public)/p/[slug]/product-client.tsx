@@ -215,11 +215,11 @@ export default function ProductClient({ slug }: { slug: string }) {
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <p className="text-[11px] uppercase tracking-wide text-slate-500">Compra protegida</p>
-                <p className="text-sm font-medium text-slate-900 mt-1">Pago validado manualmente</p>
+                    <p className="text-sm font-medium text-slate-900 mt-1">Pago validado por el equipo</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <p className="text-[11px] uppercase tracking-wide text-slate-500">Seguimiento</p>
-                <p className="text-sm font-medium text-slate-900 mt-1">Codigo y clave de seguridad</p>
+                    <p className="text-sm font-medium text-slate-900 mt-1">Estado del pedido en tiempo real</p>
               </div>
             </div>
 
@@ -270,7 +270,7 @@ export default function ProductClient({ slug }: { slug: string }) {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-bold text-slate-900">Producto agregado</h2>
-                    <p className="text-sm text-slate-600">Tu producto ya esta en el carrito.</p>
+                    <p className="text-sm text-slate-600">Tu producto ya está en el carrito.</p>
                   </div>
                   <button
                     type="button"

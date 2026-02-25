@@ -9,9 +9,9 @@ import { adminDb } from "@/lib/server/firebaseAdmin";
 export const dynamic = "force-dynamic";
 
 const trustItems = [
-  { title: "Compra protegida", desc: "Pago validado manualmente y pedido auditado.", value: "Segura" },
-  { title: "Atencion real", desc: "Soporte humano por WhatsApp durante todo el proceso.", value: "Humana" },
-  { title: "Envios Peru", desc: "Lima por delivery y provincia por agencia.", value: "Nacional" },
+  { title: "Compra protegida", desc: "Validamos tu pago y te avisamos cada avance.", value: "Segura" },
+  { title: "Atencion directa", desc: "Soporte humano por WhatsApp antes y despues de tu compra.", value: "Humana" },
+  { title: "Envios Peru", desc: "Entrega en Lima y envios por agencia a provincia.", value: "Nacional" },
 ];
 
 export default async function HomePage() {
@@ -48,18 +48,18 @@ export default async function HomePage() {
             <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
               <div className="flex flex-col gap-4 md:gap-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone="success" className="rounded-xl">Marca oficial ODERA 05</Badge>
-                  <Badge tone="info" className="rounded-xl">Experiencia premium</Badge>
+                  <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
+                  <Badge tone="info" className="rounded-xl">Compra facil y segura</Badge>
                 </div>
 
                 <div>
                   <h1 className="text-[2rem] sm:text-[2.6rem] md:text-[3.5rem] leading-[0.94] font-display font-bold text-slate-900">
                     Zapatillas y ropa
                     <br />
-                    con identidad real
+                    con estilo real
                   </h1>
                   <p className="mt-3 text-[15px] md:text-[17px] text-slate-700 max-w-xl">
-                    Compra con diseño moderno, seguimiento claro y atención humana. Cada pedido queda registrado de forma segura desde el inicio.
+                    Compra con confianza, seguimiento claro y atencion humana. Tu pedido queda registrado desde el inicio para que siempre sepas en que estado esta.
                   </p>
                 </div>
 
@@ -88,16 +88,16 @@ export default async function HomePage() {
                 <div className="rounded-xl border border-white/35 p-4 bg-white/5">
                   <p className="text-[11px] uppercase tracking-[.16em] text-white/85">Identidad oficial</p>
                   <p className="mt-2 text-3xl font-display font-bold">ODERA 05</p>
-                  <p className="text-sm text-white/90 mt-1">Zapatillas & ropa</p>
+                  <p className="text-sm text-white/90 mt-1">Zapatillas y ropa</p>
                   <div className="mt-4 h-px bg-white/30" />
                   <p className="mt-4 text-sm text-white/90 leading-relaxed">
-                    Diseño pensado para convertir mejor en celular y escritorio, con una experiencia limpia y confiable.
+                    Productos originales, pago seguro y entrega con seguimiento en cada etapa.
                   </p>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Stock controlado</span>
-                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Pago auditado</span>
+                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Stock actualizado</span>
+                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Pago validado</span>
                   <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Canales oficiales</span>
                   <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Soporte directo</span>
                 </div>
@@ -150,4 +150,3 @@ export default async function HomePage() {
     </Container>
   );
 }
-

@@ -172,8 +172,12 @@ export default function CheckoutPage() {
       setReceiptUrl(url);
       notify.success("Comprobante subido");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "No se pudo subir el comprobante.";
-      setError(msg);
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("CLOUDINARY_NOT_CONFIGURED")) {
+        setError("El sistema de comprobantes está en mantenimiento temporal.");
+      } else {
+        setError("No se pudo subir el comprobante. Intenta con otra imagen o reintenta en unos segundos.");
+      }
       setReceiptUrl("");
     } finally {
       setReceiptBusy(false);
@@ -235,10 +239,10 @@ export default function CheckoutPage() {
     <div className="mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Finalizar compra</h1>
-        <p className="text-sm text-slate-600 mt-1">Revisa tus datos para registrar el pedido sin errores.</p>
+        <p className="text-sm text-slate-600 mt-1">Completa tus datos para confirmar tu compra de forma segura.</p>
       </div>
 
-      {!items.length ? <div className="text-sm text-neutral-600">Tu carrito esta vacio.</div> : null}
+      {!items.length ? <div className="text-sm text-neutral-600">Tu carrito está vacío.</div> : null}
 
       <div className="panel p-4 grid gap-3 rounded-2xl border-slate-200">
         <div className="font-medium text-slate-900">1) Datos personales</div>
@@ -251,7 +255,7 @@ export default function CheckoutPage() {
       </div>
 
       <div className="panel p-4 flex flex-col gap-3 rounded-2xl border-slate-200">
-        <div className="font-medium text-slate-900">2) Tipo de envio y direccion</div>
+        <div className="font-medium text-slate-900">2) Tipo de envío y dirección</div>
         <div className="flex flex-col gap-2 text-sm">
           <label className="flex items-center gap-2">
             <input type="radio" checked={shippingMethod === "LIMA_DELIVERY"} onChange={() => setShippingMethod("LIMA_DELIVERY")} />
@@ -259,11 +263,11 @@ export default function CheckoutPage() {
           </label>
           <label className="flex items-center gap-2">
             <input type="radio" checked={shippingMethod === "AGENCIA_PROVINCIA"} onChange={() => setShippingMethod("AGENCIA_PROVINCIA")} />
-            Provincia - Envio por agencia
+            Provincia - Envío por agencia
           </label>
         </div>
 
-        <label className="text-sm font-medium">Nombre de quien recibe/recoge</label>
+        <label className="text-sm font-medium">Nombre de quien recibe o recoge</label>
         <input value={receiverName} onChange={(e) => setReceiverName(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
 
         <div className="grid md:grid-cols-2 gap-3">
@@ -281,7 +285,7 @@ export default function CheckoutPage() {
           <>
             <label className="text-sm font-medium">Distrito</label>
             <input value={district} onChange={(e) => setDistrict(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Direccion</label>
+            <label className="text-sm font-medium">Dirección</label>
             <input value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             <label className="text-sm font-medium">Referencia (opcional)</label>
             <input value={addressReference} onChange={(e) => setAddressReference(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
@@ -294,7 +298,7 @@ export default function CheckoutPage() {
             <input value={province} onChange={(e) => setProvince(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             <label className="text-sm font-medium">Agencia (ej. Shalom)</label>
             <input value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Direccion de agencia</label>
+            <label className="text-sm font-medium">Dirección de agencia</label>
             <input value={agencyAddress} onChange={(e) => setAgencyAddress(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
             <label className="text-sm font-medium">Referencia (opcional)</label>
             <input value={agencyReference} onChange={(e) => setAgencyReference(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
@@ -318,14 +322,14 @@ export default function CheckoutPage() {
           {payMethod === "YAPE" ? (
             <>
               <div className="font-medium">Datos para pagar por Yape</div>
-              <div>Nombre: {paymentInstructions.yapeName?.trim() || "Configurar en Admin > Settings"}</div>
-              <div>Numero: {paymentInstructions.yapeNumber?.trim() || "Configurar en Admin > Settings"}</div>
+              <div>Nombre: {paymentInstructions.yapeName?.trim() || "Disponible al momento de confirmar"}</div>
+              <div>Número: {paymentInstructions.yapeNumber?.trim() || "Disponible al momento de confirmar"}</div>
             </>
           ) : (
             <>
               <div className="font-medium">Datos para pagar por Plin</div>
-              <div>Nombre: {paymentInstructions.plinName?.trim() || "Configurar en Admin > Settings"}</div>
-              <div>Numero: {paymentInstructions.plinNumber?.trim() || "Configurar en Admin > Settings"}</div>
+              <div>Nombre: {paymentInstructions.plinName?.trim() || "Disponible al momento de confirmar"}</div>
+              <div>Número: {paymentInstructions.plinNumber?.trim() || "Disponible al momento de confirmar"}</div>
             </>
           )}
         </div>
@@ -421,7 +425,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {error ? <div className="text-sm text-red-600">{error}</div> : null}
+      {error ? <div className="text-sm text-red-600">No pudimos procesar tu solicitud. Verifica los datos e inténtalo nuevamente.</div> : null}
 
       <button type="button" disabled={disabled} onClick={submit} className="btn-brand disabled:opacity-50">
         {busy ? "Confirmando pedido..." : "Confirmar pedido"}

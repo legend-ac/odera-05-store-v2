@@ -76,7 +76,7 @@ export default function CartPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Carrito de compras</h1>
           <p className="text-sm text-slate-600 mt-1">
-            {items.length ? `${totalItems} producto(s) listos para continuar tu compra.` : "Tu carrito esta vacio por ahora."}
+            {items.length ? `${totalItems} producto(s) listos para continuar tu compra.` : "Tu carrito está vacío por ahora."}
           </p>
         </div>
         <Button type="button" variant="secondary" onClick={clear} disabled={!items.length} className="rounded-xl">
@@ -90,11 +90,11 @@ export default function CartPage() {
         <Card className="rounded-3xl">
           <CardBody className="text-sm text-slate-600 py-10">
             <div className="max-w-md mx-auto text-center flex flex-col gap-3">
-              <div className="text-base font-semibold text-slate-900">Aun no agregaste productos</div>
-              <p>Explora el catalogo y agrega tus favoritos para finalizar el pedido.</p>
+              <div className="text-base font-semibold text-slate-900">Aún no agregaste productos</div>
+              <p>Explora el catálogo y agrega tus favoritos para finalizar tu compra.</p>
               <div>
                 <Link href="/catalog" className="btn-brand inline-flex">
-                  Ver catalogo
+                  Ver catálogo
                 </Link>
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function CartPage() {
 
       {items.length ? (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-800">
-          Compra protegida: pedido registrado, validacion de pago manual y seguimiento por codigo.
+          Compra protegida: pedido registrado, validación de pago manual y seguimiento por número de pedido.
         </div>
       ) : null}
     </div>
