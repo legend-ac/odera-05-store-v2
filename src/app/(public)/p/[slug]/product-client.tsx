@@ -327,12 +327,12 @@ export default function ProductClient({ slug }: { slug: string }) {
       {showCartModal ? (
         <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/55 p-2 sm:items-center sm:p-6">
           <div className="w-full max-w-[390px] sm:max-w-4xl">
-            <Card className="max-h-[90vh] overflow-hidden rounded-2xl sm:max-h-[92vh]">
+            <Card className="max-h-[92vh] overflow-hidden rounded-2xl sm:max-h-[92vh]">
               <CardBody className="flex min-h-0 flex-col gap-4 p-4 sm:gap-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-xl font-bold text-slate-900">Producto agregado</h2>
-                    <p className="text-sm text-slate-600">Tu producto ya está en el carrito.</p>
+                    <h2 className="text-[1.72rem] font-bold leading-none text-slate-900 sm:text-xl sm:leading-normal">Producto agregado</h2>
+                    <p className="mt-1 text-[15px] leading-snug text-slate-600 sm:mt-0 sm:text-sm sm:leading-normal">Tu producto ya está en el carrito.</p>
                   </div>
                   <button
                     type="button"
@@ -352,20 +352,20 @@ export default function ProductClient({ slug }: { slug: string }) {
                       ) : null}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-slate-900">{String(data.name ?? "")}</p>
-                      <p className="text-sm text-slate-500">Variante: {selectedVariant?.size ? `Talla ${selectedVariant.size}` : selectedVariant?.id ?? "-"}</p>
+                      <p className="line-clamp-2 text-[1.16rem] font-semibold leading-tight text-slate-900 sm:text-base sm:leading-normal">{String(data.name ?? "")}</p>
+                      <p className="mt-1 text-[15px] leading-tight text-slate-500 sm:mt-0 sm:text-sm sm:leading-normal">Variante: {selectedVariant?.size ? `Talla ${selectedVariant.size}` : selectedVariant?.id ?? "-"}</p>
                       <div className="mt-2 inline-flex items-center rounded-lg border border-slate-200">
                         <button
                           type="button"
-                          className="px-3 py-1.5 text-sm"
+                          className="h-9 px-3 text-sm"
                           onClick={() => setAddedQty((qv) => Math.max(1, qv - 1))}
                         >
                           -
                         </button>
-                        <span className="border-x border-slate-200 px-3 py-1.5 text-sm">{addedQty}</span>
+                        <span className="inline-flex h-9 items-center border-x border-slate-200 px-3 text-sm">{addedQty}</span>
                         <button
                           type="button"
-                          className="px-3 py-1.5 text-sm"
+                          className="h-9 px-3 text-sm"
                           onClick={() => setAddedQty((qv) => Math.min(50, qv + 1))}
                         >
                           +
@@ -373,14 +373,14 @@ export default function ProductClient({ slug }: { slug: string }) {
                       </div>
                     </div>
                     <div className="col-span-2 flex items-end justify-between border-t border-slate-200 pt-2 sm:col-span-1 sm:block sm:border-t-0 sm:pt-0 sm:text-right">
-                      <p className="text-xs text-slate-500">Subtotal</p>
-                      <p className="text-[1.75rem] font-bold leading-none sm:text-2xl">{formatPEN(modalSubtotal)}</p>
+                      <p className="text-[13px] text-slate-500 sm:text-xs">Subtotal</p>
+                      <p className="text-[2rem] font-bold leading-none tracking-[-0.01em] sm:text-2xl">{formatPEN(modalSubtotal)}</p>
                     </div>
                   </div>
 
                   {recommended.length ? (
                     <div className="flex flex-col gap-3">
-                      <p className="text-sm font-semibold text-slate-900">Recomendados para ti</p>
+                      <p className="text-[1.12rem] font-semibold leading-tight text-slate-900 sm:text-sm sm:leading-normal">Recomendados para ti</p>
                       <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:gap-2.5 sm:overflow-visible">
                         {recommended.map((it) => {
                           const price = it.onSale && typeof it.salePrice === "number" ? it.salePrice : it.price;
@@ -389,7 +389,7 @@ export default function ProductClient({ slug }: { slug: string }) {
                             <Link
                               key={it.id}
                               href={`/p/${it.id}`}
-                              className="w-[136px] shrink-0 snap-start rounded-xl border border-slate-200 bg-white p-2 hover:border-slate-300 sm:w-auto sm:p-2.5"
+                              className="w-[144px] shrink-0 snap-start rounded-xl border border-slate-200 bg-white p-2 hover:border-slate-300 sm:w-auto sm:p-2.5"
                             >
                               <div className="aspect-[3/2] overflow-hidden rounded-lg bg-slate-100 sm:aspect-[4/3]">
                                 {img ? (
@@ -398,7 +398,7 @@ export default function ProductClient({ slug }: { slug: string }) {
                                 ) : null}
                               </div>
                               <p className="mt-2 line-clamp-2 text-xs font-semibold leading-tight text-slate-900 sm:min-h-[2rem] sm:text-sm">{it.name}</p>
-                              <p className="mt-1 text-sm font-bold text-slate-900">{formatPEN(price)}</p>
+                              <p className="mt-1 text-[1.06rem] font-bold leading-tight text-slate-900 sm:text-sm sm:leading-normal">{formatPEN(price)}</p>
                             </Link>
                           );
                         })}
@@ -407,7 +407,7 @@ export default function ProductClient({ slug }: { slug: string }) {
                   ) : null}
                 </div>
 
-                <div className="sticky bottom-0 z-10 -mx-4 mt-1 flex flex-col gap-2 border-t border-slate-200 bg-white px-4 pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:static sm:z-auto sm:mx-0 sm:flex-row sm:justify-end sm:bg-transparent sm:px-0 sm:pb-0">
+                <div className="sticky bottom-0 z-10 -mx-4 mt-1 flex flex-col gap-2 border-t border-slate-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:z-auto sm:mx-0 sm:flex-row sm:justify-end sm:bg-transparent sm:px-0 sm:pb-0">
                   <Button type="button" variant="secondary" onClick={() => setShowCartModal(false)} className="w-full sm:w-auto">
                     Seguir comprando
                   </Button>
