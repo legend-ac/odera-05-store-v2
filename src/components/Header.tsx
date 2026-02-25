@@ -68,7 +68,7 @@ export default function Header() {
           </Link>
 
           <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 w-full max-w-2xl justify-self-center">
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Busca por nombre, marca o categoría..." className="h-11" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Busca por nombre, marca o categoria..." className="h-11" />
             <button type="submit" className="btn-soft px-4 h-11">Buscar</button>
           </form>
 
@@ -100,16 +100,10 @@ export default function Header() {
 
         {open ? (
           <div className="lg:hidden mt-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <form onSubmit={submitSearch} className="flex items-center gap-2">
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar productos..." />
-              <button type="submit" className="btn-soft px-4 py-2.5">Buscar</button>
-            </form>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Link href="/catalog" className="chip-link justify-center" onClick={() => setOpen(false)}>Catalogo</Link>
               <Link href="/track" className="chip-link justify-center" onClick={() => setOpen(false)}>Mis pedidos</Link>
-              <Link href="/cart" className="chip-link justify-center col-span-2" onClick={() => setOpen(false)}>
-                Carrito {count > 0 ? `(${count})` : ""}
-              </Link>
+              <Link href="/" className="chip-link justify-center col-span-2" onClick={() => setOpen(false)}>Inicio</Link>
             </div>
           </div>
         ) : null}

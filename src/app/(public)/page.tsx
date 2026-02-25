@@ -9,9 +9,9 @@ import { adminDb } from "@/lib/server/firebaseAdmin";
 export const dynamic = "force-dynamic";
 
 const trustItems = [
-  { title: "Compra protegida", desc: "Validamos tu pago y te avisamos cada avance.", value: "Segura" },
-  { title: "Atencion directa", desc: "Soporte humano por WhatsApp antes y despues de tu compra.", value: "Humana" },
-  { title: "Envios Peru", desc: "Entrega en Lima y envios por agencia a provincia.", value: "Nacional" },
+  { title: "Pago por Yape o Plin", desc: "Elige tu metodo y envia tu comprobante en minutos.", value: "Simple" },
+  { title: "Atencion por WhatsApp", desc: "Te ayudamos antes y despues de tu compra.", value: "Directa" },
+  { title: "Despacho nacional", desc: "Entrega en Lima y envios por agencia a provincia.", value: "Peru" },
 ];
 
 export default async function HomePage() {
@@ -111,11 +111,8 @@ export default async function HomePage() {
                   </p>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Stock actualizado</span>
-                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Pago validado</span>
-                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Canales oficiales</span>
-                  <span className="rounded-lg bg-white/12 px-2 py-1.5 text-xs">Soporte directo</span>
+                <div className="mt-4 text-xs text-white/85">
+                  Compra segura, seguimiento claro y soporte por canales oficiales.
                 </div>
               </div>
             </div>
