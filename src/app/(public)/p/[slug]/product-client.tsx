@@ -144,7 +144,7 @@ export default function ProductClient({ slug }: { slug: string }) {
 
   return (
     <>
-      <div className="mx-auto grid max-w-6xl gap-3 px-3 py-4 sm:gap-6 sm:px-4 sm:py-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] lg:py-8">
+      <div className="mx-auto grid max-w-6xl gap-3 px-2.5 py-3 sm:gap-6 sm:px-4 sm:py-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] lg:py-8">
         <Card className="overflow-hidden">
           <CardBody className="p-0">
             <div className="relative flex h-[180px] items-center justify-center overflow-hidden bg-slate-100 sm:h-[260px] md:h-[320px] lg:h-[360px] xl:h-[390px]">
@@ -204,40 +204,40 @@ export default function ProductClient({ slug }: { slug: string }) {
         </Card>
 
         <Card className="lg:sticky lg:top-24 lg:self-start">
-          <CardBody className="flex flex-col gap-4 p-4 sm:gap-5 sm:p-6">
+          <CardBody className="flex flex-col gap-3.5 p-3.5 sm:gap-5 sm:p-6">
             <div className="flex flex-col gap-1">
-              <h1 className="text-[clamp(1.75rem,6.6vw,3rem)] font-bold leading-[1.05] tracking-[-0.01em]">{String(data.name ?? "")}</h1>
+              <h1 className="text-[clamp(1.62rem,6.2vw,3rem)] font-bold leading-[1.05] tracking-[-0.01em]">{String(data.name ?? "")}</h1>
               <div className="text-sm text-slate-600">{String(data.brand ?? "")}</div>
             </div>
 
-            <div className="text-[2rem] font-bold leading-none sm:text-4xl">{formatPEN(unitPrice)}</div>
+            <div className="text-[1.85rem] font-bold leading-none sm:text-4xl">{formatPEN(unitPrice)}</div>
 
             {specsText ? (
               <div className="rounded-xl border border-slate-200 bg-white">
                 <button
                   type="button"
                   onClick={() => setShowSpecs((v) => !v)}
-                  className="flex w-full items-center justify-between px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between px-3.5 py-2.5 text-left sm:px-4 sm:py-3"
                 >
                   <span className="text-sm font-semibold text-slate-900">Especificaciones</span>
                   <span className="text-xs font-medium text-slate-600">{showSpecs ? "Ocultar" : "Ver"}</span>
                 </button>
                 {showSpecs ? (
-                  <div className="border-t border-slate-200 px-4 pb-4 pt-3">
+                  <div className="border-t border-slate-200 px-3.5 pb-3.5 pt-2.5 sm:px-4 sm:pb-4 sm:pt-3">
                     <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{specsText}</div>
                   </div>
                 ) : null}
               </div>
             ) : null}
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 sm:p-3">
                 <p className="text-[11px] uppercase tracking-wide text-slate-500">Compra protegida</p>
-                <p className="mt-1 text-sm font-medium text-slate-900">Pago validado por el equipo</p>
+                <p className="mt-1 text-[13px] font-medium leading-snug text-slate-900 sm:text-sm sm:leading-normal">Pago validado por el equipo</p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 sm:p-3">
                 <p className="text-[11px] uppercase tracking-wide text-slate-500">Seguimiento</p>
-                <p className="mt-1 text-sm font-medium text-slate-900">Estado del pedido en tiempo real</p>
+                <p className="mt-1 text-[13px] font-medium leading-snug text-slate-900 sm:text-sm sm:leading-normal">Estado del pedido en tiempo real</p>
               </div>
             </div>
 
