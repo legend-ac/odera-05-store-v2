@@ -8,12 +8,6 @@ import { adminDb } from "@/lib/server/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
 
-const trustItems = [
-  { title: "Pago por Yape o Plin", desc: "Elige tu metodo y envia tu comprobante en minutos.", value: "Simple" },
-  { title: "Atencion por WhatsApp", desc: "Te ayudamos antes y despues de tu compra.", value: "Directa" },
-  { title: "Despacho nacional", desc: "Entrega en Lima y envios por agencia a provincia.", value: "Peru" },
-];
-
 const DEFAULT_CATEGORY_CARDS = [
   { key: "zapatillas", label: "Zapatillas", subtitle: "Running, urbano y futbol", cta: "Ver zapatillas", enabled: true },
   { key: "ropa", label: "Ropa", subtitle: "Poleras, casacas y conjuntos", cta: "Ver ropa", enabled: true },
@@ -95,7 +89,7 @@ export default async function HomePage() {
       <div className="flex flex-col gap-6 md:gap-8">
         <Section className="py-0">
           <div className="panel-premium bg-brand-mesh overflow-hidden p-4 sm:p-6 md:p-8">
-            <div className="grid gap-5 md:grid-cols-[1.12fr_0.88fr]">
+            <div className="grid gap-5 md:gap-8 lg:grid-cols-[1.12fr_0.88fr] items-start">
               <div className="flex flex-col gap-4 md:gap-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
@@ -128,22 +122,37 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-900/95 p-2 md:p-3 shadow-[0_18px_35px_rgba(31,77,31,0.35)] self-start overflow-hidden">
-                <Image src="/brand/hero-home-desktop.svg" alt="Visual oficial ODERA 05" width={1600} height={900} className="hidden sm:block w-full h-auto rounded-xl border border-white/20" priority />
-                <Image src="/brand/hero-home-mobile.svg" alt="Visual oficial ODERA 05" width={1080} height={1350} className="block sm:hidden w-full h-auto rounded-xl border border-white/20" priority />
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {trustItems.map((item) => (
-                <div key={item.title} className="rounded-xl border border-slate-200 bg-white/85 p-3">
-                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                  <p className="text-xs text-slate-600 mt-1">{item.desc}</p>
-                  <span className="mt-2 inline-flex rounded-lg border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                    {item.value}
-                  </span>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-[0_14px_28px_rgba(15,23,42,0.12)]">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Como funciona</p>
+                  <h3 className="mt-2 text-2xl md:text-[1.9rem] font-display font-bold text-slate-900">Compra en 3 pasos</h3>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Flujo simple para el cliente: elegir, pagar y seguir el pedido.
+                  </p>
                 </div>
-              ))}
+                <div className="mt-4 grid gap-2.5">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                    <p className="text-sm font-semibold text-slate-900">1. Elige tu producto</p>
+                    <p className="text-xs text-slate-600">Selecciona talla, cantidad y agrégalo al carrito.</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                    <p className="text-sm font-semibold text-slate-900">2. Paga y sube tu comprobante</p>
+                    <p className="text-xs text-slate-600">Aceptamos Yape y Plin con validación manual segura.</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                    <p className="text-sm font-semibold text-slate-900">3. Recibe seguimiento en tiempo real</p>
+                    <p className="text-xs text-slate-600">Estado visible por código y atención por WhatsApp.</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2.5">
+                  <Link href="/catalog" className="btn-brand w-full justify-center">
+                    Ver catalogo
+                  </Link>
+                  <Link href="/track" className="btn-soft w-full justify-center">
+                    Seguir pedido
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </Section>
