@@ -34,6 +34,10 @@ body {
   scroll-behavior: smooth;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 h1,
 h2,
 h3,
@@ -91,7 +95,7 @@ a:hover {
   }
 
   .btn-brand {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition duration-200;
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-[15px] leading-tight font-semibold text-white transition duration-200 sm:min-h-10 sm:text-sm;
     background: linear-gradient(135deg, var(--brand-700), var(--brand-500));
   }
 
@@ -101,7 +105,7 @@ a:hover {
   }
 
   .btn-soft {
-    @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition duration-200;
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[15px] leading-tight font-medium text-slate-700 transition duration-200 sm:min-h-10 sm:text-sm;
   }
 
   .btn-soft:hover {
@@ -109,7 +113,7 @@ a:hover {
   }
 
   .chip-link {
-    @apply inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition duration-200;
+    @apply inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[15px] leading-tight font-medium text-slate-700 transition duration-200 sm:min-h-10 sm:text-sm;
   }
 
   .chip-link:hover {

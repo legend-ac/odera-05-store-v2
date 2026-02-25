@@ -17,7 +17,7 @@ export function Button({ className, variant = "primary", ...props }: ButtonProps
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-[15px] leading-tight font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:text-sm",
         styles[variant],
         className
       )}
