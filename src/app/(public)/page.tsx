@@ -133,24 +133,21 @@ export default async function HomePage() {
                 <div className="mt-4 grid gap-2.5">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
                     <p className="text-sm font-semibold text-slate-900">1. Elige tu producto</p>
-                    <p className="text-xs text-slate-600">Selecciona talla, cantidad y agrégalo al carrito.</p>
+                    <p className="text-xs text-slate-600">Selecciona talla, cantidad y agregalo al carrito.</p>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
                     <p className="text-sm font-semibold text-slate-900">2. Paga y sube tu comprobante</p>
-                    <p className="text-xs text-slate-600">Aceptamos Yape y Plin con validación manual segura.</p>
+                    <p className="text-xs text-slate-600">Aceptamos Yape y Plin con validacion manual segura.</p>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
                     <p className="text-sm font-semibold text-slate-900">3. Recibe seguimiento en tiempo real</p>
-                    <p className="text-xs text-slate-600">Estado visible por código y atención por WhatsApp.</p>
+                    <p className="text-xs text-slate-600">Estado visible por codigo y atencion por WhatsApp.</p>
                   </div>
                 </div>
-                <div className="mt-4 flex gap-2.5">
-                  <Link href="/catalog" className="btn-brand w-full justify-center">
-                    Ver catalogo
-                  </Link>
-                  <Link href="/track" className="btn-soft w-full justify-center">
-                    Seguir pedido
-                  </Link>
+                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p className="text-xs text-slate-700">
+                    Sigue tu pedido cuando quieras desde la opcion <span className="font-semibold">Seguir mi pedido</span>.
+                  </p>
                 </div>
               </div>
             </div>
@@ -222,3 +219,4 @@ export default async function HomePage() {
     </Container>
   );
 }
+
