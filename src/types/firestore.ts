@@ -1,5 +1,5 @@
 export type ProductStatus = "active" | "archived";
-export type ProductType = "zapatillas" | "ropa" | "accesorios";
+export type ProductType = string;
 
 export type ProductImage = {
   url: string;
@@ -96,9 +96,23 @@ export type OrderDoc = {
 export type StoreSettingsDoc = {
   storeName: string;
   homePromoEnabled?: boolean;
+  homePromo?: {
+    title?: string;
+    message?: string;
+    rightNote?: string;
+    couponCode?: string;
+    freeShippingFrom?: number;
+  };
   publicContactEmail: string;
   publicWhatsapp: string;
   socialLinks?: { instagram?: string; tiktok?: string; facebook?: string; whatsapp?: string };
   paymentInstructions: { yapeName?: string; yapeNumber?: string; plinName?: string; plinNumber?: string };
+  productTypes?: Array<{
+    key: string;
+    label: string;
+    subtitle?: string;
+    cta?: string;
+    enabled?: boolean;
+  }>;
   updatedAt: unknown;
 };

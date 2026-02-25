@@ -4,6 +4,12 @@ export const maxDuration = 60;
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import SettingsClient from "./settings-client";
 
+const DEFAULT_PRODUCT_TYPES = [
+  { key: "zapatillas", label: "Zapatillas", subtitle: "Running, urbano y futbol", cta: "Ver zapatillas", enabled: true },
+  { key: "ropa", label: "Ropa", subtitle: "Poleras, casacas y conjuntos", cta: "Ver ropa", enabled: true },
+  { key: "accesorios", label: "Accesorios", subtitle: "Mochilas, medias y mas", cta: "Ver accesorios", enabled: true },
+];
+
 export default async function SettingsPage() {
   let snap: any = null;
   try {
@@ -39,6 +45,15 @@ export default async function SettingsPage() {
           plinName: String(data.paymentInstructions?.plinName ?? ""),
           plinNumber: String(data.paymentInstructions?.plinNumber ?? ""),
         },
+        productTypes: Array.isArray(data.productTypes) && data.productTypes.length
+          ? data.productTypes.map((x: any) => ({
+              key: String(x?.key ?? ""),
+              label: String(x?.label ?? ""),
+              subtitle: String(x?.subtitle ?? ""),
+              cta: String(x?.cta ?? ""),
+              enabled: Boolean(x?.enabled ?? true),
+            }))
+          : DEFAULT_PRODUCT_TYPES,
       }
       : {
           storeName: "ODERA 05 STORE",
@@ -54,6 +69,7 @@ export default async function SettingsPage() {
           publicWhatsapp: "",
           socialLinks: { instagram: "", tiktok: "", facebook: "", whatsapp: "" },
           paymentInstructions: { yapeName: "", yapeNumber: "", plinName: "", plinNumber: "" },
+          productTypes: DEFAULT_PRODUCT_TYPES,
         };
 
   return <SettingsClient initial={initial} />;

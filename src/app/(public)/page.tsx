@@ -13,31 +13,14 @@ const trustItems = [
   { title: "Despacho nacional", desc: "Entrega en Lima y envios por agencia a provincia.", value: "Peru" },
 ];
 
-const categoryCards = [
-  {
-    title: "Zapatillas",
-    href: "/catalog?type=zapatillas",
-    subtitle: "Running, urbano y futbol",
-    tone: "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/70",
-    cta: "Ver zapatillas",
-  },
-  {
-    title: "Ropa",
-    href: "/catalog?type=ropa",
-    subtitle: "Poleras, casacas y conjuntos",
-    tone: "border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100/70",
-    cta: "Ver ropa",
-  },
-  {
-    title: "Accesorios",
-    href: "/catalog?type=accesorios",
-    subtitle: "Mochilas, medias y mas",
-    tone: "border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100",
-    cta: "Ver accesorios",
-  },
+const DEFAULT_CATEGORY_CARDS = [
+  { key: "zapatillas", label: "Zapatillas", subtitle: "Running, urbano y futbol", cta: "Ver zapatillas", enabled: true },
+  { key: "ropa", label: "Ropa", subtitle: "Poleras, casacas y conjuntos", cta: "Ver ropa", enabled: true },
+  { key: "accesorios", label: "Accesorios", subtitle: "Mochilas, medias y mas", cta: "Ver accesorios", enabled: true },
 ];
 
 export default async function HomePage() {
+  let categoryCards: Array<{ key: string; label: string; subtitle: string; cta: string; enabled: boolean }> = DEFAULT_CATEGORY_CARDS;
   let homePromoEnabled = true;
   let homePromo = {
     title: "Promocion activa",
@@ -58,6 +41,18 @@ export default async function HomePage() {
         couponCode: String(storeData?.homePromo?.couponCode ?? homePromo.couponCode),
         freeShippingFrom: Number(storeData?.homePromo?.freeShippingFrom ?? homePromo.freeShippingFrom),
       };
+      if (Array.isArray(storeData?.productTypes) && storeData.productTypes.length) {
+        categoryCards = storeData.productTypes
+          .filter((x: any) => Boolean(x?.enabled ?? true))
+          .map((x: any) => ({
+            key: String(x?.key ?? ""),
+            label: String(x?.label ?? ""),
+            subtitle: String(x?.subtitle ?? ""),
+            cta: String(x?.cta ?? ""),
+            enabled: Boolean(x?.enabled ?? true),
+          }))
+          .filter((x: any) => x.key && x.label);
+      }
     }
   } catch {
     homePromoEnabled = true;
@@ -180,16 +175,25 @@ export default async function HomePage() {
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
-            {categoryCards.map((item) => (
-              <Link key={item.title} href={item.href} className={`group rounded-2xl border p-4 md:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${item.tone}`}>
+            {categoryCards.map((item, idx) => {
+              const tones = [
+                "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/70",
+                "border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100/70",
+                "border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100",
+                "border-violet-200 bg-gradient-to-br from-violet-50 via-white to-violet-100/70",
+              ];
+              const tone = tones[idx % tones.length];
+              return (
+              <Link key={item.key} href={`/catalog?type=${encodeURIComponent(item.key)}`} className={`group rounded-2xl border p-4 md:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${tone}`}>
                 <p className="text-xs font-semibold uppercase tracking-[.12em] text-slate-600">Categoria</p>
-                <h3 className="mt-2 text-2xl font-display font-bold text-slate-900">{item.title}</h3>
-                <p className="mt-1.5 text-sm text-slate-700">{item.subtitle}</p>
+                <h3 className="mt-2 text-2xl font-display font-bold text-slate-900">{item.label}</h3>
+                <p className="mt-1.5 text-sm text-slate-700">{item.subtitle || "Productos destacados en esta linea."}</p>
                 <span className="mt-4 inline-flex h-10 items-center rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 group-hover:bg-slate-100 transition-colors">
-                  {item.cta}
+                  {item.cta || `Ver ${item.label.toLowerCase()}`}
                 </span>
               </Link>
-            ))}
+            );
+            })}
           </div>
         </Section>
 

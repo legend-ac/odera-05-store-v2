@@ -27,6 +27,13 @@ type Settings = {
     plinName?: string;
     plinNumber?: string;
   };
+  productTypes?: {
+    key: string;
+    label: string;
+    subtitle?: string;
+    cta?: string;
+    enabled?: boolean;
+  }[];
 };
 
 export default function SettingsClient({ initial }: { initial: Settings }) {
@@ -39,6 +46,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
   const couponCode = String(s.homePromo?.couponCode ?? "").trim();
   const freeShippingFrom = Number(s.homePromo?.freeShippingFrom ?? 0);
   const [issues, setIssues] = useState<string[]>([]);
+  const productTypes = Array.isArray(s.productTypes) ? s.productTypes : [];
 
   function validateInput(data: Settings): string[] {
     const errs: string[] = [];
@@ -46,6 +54,13 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
     if (!(data.publicContactEmail ?? "").includes("@")) errs.push("Correo público inválido.");
     if (promoEnabled && couponCode && couponCode.length < 4) errs.push("El código de cupón debe tener al menos 4 caracteres.");
     if (promoEnabled && freeShippingFrom < 0) errs.push("Envío gratis desde no puede ser negativo.");
+    if (!Array.isArray(data.productTypes) || data.productTypes.length === 0) errs.push("Debes tener al menos un tipo de producto activo.");
+    const keys = new Set<string>();
+    for (const t of data.productTypes ?? []) {
+      if (!t.key.trim() || !t.label.trim()) errs.push("Cada tipo de producto necesita clave y nombre.");
+      if (keys.has(t.key)) errs.push(`Clave repetida en tipos: ${t.key}`);
+      keys.add(t.key);
+    }
     return errs;
   }
 
@@ -81,10 +96,11 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
         </button>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-2 text-xs">
+        <div className="grid md:grid-cols-3 gap-2 text-xs">
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">Promo Home: {s.homePromoEnabled ? "Activa" : "Oculta"}</div>
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">Redes configuradas: {enabledSocials}/4</div>
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">Medios de pago: {paymentConfigured ? "Listos" : "Pendiente"}</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700 md:col-span-3">Tipos de producto: {productTypes.length}</div>
       </div>
 
       {msg ? <div className="panel p-3 text-sm text-slate-700 rounded-2xl border-slate-200">{msg}</div> : null}
@@ -199,6 +215,107 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
               <label className="text-sm font-medium">WhatsApp link</label>
               <input value={s.socialLinks?.whatsapp ?? ""} onChange={(e) => setS((p) => ({ ...p, socialLinks: { ...p.socialLinks, whatsapp: e.target.value } }))} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" placeholder="https://wa.me/51999..." />
             </div>
+          </div>
+        </div>
+
+        <div className="border border-slate-200 rounded-2xl p-3 md:p-4 bg-white">
+          <div className="font-medium mb-2">Tipos de producto (Home + Admin)</div>
+          <div className="grid gap-2">
+            {productTypes.map((t, idx) => (
+              <div key={`${t.key}-${idx}`} className="grid gap-2 md:grid-cols-[180px_1fr_1fr_150px_100px_90px] items-center">
+                <input
+                  value={t.key}
+                  onChange={(e) =>
+                    setS((p) => {
+                      const copy: NonNullable<Settings["productTypes"]> = [...(p.productTypes ?? [])];
+                      if (!copy[idx]) return p;
+                      copy[idx] = { ...copy[idx], key: e.target.value.trim().toLowerCase().replace(/\s+/g, "-") };
+                      return { ...p, productTypes: copy };
+                    })
+                  }
+                  className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+                  placeholder="clave (kebab-case)"
+                />
+                <input
+                  value={t.label}
+                  onChange={(e) =>
+                    setS((p) => {
+                      const copy: NonNullable<Settings["productTypes"]> = [...(p.productTypes ?? [])];
+                      if (!copy[idx]) return p;
+                      copy[idx] = { ...copy[idx], label: e.target.value };
+                      return { ...p, productTypes: copy };
+                    })
+                  }
+                  className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+                  placeholder="Nombre visible"
+                />
+                <input
+                  value={t.subtitle ?? ""}
+                  onChange={(e) =>
+                    setS((p) => {
+                      const copy: NonNullable<Settings["productTypes"]> = [...(p.productTypes ?? [])];
+                      if (!copy[idx]) return p;
+                      copy[idx] = { ...copy[idx], subtitle: e.target.value };
+                      return { ...p, productTypes: copy };
+                    })
+                  }
+                  className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+                  placeholder="Subtitulo"
+                />
+                <input
+                  value={t.cta ?? ""}
+                  onChange={(e) =>
+                    setS((p) => {
+                      const copy: NonNullable<Settings["productTypes"]> = [...(p.productTypes ?? [])];
+                      if (!copy[idx]) return p;
+                      copy[idx] = { ...copy[idx], cta: e.target.value };
+                      return { ...p, productTypes: copy };
+                    })
+                  }
+                  className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+                  placeholder="Texto boton"
+                />
+                <label className="inline-flex items-center gap-2 text-xs text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(t.enabled ?? true)}
+                    onChange={(e) =>
+                      setS((p) => {
+                        const copy: NonNullable<Settings["productTypes"]> = [...(p.productTypes ?? [])];
+                        if (!copy[idx]) return p;
+                        copy[idx] = { ...copy[idx], enabled: e.target.checked };
+                        return { ...p, productTypes: copy };
+                      })
+                    }
+                  />
+                  Activo
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setS((p) => ({ ...p, productTypes: (p.productTypes ?? []).filter((_, i) => i !== idx) }))
+                  }
+                  className="h-10 rounded-xl border border-slate-300 text-sm font-medium bg-white hover:bg-slate-50"
+                >
+                  Quitar
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() =>
+                setS((p) => ({
+                  ...p,
+                  productTypes: [
+                    ...(p.productTypes ?? []),
+                    { key: `tipo-${(p.productTypes ?? []).length + 1}`, label: "Nuevo tipo", subtitle: "", cta: "Ver", enabled: true },
+                  ],
+                }))
+              }
+              className="h-10 w-fit rounded-xl border border-slate-300 px-3 text-sm font-medium bg-white hover:bg-slate-50"
+            >
+              + Agregar tipo
+            </button>
           </div>
         </div>
 

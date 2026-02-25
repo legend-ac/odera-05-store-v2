@@ -16,7 +16,11 @@ export const productVariantSchema = z.object({
 });
 
 export const productUpsertSchema = z.object({
-  productType: z.enum(["zapatillas", "ropa", "accesorios"]),
+  productType: z
+    .string()
+    .min(2)
+    .max(40)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "productType must be kebab-case"),
   slug: z
     .string()
     .min(2)

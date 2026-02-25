@@ -6,8 +6,10 @@ import ProductsClient from "./products-client";
 
 export default async function ProductsPage() {
   let snap: any = null;
+  let settingsSnap: any = null;
   try {
     snap = await adminDb.collection("products").orderBy("updatedAt", "desc").limit(50).get();
+    settingsSnap = await adminDb.doc("settings/store").get();
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (!msg.includes("NOT_FOUND")) throw e;
@@ -32,5 +34,18 @@ export default async function ProductsPage() {
     };
   });
 
-  return <ProductsClient initialProducts={products} />;
+  const rawTypes = settingsSnap?.exists ? (settingsSnap.data() as any)?.productTypes : null;
+  const initialProductTypes =
+    Array.isArray(rawTypes) && rawTypes.length
+      ? rawTypes
+          .filter((x: any) => Boolean(x?.enabled ?? true))
+          .map((x: any) => ({ key: String(x?.key ?? ""), label: String(x?.label ?? "") }))
+          .filter((x: any) => x.key && x.label)
+      : [
+          { key: "zapatillas", label: "Zapatillas" },
+          { key: "ropa", label: "Ropa" },
+          { key: "accesorios", label: "Accesorios" },
+        ];
+
+  return <ProductsClient initialProducts={products} initialProductTypes={initialProductTypes} />;
 }

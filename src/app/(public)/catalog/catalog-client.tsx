@@ -10,27 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/fields";
 
 type SortType = "latest" | "price-asc" | "price-desc" | "name";
-type ProductTypeFilter = "" | "zapatillas" | "ropa" | "accesorios";
-type CatalogItem = ProductCardData & { productType?: ProductTypeFilter };
-
-function parseType(value: string): ProductTypeFilter {
-  const t = (value ?? "").toLowerCase();
-  if (t === "zapatillas" || t === "ropa" || t === "accesorios") return t;
-  return "";
-}
+type CatalogItem = ProductCardData & { productType?: string };
 
 export default function CatalogClient({
   initialItems,
   initialQuery,
   initialType,
+  productTypes,
 }: {
   initialItems: CatalogItem[];
   initialQuery: string;
   initialType: string;
+  productTypes: { key: string; label: string }[];
 }) {
   const [qText, setQText] = useState(initialQuery ?? "");
   const token = useMemo(() => normalizeToken(qText).split(/\s+/g).filter(Boolean)[0] ?? "", [qText]);
-  const [typeFilter, setTypeFilter] = useState<ProductTypeFilter>(parseType(initialType));
+  const [typeFilter, setTypeFilter] = useState<string>((initialType ?? "").toLowerCase().trim());
   const [sortBy, setSortBy] = useState<SortType>("latest");
   const [items, setItems] = useState<CatalogItem[] | null>(initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +64,7 @@ export default function CatalogClient({
             onSale: Boolean(data.onSale),
             imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
             imageUrls,
-            productType: parseType(String(data?.productType ?? "")),
+            productType: String(data?.productType ?? "").toLowerCase().trim() || undefined,
             dedupeKey,
             updatedAtMs,
           };
@@ -96,7 +91,7 @@ export default function CatalogClient({
         if (mounted) setItems(list);
       } catch (e) {
         console.error(e);
-        if (mounted) setError("No pudimos cargar el catálogo. Intenta nuevamente en unos segundos.");
+        if (mounted) setError("No pudimos cargar el catalogo. Intenta nuevamente en unos segundos.");
       }
     })();
 
@@ -129,7 +124,7 @@ export default function CatalogClient({
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:py-10 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Catálogo</h1>
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Catalogo</h1>
         <p className="text-sm text-slate-600">Encuentra productos por nombre, marca o tipo.</p>
       </div>
 
@@ -138,16 +133,18 @@ export default function CatalogClient({
           <div className="grid gap-2 md:grid-cols-[1fr_180px_170px_120px]">
             <Input value={qText} onChange={(e) => setQText(e.target.value)} placeholder="Buscar (ej. nike, polera, negro)" />
             <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
-              <option value="latest">Más recientes</option>
+              <option value="latest">Mas recientes</option>
               <option value="price-asc">Precio: menor a mayor</option>
               <option value="price-desc">Precio: mayor a menor</option>
               <option value="name">Nombre A-Z</option>
             </Select>
-            <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as ProductTypeFilter)}>
+            <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
               <option value="">Todos los tipos</option>
-              <option value="zapatillas">Zapatillas</option>
-              <option value="ropa">Ropa</option>
-              <option value="accesorios">Accesorios</option>
+              {productTypes.map((t) => (
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
+              ))}
             </Select>
             <Button type="button" variant="secondary" onClick={() => setQText("")}>
               Limpiar
@@ -196,11 +193,11 @@ export default function CatalogClient({
       {items && !items.length ? (
         <Card className="rounded-2xl border-slate-200">
           <CardBody className="py-10 text-center">
-            <p className="text-base font-semibold text-slate-900">No encontramos productos con esa búsqueda</p>
+            <p className="text-base font-semibold text-slate-900">No encontramos productos con esa busqueda</p>
             <p className="text-sm text-slate-600 mt-1">Prueba con otra palabra o limpia el filtro.</p>
             <div className="mt-4">
               <Button type="button" variant="secondary" onClick={() => setQText("")}>
-                Ver todo el catálogo
+                Ver todo el catalogo
               </Button>
             </div>
           </CardBody>
@@ -213,7 +210,7 @@ export default function CatalogClient({
 function BadgeToken({ token }: { token: string }) {
   return (
     <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-      Búsqueda: {token}
+      Busqueda: {token}
     </span>
   );
 }

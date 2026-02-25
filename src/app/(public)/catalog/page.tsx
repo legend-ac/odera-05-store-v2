@@ -4,7 +4,14 @@ import type { ProductCardData } from "@/components/ProductCard";
 
 export const revalidate = 60;
 
-type CatalogItem = ProductCardData & { productType?: "zapatillas" | "ropa" | "accesorios" };
+type CatalogItem = ProductCardData & { productType?: string };
+type ProductTypeOption = { key: string; label: string };
+
+const DEFAULT_PRODUCT_TYPES: ProductTypeOption[] = [
+  { key: "zapatillas", label: "Zapatillas" },
+  { key: "ropa", label: "Ropa" },
+  { key: "accesorios", label: "Accesorios" },
+];
 
 async function loadInitialCatalog(): Promise<CatalogItem[]> {
   const snap = await adminDb.collection("products").where("status", "==", "active").limit(150).get();
@@ -56,10 +63,25 @@ export default async function CatalogPage({
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
+  let productTypes: ProductTypeOption[] = DEFAULT_PRODUCT_TYPES;
   const initialItems = await loadInitialCatalog();
+
+  try {
+    const settingsSnap = await adminDb.doc("settings/store").get();
+    if (settingsSnap.exists) {
+      const data = settingsSnap.data() as any;
+      const raw = Array.isArray(data?.productTypes) ? data.productTypes : [];
+      const parsed = raw
+        .filter((x: any) => Boolean(x?.enabled ?? true))
+        .map((x: any) => ({ key: String(x?.key ?? "").trim(), label: String(x?.label ?? "").trim() }))
+        .filter((x: ProductTypeOption) => x.key.length > 0 && x.label.length > 0);
+      if (parsed.length) productTypes = parsed;
+    }
+  } catch {}
+
   const q = searchParams?.q;
   const initialQuery = Array.isArray(q) ? q[0] ?? "" : q ?? "";
   const type = searchParams?.type;
   const initialType = Array.isArray(type) ? type[0] ?? "" : type ?? "";
-  return <CatalogClient initialItems={initialItems} initialQuery={initialQuery} initialType={initialType} />;
+  return <CatalogClient initialItems={initialItems} initialQuery={initialQuery} initialType={initialType} productTypes={productTypes} />;
 }

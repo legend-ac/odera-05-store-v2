@@ -28,6 +28,22 @@ export const storeSettingsSchema = z.object({
     plinName: z.string().max(120).optional(),
     plinNumber: z.string().max(40).optional(),
   }),
+  productTypes: z
+    .array(
+      z.object({
+        key: z
+          .string()
+          .min(2)
+          .max(40)
+          .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+        label: z.string().min(2).max(60),
+        subtitle: z.string().max(90).optional(),
+        cta: z.string().max(40).optional(),
+        enabled: z.boolean().optional(),
+      })
+    )
+    .max(12)
+    .optional(),
 });
 
 export type StoreSettingsInput = z.infer<typeof storeSettingsSchema>;

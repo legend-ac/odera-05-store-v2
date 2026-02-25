@@ -5,7 +5,7 @@ import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 
 type Product = {
   id: string;
-  productType: "zapatillas" | "ropa" | "accesorios";
+  productType: string;
   slug: string;
   status: "active" | "archived";
   name: string;
@@ -19,10 +19,10 @@ type Product = {
   variants: { id: string; size?: string; color?: string; sku?: string; stock: number }[];
 };
 
-function emptyProduct(): Product {
+function emptyProduct(defaultType: string): Product {
   return {
     id: "",
-    productType: "zapatillas",
+    productType: defaultType,
     slug: "",
     status: "active",
     name: "",
@@ -82,6 +82,7 @@ function validateDraft(draft: Product): string[] {
   const slug = draft.slug.trim();
   if (slug.length < 2) errors.push("El slug es obligatorio (minimo 2 caracteres).");
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) errors.push("El slug debe estar en formato kebab-case (ejemplo: nike-air-max).");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test((draft.productType ?? "").trim())) errors.push("El tipo de producto debe estar en kebab-case.");
   if ((draft.name ?? "").trim().length < 2) errors.push("El nombre es obligatorio.");
   if (!Number.isFinite(Number(draft.price)) || Number(draft.price) < 0) errors.push("El precio debe ser un numero valido.");
   if (!Array.isArray(draft.variants) || draft.variants.length === 0) errors.push("Agrega al menos una variante.");
@@ -91,48 +92,65 @@ function validateDraft(draft: Product): string[] {
 async function uploadToCloudinary(blob: Blob, slug: string, filename: string): Promise<string> {
   const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "").trim();
   const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
-  if (!cloudName || !uploadPreset) {
-    throw new Error("CLOUDINARY_NOT_CONFIGURED");
-  }
+  if (!cloudName || !uploadPreset) throw new Error("CLOUDINARY_NOT_CONFIGURED");
 
   const form = new FormData();
   form.append("file", blob, filename);
   form.append("upload_preset", uploadPreset);
   form.append("folder", `products/${slug}`);
 
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: form,
-  });
-
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: form });
   const text = await res.text();
   let json: any = null;
   try {
     json = text ? JSON.parse(text) : null;
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   if (!res.ok) {
     const detail = json?.error?.message ? String(json.error.message) : `HTTP_${res.status}`;
     throw new Error(`CLOUDINARY_UPLOAD_FAILED: ${detail}`);
   }
 
-  const url = typeof json?.secure_url === "string" ? json.secure_url : "";
-  if (!url) throw new Error("CLOUDINARY_NO_URL");
-  return url;
+  const secureUrl = typeof json?.secure_url === "string" ? json.secure_url : "";
+  if (!secureUrl) throw new Error("CLOUDINARY_NO_URL");
+  return secureUrl;
 }
 
-export default function ProductsClient({ initialProducts }: { initialProducts: Product[] }) {
+export default function ProductsClient({
+  initialProducts,
+  initialProductTypes,
+}: {
+  initialProducts: Product[];
+  initialProductTypes: { key: string; label: string }[];
+}) {
+  const fallbackTypes = useMemo(
+    () =>
+      initialProductTypes.length
+        ? initialProductTypes
+        : [
+            { key: "zapatillas", label: "Zapatillas" },
+            { key: "ropa", label: "Ropa" },
+            { key: "accesorios", label: "Accesorios" },
+          ],
+    [initialProductTypes]
+  );
+
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [selectedId, setSelectedId] = useState<string>("");
   const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"" | Product["productType"]>("");
-  const [draft, setDraft] = useState<Product>(() => emptyProduct());
+  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [draft, setDraft] = useState<Product>(() => emptyProduct(fallbackTypes[0]?.key ?? "zapatillas"));
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const selected = useMemo(() => products.find((p) => p.id === selectedId) ?? null, [products, selectedId]);
+  const typeCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of products) map.set(p.productType, (map.get(p.productType) ?? 0) + 1);
+    return map;
+  }, [products]);
+  const activeCount = useMemo(() => products.filter((p) => p.status === "active").length, [products]);
+
   const filteredProducts = useMemo(() => {
     const token = query.trim().toLowerCase();
     return products.filter((p) => {
@@ -141,14 +159,15 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
       return [p.slug, p.name, p.brand, p.category, p.productType].some((x) => (x ?? "").toLowerCase().includes(token));
     });
   }, [products, query, typeFilter]);
-  const activeCount = useMemo(() => products.filter((p) => p.status === "active").length, [products]);
-  const typeCounts = useMemo(() => {
-    return {
-      zapatillas: products.filter((p) => p.productType === "zapatillas").length,
-      ropa: products.filter((p) => p.productType === "ropa").length,
-      accesorios: products.filter((p) => p.productType === "accesorios").length,
-    };
-  }, [products]);
+
+  const typeOptions = useMemo(() => {
+    const fromSettings = fallbackTypes.map((t) => ({ key: t.key, label: t.label }));
+    const existingKeys = new Set(fromSettings.map((x) => x.key));
+    const dynamic = Array.from(typeCounts.keys())
+      .filter((k) => !existingKeys.has(k))
+      .map((k) => ({ key: k, label: k }));
+    return [...fromSettings, ...dynamic];
+  }, [fallbackTypes, typeCounts]);
 
   function loadSelected() {
     if (!selected) return;
@@ -198,11 +217,8 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
       setSelectedId(draft.slug);
     } catch (e) {
       const m = e instanceof Error ? e.message : "Error";
-      if (m === "VALIDATION_ERROR") {
-        setMsg("Error de validacion. Revisa slug, nombre, precio y variantes.");
-      } else {
-        setMsg(`Error: ${m}`);
-      }
+      if (m === "VALIDATION_ERROR") setMsg("Error de validacion. Revisa tipo, slug, nombre, precio y variantes.");
+      else setMsg(`Error: ${m}`);
     } finally {
       setBusy(false);
     }
@@ -240,7 +256,6 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
       setMsg(`Imagen subida a Cloudinary (${width}x${height}, ~${sizeKB}KB).${converted ? " Convertida a WebP." : ""}`);
     } catch (e) {
       const m = e instanceof Error ? e.message : "No se pudo subir la imagen.";
-      console.warn(e);
       setMsg(`Error de imagen: ${m}`);
     }
   }
@@ -253,9 +268,11 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-emerald-800">Activos: {activeCount}</div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">Total: {products.length}</div>
-          <div className="rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-2 text-blue-800">Zapatillas: {typeCounts.zapatillas}</div>
-          <div className="rounded-xl border border-violet-200 bg-violet-50 px-2.5 py-2 text-violet-800">Ropa: {typeCounts.ropa}</div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-amber-800 col-span-2">Accesorios: {typeCounts.accesorios}</div>
+          {typeOptions.map((t) => (
+            <div key={t.key} className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
+              {t.label}: {typeCounts.get(t.key) ?? 0}
+            </div>
+          ))}
         </div>
 
         <div className="mb-3 grid gap-2">
@@ -265,15 +282,13 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             placeholder="Buscar por slug, nombre o marca"
             className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm"
           />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as "" | Product["productType"])}
-            className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm bg-white"
-          >
+          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm bg-white">
             <option value="">Todos los tipos</option>
-            <option value="zapatillas">Zapatillas</option>
-            <option value="ropa">Ropa</option>
-            <option value="accesorios">Accesorios</option>
+            {typeOptions.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -283,27 +298,18 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             className="px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white hover:bg-slate-50 font-medium"
             onClick={() => {
               setSelectedId("");
-              setDraft(emptyProduct());
+              setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas"));
               setMsg(null);
             }}
           >
             Nuevo
           </button>
-          <button
-            type="button"
-            className="px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white hover:bg-slate-50 disabled:opacity-50 font-medium"
-            disabled={!selected}
-            onClick={loadSelected}
-          >
+          <button type="button" className="px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white hover:bg-slate-50 disabled:opacity-50 font-medium" disabled={!selected} onClick={loadSelected}>
             Cargar
           </button>
         </div>
 
-        <select
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-          className="w-full border border-slate-300 rounded-xl px-2 py-2 text-sm bg-white"
-        >
+        <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="w-full border border-slate-300 rounded-xl px-2 py-2 text-sm bg-white">
           <option value="">(Selecciona)</option>
           {filteredProducts.map((p) => (
             <option key={p.id} value={p.id}>
@@ -311,25 +317,13 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             </option>
           ))}
         </select>
-
-        <div className="mt-3 text-xs text-slate-500">
-          Nota: aqui el <b>docId</b> es el <b>slug</b>. Cambiar slug crea otro documento.
-        </div>
       </div>
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Editor de producto</h1>
-            <p className="text-sm text-slate-600">Crea y actualiza productos con variantes e imagenes.</p>
-            {selected ? (
-              <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700">
-                <span className="font-semibold">{selected.slug}</span>
-                <span className={selected.status === "active" ? "text-emerald-700" : "text-slate-600"}>
-                  {selected.status === "active" ? "Activo" : "Archivado"}
-                </span>
-              </div>
-            ) : null}
+            <p className="text-sm text-slate-600">Crea y actualiza productos con variantes e imágenes.</p>
           </div>
           <button type="button" onClick={save} disabled={busy} className="btn-brand disabled:opacity-50">
             {busy ? "Guardando..." : "Guardar"}
@@ -342,14 +336,12 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
           <div className="grid md:grid-cols-3 gap-3 panel p-3 md:p-4">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Tipo de producto</label>
-              <select
-                value={draft.productType}
-                onChange={(e) => setDraft((d) => ({ ...d, productType: e.target.value as Product["productType"] }))}
-                className="border border-slate-300 rounded-md px-3 py-2 text-sm"
-              >
-                <option value="zapatillas">Zapatillas</option>
-                <option value="ropa">Ropa</option>
-                <option value="accesorios">Accesorios</option>
+              <select value={draft.productType} onChange={(e) => setDraft((d) => ({ ...d, productType: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
+                {typeOptions.map((t) => (
+                  <option key={t.key} value={t.key}>
+                    {t.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="grid gap-1">
@@ -358,7 +350,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">Estado</label>
-              <select value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as any }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
+              <select value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as Product["status"] }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
                 <option value="active">Activo</option>
                 <option value="archived">Archivado</option>
               </select>
@@ -386,7 +378,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
               <input value={draft.brand} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
             <div className="grid gap-1">
-              <label className="text-sm font-medium">Categoria</label>
+              <label className="text-sm font-medium">Categoria (texto interno)</label>
               <input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
           </div>
@@ -401,7 +393,6 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
               <label className="text-sm font-medium">Precio</label>
               <input type="number" value={draft.price} onChange={(e) => setDraft((d) => ({ ...d, price: Number(e.target.value) }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
-
             <div className="grid gap-1">
               <label className="text-sm font-medium">En oferta</label>
               <select value={draft.onSale ? "yes" : "no"} onChange={(e) => setDraft((d) => ({ ...d, onSale: e.target.value === "yes" }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
@@ -409,7 +400,6 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                 <option value="yes">Si</option>
               </select>
             </div>
-
             <div className="grid gap-1">
               <label className="text-sm font-medium">Precio oferta</label>
               <input type="number" value={draft.salePrice ?? ""} onChange={(e) => setDraft((d) => ({ ...d, salePrice: e.target.value === "" ? null : Number(e.target.value) }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
@@ -418,7 +408,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
 
           <div className="border border-neutral-200 rounded-xl p-3 md:p-4 bg-white">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-              <div className="font-medium">Imagenes (spark: solo URLs o /public)</div>
+              <div className="font-medium">Imagenes (solo URLs https)</div>
               <label className="text-sm px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 cursor-pointer w-fit">
                 + Convertir a WebP
                 <input
@@ -441,8 +431,9 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                     value={img.url}
                     onChange={(e) =>
                       setDraft((d) => {
-                        const copy = [...d.images];
-                        copy[idx] = { ...copy[idx]!, url: e.target.value };
+                        const copy: Product["images"] = [...d.images];
+                        if (!copy[idx]) return d;
+                        copy[idx] = { ...copy[idx], url: e.target.value };
                         return { ...d, images: copy };
                       })
                     }
@@ -466,35 +457,28 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                     value={img.alt ?? ""}
                     onChange={(e) =>
                       setDraft((d) => {
-                        const copy = [...d.images];
-                        copy[idx] = { ...copy[idx]!, alt: e.target.value };
+                        const copy: Product["images"] = [...d.images];
+                        if (!copy[idx]) return d;
+                        copy[idx] = { ...copy[idx], alt: e.target.value };
                         return { ...d, images: copy };
                       })
                     }
                     className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
                     placeholder="alt"
                   />
-                  <button
-                    type="button"
-                    className="px-3 py-2 rounded-lg border border-neutral-300 text-sm bg-white hover:bg-neutral-50"
-                    onClick={() => setDraft((d) => ({ ...d, images: d.images.filter((_, i) => i !== idx) }))}
-                  >
+                  <button type="button" className="px-3 py-2 rounded-lg border border-neutral-300 text-sm bg-white hover:bg-neutral-50" onClick={() => setDraft((d) => ({ ...d, images: d.images.filter((_, i) => i !== idx) }))}>
                     Quitar
                   </button>
                 </div>
               ))}
-              {!draft.images.length ? <div className="text-sm text-neutral-500">Sin imagenes.</div> : null}
+              {!draft.images.length ? <div className="text-sm text-neutral-500">Sin imágenes.</div> : null}
             </div>
           </div>
 
           <div className="border border-neutral-200 rounded-xl p-3 md:p-4 bg-white">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
               <div className="font-medium">Variantes</div>
-              <button
-                type="button"
-                className="px-3 py-2 rounded-lg border border-neutral-300 text-sm bg-white hover:bg-neutral-50"
-                onClick={() => setDraft((d) => ({ ...d, variants: [...d.variants, { id: `v${d.variants.length + 1}`, stock: 0 }] }))}
-              >
+              <button type="button" className="px-3 py-2 rounded-lg border border-neutral-300 text-sm bg-white hover:bg-neutral-50" onClick={() => setDraft((d) => ({ ...d, variants: [...d.variants, { id: `v${d.variants.length + 1}`, stock: 0 }] }))}>
                 + Variante
               </button>
             </div>
@@ -502,85 +486,19 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             <div className="grid gap-2">
               {draft.variants.map((v, idx) => (
                 <div key={idx} className="grid md:grid-cols-[160px_120px_120px_1fr_120px_90px] gap-2 items-center">
-                  <input
-                    value={v.id}
-                    onChange={(e) =>
-                      setDraft((d) => {
-                        const copy = [...d.variants];
-                        copy[idx] = { ...copy[idx]!, id: e.target.value };
-                        return { ...d, variants: copy };
-                      })
-                    }
-                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
-                    placeholder="id"
-                  />
-
-                  <input
-                    value={v.size ?? ""}
-                    onChange={(e) =>
-                      setDraft((d) => {
-                        const copy = [...d.variants];
-                        copy[idx] = { ...copy[idx]!, size: e.target.value || undefined };
-                        return { ...d, variants: copy };
-                      })
-                    }
-                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
-                    placeholder="talla"
-                  />
-
-                  <input
-                    value={v.color ?? ""}
-                    onChange={(e) =>
-                      setDraft((d) => {
-                        const copy = [...d.variants];
-                        copy[idx] = { ...copy[idx]!, color: e.target.value || undefined };
-                        return { ...d, variants: copy };
-                      })
-                    }
-                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
-                    placeholder="color"
-                  />
-
-                  <input
-                    value={v.sku ?? ""}
-                    onChange={(e) =>
-                      setDraft((d) => {
-                        const copy = [...d.variants];
-                        copy[idx] = { ...copy[idx]!, sku: e.target.value || undefined };
-                        return { ...d, variants: copy };
-                      })
-                    }
-                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
-                    placeholder="sku (opcional)"
-                  />
-
-                  <input
-                    type="number"
-                    value={v.stock}
-                    onChange={(e) =>
-                      setDraft((d) => {
-                        const copy = [...d.variants];
-                        copy[idx] = { ...copy[idx]!, stock: Number(e.target.value) };
-                        return { ...d, variants: copy };
-                      })
-                    }
-                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
-                    placeholder="stock"
-                  />
-
+                  <input value={v.id} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, id: e.target.value } : x)) }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="id" />
+                  <input value={v.size ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, size: e.target.value || undefined } : x)) }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="talla" />
+                  <input value={v.color ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, color: e.target.value || undefined } : x)) }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="color" />
+                  <input value={v.sku ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, sku: e.target.value || undefined } : x)) }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="sku (opcional)" />
+                  <input type="number" value={v.stock} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, stock: Number(e.target.value) } : x)) }))} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="stock" />
                   <button type="button" className="px-3 py-2 rounded-lg border border-neutral-300 text-sm bg-white hover:bg-neutral-50" onClick={() => setDraft((d) => ({ ...d, variants: d.variants.filter((_, i) => i !== idx) }))}>
                     Quitar
                   </button>
                 </div>
               ))}
             </div>
-
-            <div className="mt-2 text-xs text-neutral-500">El stock se decrementa/incrementa exclusivamente en el backend (transactions).</div>
+            <div className="mt-2 text-xs text-neutral-500">El stock se decrementa/incrementa exclusivamente en backend (transactions).</div>
           </div>
-        </div>
-
-        <div className="text-xs text-neutral-500">
-          Seguridad: el endpoint valida con Zod + session cookie + admin claim + CSRF. Las imagenes deben quedar con URL https valida (Cloudinary recomendado).
         </div>
       </div>
     </div>
