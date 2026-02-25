@@ -375,8 +375,8 @@ export default function ProductsClient({
   }
 
   return (
-    <div className="grid xl:grid-cols-[300px_1fr] gap-4 md:gap-6">
-      <div className="panel p-3 md:p-4 h-fit rounded-2xl border-slate-200">
+    <div className="grid xl:grid-cols-[320px_1fr] gap-4 md:gap-6">
+      <div className="panel p-3 md:p-4 h-fit rounded-2xl border-slate-200 shadow-sm">
         <div className="font-semibold text-slate-900 mb-2">Productos</div>
 
         <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
@@ -406,7 +406,7 @@ export default function ProductsClient({
           </select>
         </div>
 
-        <div className="flex gap-2 mb-3">
+        <div className="flex flex-wrap gap-2 mb-3">
           <button
             type="button"
             className={`px-3 py-2 rounded-xl border text-sm font-medium ${viewMode === "active" ? "border-slate-700 bg-slate-800 text-white" : "border-slate-300 bg-white hover:bg-slate-50"}`}
@@ -470,7 +470,7 @@ export default function ProductsClient({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Editor de producto</h1>
-            <p className="text-sm text-slate-600">Crea y actualiza productos con variantes e imágenes.</p>
+            <p className="text-sm text-slate-600">Crea y actualiza productos con variantes e imagenes.</p>
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={save} disabled={busy} className="btn-brand disabled:opacity-50">
@@ -508,10 +508,10 @@ export default function ProductsClient({
           </div>
         </div>
 
-        {msg ? <div className="text-sm text-slate-700 panel p-3 rounded-2xl border-slate-200">{msg}</div> : null}
+        {msg ? <div className="text-sm text-slate-700 panel p-3 rounded-2xl border-slate-200 shadow-sm">{msg}</div> : null}
 
         <div className="grid gap-4">
-          <div className="grid md:grid-cols-3 gap-3 panel p-3 md:p-4">
+          <div className="grid md:grid-cols-3 gap-3 panel p-3 md:p-4 shadow-sm">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Tipo de producto</label>
               <select value={draft.productType} onChange={(e) => setDraft((d) => ({ ...d, productType: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
@@ -535,7 +535,7 @@ export default function ProductsClient({
             </div>
           </div>
 
-          <div className="grid gap-1 panel p-3 md:p-4">
+          <div className="grid gap-1 panel p-3 md:p-4 shadow-sm">
             <label className="text-sm font-medium">Nombre</label>
             <input
               value={draft.name}
@@ -550,23 +550,23 @@ export default function ProductsClient({
             />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4">
+          <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4 shadow-sm">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Marca</label>
               <input value={draft.brand} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
             <div className="grid gap-1">
-              <label className="text-sm font-medium">Categoria (texto interno)</label>
+              <label className="text-sm font-medium">Categoria (uso interno)</label>
               <input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
           </div>
 
-          <div className="grid gap-1 panel p-3 md:p-4">
+          <div className="grid gap-1 panel p-3 md:p-4 shadow-sm">
             <label className="text-sm font-medium">Descripcion</label>
             <textarea value={draft.description} onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm min-h-28" />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-3 panel p-3 md:p-4">
+          <div className="grid md:grid-cols-3 gap-3 panel p-3 md:p-4 shadow-sm">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Precio</label>
               <input type="number" value={draft.price} onChange={(e) => setDraft((d) => ({ ...d, price: Number(e.target.value) }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
@@ -649,7 +649,7 @@ export default function ProductsClient({
                   </button>
                 </div>
               ))}
-              {!draft.images.length ? <div className="text-sm text-neutral-500">Sin imágenes.</div> : null}
+              {!draft.images.length ? <div className="text-sm text-neutral-500">Sin imagenes.</div> : null}
             </div>
           </div>
 
@@ -682,3 +682,4 @@ export default function ProductsClient({
     </div>
   );
 }
+

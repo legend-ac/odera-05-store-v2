@@ -245,7 +245,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
         </div>
       </div>
 
-      <Card className="rounded-2xl border-slate-200">
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
         <CardBody className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
           <input
             value={query}
@@ -267,7 +267,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
         </CardBody>
       </Card>
 
-      <Card className="rounded-2xl border-slate-200">
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
         <CardBody className="grid gap-3 md:grid-cols-[180px_180px_1fr_180px_auto_auto] md:items-end">
           <label className="grid gap-1 text-xs text-slate-600">
             Desde
@@ -318,7 +318,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           </label>
 
           <a href={exportHref} className="btn-soft">
-            Exportar CSV
+            Exportar Excel (CSV)
           </a>
 
           <Button
@@ -342,6 +342,9 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
               {busyMass ? "Procesando..." : "Vaciar papelera (definitivo)"}
             </Button>
           )}
+          <p className="md:col-span-6 text-[11px] text-slate-500">
+            Exportacion profesional: por defecto no incluye pedidos en papelera y se genera compatible con Excel.
+          </p>
         </CardBody>
       </Card>
 

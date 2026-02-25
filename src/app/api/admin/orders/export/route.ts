@@ -40,6 +40,7 @@ export async function GET(req: Request) {
     const status = isOrderStatus(statusRaw) ? statusRaw : "";
     const templateRaw = String(searchParams.get("template") ?? "detalle").trim().toLowerCase();
     const template: "detalle" | "resumen" = templateRaw === "resumen" ? "resumen" : "detalle";
+    const includeTrash = String(searchParams.get("includeTrash") ?? "").trim() === "1";
 
     const fromMs = from ? Date.parse(`${from}T00:00:00.000Z`) : NaN;
     const toMsFilter = to ? Date.parse(`${to}T23:59:59.999Z`) : NaN;
@@ -52,6 +53,7 @@ export async function GET(req: Request) {
       const o = d.data() as any;
       const createdAtIso = toIso(o?.createdAt);
       const createdAtMs = toMs(o?.createdAt);
+      const deletedAtMs = toMs(o?.deletedAt);
       const shipping = o?.shipping ?? {};
       const shippingType = shipping?.method ?? "";
       const destination =
@@ -64,6 +66,7 @@ export async function GET(req: Request) {
         status: o?.status ?? "",
         createdAtIso,
         createdAtMs,
+        deletedAtMs,
         customerName: o?.customer?.name ?? "",
         customerEmail: o?.customer?.email ?? "",
         customerPhone: o?.customer?.phone ?? "",
@@ -79,6 +82,7 @@ export async function GET(req: Request) {
     });
 
     const rows = rowsRaw.filter((r) => {
+      if (!includeTrash && r.deletedAtMs) return false;
       if (status && r.status !== status) return false;
       if (hasFrom && (r.createdAtMs === null || r.createdAtMs < fromMs)) return false;
       if (hasTo && (r.createdAtMs === null || r.createdAtMs > toMsFilter)) return false;
@@ -86,17 +90,17 @@ export async function GET(req: Request) {
     });
 
     const detailHeaders = [
-      "Pedido",
+      "NroPedido",
       "Estado",
-      "Fecha",
+      "FechaISO",
       "Cliente",
       "Correo",
       "Telefono",
       "MetodoPago",
-      "Subtotal",
-      "Descuento",
-      "Envio",
-      "Total",
+      "Subtotal_S",
+      "Descuento_S",
+      "Envio_S",
+      "Total_S",
       "Cupon",
       "TipoEnvio",
       "Destino",
@@ -133,6 +137,7 @@ export async function GET(req: Request) {
         ["Filtro fecha desde", from || "-"],
         ["Filtro fecha hasta", to || "-"],
         ["Filtro estado", status || "TODOS"],
+        ["Incluye papelera", includeTrash ? "SI" : "NO"],
         [""],
         ["Indicador", "Valor"],
         ["Pedidos", String(totalPedidos)],
@@ -152,7 +157,7 @@ export async function GET(req: Request) {
       for (const [k, v] of Array.from(byPayment.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
         resumenRows.push([k, String(v.qty), v.total.toFixed(2)]);
       }
-      csv = resumenRows.map((r) => r.map(esc).join(",")).join("\n");
+      csv = resumenRows.map((r) => r.map(esc).join(";")).join("\n");
     } else {
       const detailRows = rows.map((r) => [
         r.publicCode,
@@ -170,10 +175,10 @@ export async function GET(req: Request) {
         r.shippingType,
         r.destination,
       ]);
-      csv = [detailHeaders, ...detailRows].map((r) => r.map(esc).join(",")).join("\n");
+      csv = [detailHeaders, ...detailRows].map((r) => r.map(esc).join(";")).join("\n");
     }
 
-    const bomCsv = `\uFEFF${csv}`;
+    const bomCsv = `\uFEFFsep=;\n${csv}`;
 
     return new NextResponse(bomCsv, {
       status: 200,

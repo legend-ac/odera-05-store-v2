@@ -38,14 +38,14 @@ export default function AdminShell({ email, children }: { email: string; childre
   }
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(1100px_500px_at_0%_-20%,rgba(46,106,47,.13),transparent_55%),linear-gradient(180deg,#f5f8fd_0%,#edf3fb_100%)]">
-      <div className="mx-auto max-w-7xl px-4 py-4 md:py-6 grid gap-4 lg:grid-cols-[250px_1fr]">
-        <aside className="rounded-2xl bg-gradient-to-b from-[var(--brand-700)] via-[var(--brand-600)] to-[var(--brand-500)] text-white p-3 md:p-4 h-fit shadow-[0_16px_36px_rgba(31,77,31,.35)]">
-          <div className="flex items-center gap-3 pb-3 border-b border-white/20">
-            <span className="grid place-items-center h-10 w-10 rounded-xl border border-white/35 bg-white/10 text-xs font-bold">O5</span>
+    <div className="min-h-dvh bg-[radial-gradient(1200px_520px_at_100%_-20%,rgba(15,23,42,.08),transparent_55%),linear-gradient(180deg,#f6f8fc_0%,#edf2f8_100%)]">
+      <div className="mx-auto max-w-7xl px-4 py-4 md:py-6 grid gap-4 lg:grid-cols-[260px_1fr]">
+        <aside className="rounded-2xl border border-slate-800 bg-slate-900 text-white p-3 md:p-4 h-fit shadow-[0_22px_38px_rgba(15,23,42,.28)]">
+          <div className="flex items-center gap-3 pb-3 border-b border-white/15">
+            <span className="grid place-items-center h-10 w-10 rounded-xl border border-white/25 bg-white/5 text-xs font-bold">O5</span>
             <div>
               <p className="text-sm font-semibold leading-none">Panel ODERA 05</p>
-              <p className="text-[11px] text-white/80 mt-1">Gestion comercial</p>
+              <p className="text-[11px] text-white/70 mt-1">Operacion comercial</p>
             </div>
           </div>
 
@@ -58,10 +58,10 @@ export default function AdminShell({ email, children }: { email: string; childre
         </aside>
 
         <div className="flex flex-col gap-4">
-          <header className="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur p-3 md:px-4 md:py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+          <header className="rounded-2xl border border-slate-200 bg-white p-3 md:px-4 md:py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shadow-[0_10px_28px_rgba(15,23,42,0.06)]">
             <div>
               <p className="text-sm font-semibold text-slate-900">Administracion de tienda</p>
-              <p className="text-xs text-slate-500">Control de productos, pedidos y configuracion general.</p>
+              <p className="text-xs text-slate-500">Control de pedidos, productos, ventas y configuracion.</p>
               <p className="text-[11px] text-slate-400 mt-1">
                 Ruta: {pathname === "/dashboard" ? "Inicio" : pathname.replace("/dashboard/", "").replaceAll("/", " / ")}
               </p>
@@ -74,7 +74,7 @@ export default function AdminShell({ email, children }: { email: string; childre
             </div>
           </header>
 
-          <section className="rounded-2xl border border-slate-200 bg-white/92 backdrop-blur p-3 md:p-5 shadow-[0_10px_26px_rgba(15,23,42,0.07)]">
+          <section className="rounded-2xl border border-slate-200 bg-white p-3 md:p-5 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
             {children}
           </section>
         </div>
