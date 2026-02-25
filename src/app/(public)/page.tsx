@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import HomeSocialLinks from "@/components/HomeSocialLinks";
 import { Card, CardBody } from "@/components/ui/card";
 import { Container, Section } from "@/components/ui/layout";
@@ -18,6 +19,15 @@ const DEFAULT_CATEGORY_CARDS = [
   { key: "ropa", label: "Ropa", subtitle: "Poleras, casacas y conjuntos", cta: "Ver ropa", enabled: true },
   { key: "accesorios", label: "Accesorios", subtitle: "Mochilas, medias y mas", cta: "Ver accesorios", enabled: true },
 ];
+
+function pickCategoryAsset(categoryKey: string, idx: number): string {
+  const key = categoryKey.toLowerCase();
+  if (key.includes("zapat")) return "/brand/category-zapatillas.svg";
+  if (key.includes("ropa")) return "/brand/category-ropa.svg";
+  if (key.includes("acces")) return "/brand/category-accesorios.svg";
+  const pool = ["/brand/category-zapatillas.svg", "/brand/category-ropa.svg", "/brand/category-accesorios.svg"] as const;
+  return pool[idx % pool.length] ?? "/brand/category-zapatillas.svg";
+}
 
 export default async function HomePage() {
   let categoryCards: Array<{ key: string; label: string; subtitle: string; cta: string; enabled: boolean }> = DEFAULT_CATEGORY_CARDS;
@@ -118,20 +128,9 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-[var(--brand-700)] via-[var(--brand-600)] to-[var(--brand-500)] p-4 md:p-5 text-white shadow-[0_18px_35px_rgba(31,77,31,0.35)] self-start">
-                <div className="rounded-xl border border-white/35 p-4 bg-white/5">
-                  <p className="text-[11px] uppercase tracking-[.16em] text-white/85">Identidad oficial</p>
-                  <p className="mt-2 text-3xl font-display font-bold">ODERA 05</p>
-                  <p className="text-sm text-white/90 mt-1">Zapatillas y ropa</p>
-                  <div className="mt-4 h-px bg-white/30" />
-                  <p className="mt-4 text-sm text-white/90 leading-relaxed">
-                    Productos originales, pago seguro y entrega con seguimiento en cada etapa.
-                  </p>
-                </div>
-
-                <div className="mt-4 text-xs text-white/85">
-                  Compra segura, seguimiento claro y soporte por canales oficiales.
-                </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-900/95 p-2 md:p-3 shadow-[0_18px_35px_rgba(31,77,31,0.35)] self-start overflow-hidden">
+                <Image src="/brand/hero-home-desktop.svg" alt="Visual oficial ODERA 05" width={1600} height={900} className="hidden sm:block w-full h-auto rounded-xl border border-white/20" priority />
+                <Image src="/brand/hero-home-mobile.svg" alt="Visual oficial ODERA 05" width={1080} height={1350} className="block sm:hidden w-full h-auto rounded-xl border border-white/20" priority />
               </div>
             </div>
 
@@ -152,12 +151,15 @@ export default async function HomePage() {
         {homePromoEnabled ? (
           <Section className="py-0">
             <Card className="bg-gradient-to-r from-emerald-50 via-white to-blue-50 border-slate-200">
-              <CardBody className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+              <CardBody className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">{homePromo.title}</p>
                   <p className="text-sm text-slate-700">{homePromo.message}</p>
                 </div>
-                <div className="text-sm text-slate-700">{homePromo.rightNote}</div>
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-slate-700">{homePromo.rightNote}</div>
+                  <Image src="/brand/promo-shipping.svg" alt="Envio y compra segura ODERA 05" width={1600} height={560} className="hidden md:block h-14 w-40 rounded-lg border border-slate-200 object-cover" />
+                </div>
               </CardBody>
             </Card>
           </Section>
@@ -184,15 +186,24 @@ export default async function HomePage() {
               ];
               const tone = tones[idx % tones.length];
               return (
-              <Link key={item.key} href={`/catalog?type=${encodeURIComponent(item.key)}`} className={`group rounded-2xl border p-4 md:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${tone}`}>
-                <p className="text-xs font-semibold uppercase tracking-[.12em] text-slate-600">Categoria</p>
-                <h3 className="mt-2 text-2xl font-display font-bold text-slate-900">{item.label}</h3>
-                <p className="mt-1.5 text-sm text-slate-700">{item.subtitle || "Productos destacados en esta linea."}</p>
-                <span className="mt-4 inline-flex h-10 items-center rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 group-hover:bg-slate-100 transition-colors">
-                  {item.cta || `Ver ${item.label.toLowerCase()}`}
-                </span>
-              </Link>
-            );
+                <Link key={item.key} href={`/catalog?type=${encodeURIComponent(item.key)}`} className={`group rounded-2xl border p-3 md:p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${tone}`}>
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <Image
+                      src={pickCategoryAsset(item.key, idx)}
+                      alt={`${item.label} ODERA 05`}
+                      width={1200}
+                      height={760}
+                      className="aspect-[4/2.5] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    />
+                  </div>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-[.12em] text-slate-600">Categoria</p>
+                  <h3 className="mt-1.5 text-2xl font-display font-bold text-slate-900">{item.label}</h3>
+                  <p className="mt-1.5 text-sm text-slate-700">{item.subtitle || "Productos destacados en esta linea."}</p>
+                  <span className="mt-4 inline-flex h-10 items-center rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 group-hover:bg-slate-100 transition-colors">
+                    {item.cta || `Ver ${item.label.toLowerCase()}`}
+                  </span>
+                </Link>
+              );
             })}
           </div>
         </Section>

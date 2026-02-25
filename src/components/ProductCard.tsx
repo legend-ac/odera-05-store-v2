@@ -41,7 +41,8 @@ export default function ProductCard({ p }: { p: ProductCardData }) {
             onError={() => setIdx((i) => (i + 1 < candidates.length ? i + 1 : i))}
           />
         ) : (
-          <div className="h-full w-full grid place-items-center text-xs text-slate-500">Sin imagen</div>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/brand/placeholder-product.svg" alt="Producto sin imagen ODERA 05" className="w-full h-full object-cover" />
         )}
 
         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/20 via-black/0 to-transparent pointer-events-none" />

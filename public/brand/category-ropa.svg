@@ -1,0 +1,28 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g2" x1="40" y1="20" x2="1100" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E8F2FF"/>
+      <stop offset="1" stop-color="#DEE9F9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" rx="28" fill="url(#g2)"/>
+  <rect x="66" y="72" width="1068" height="616" rx="24" fill="#FFFFFF" fill-opacity="0.8" stroke="#B5C7E2"/>
+  <text x="112" y="166" fill="#173B70" font-size="68" font-family="Arial, Helvetica, sans-serif" font-weight="700">ROPA</text>
+  <text x="112" y="216" fill="#4A638A" font-size="30" font-family="Arial, Helvetica, sans-serif">Casacas, poleras y conjuntos</text>
+  <g transform="translate(120 280)">
+    <rect width="300" height="320" rx="24" fill="#234F7E"/>
+    <rect x="96" y="44" width="108" height="244" rx="16" fill="#DCE8F8"/>
+    <rect x="30" y="112" width="84" height="150" rx="18" fill="#DCE8F8"/>
+    <rect x="186" y="112" width="84" height="150" rx="18" fill="#DCE8F8"/>
+  </g>
+  <g transform="translate(470 280)">
+    <rect width="300" height="320" rx="24" fill="#1D4C22"/>
+    <path d="M40 96C84 68 122 52 150 52C178 52 216 68 260 96L236 274H64L40 96Z" fill="#DDEEDC"/>
+    <path d="M110 52H190V98H110V52Z" fill="#AACFAE"/>
+  </g>
+  <g transform="translate(820 280)">
+    <rect width="250" height="320" rx="24" fill="#0F2032"/>
+    <path d="M48 272L82 98H168L202 272H48Z" fill="#DFE8F2"/>
+    <path d="M90 98C108 64 142 64 160 98H90Z" fill="#9CB7D4"/>
+  </g>
+</svg>

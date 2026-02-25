@@ -1,0 +1,20 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="70" y1="30" x2="1110" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAF7EA"/>
+      <stop offset="1" stop-color="#D7EBD6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" rx="28" fill="url(#g1)"/>
+  <rect x="66" y="72" width="1068" height="616" rx="24" fill="#FFFFFF" fill-opacity="0.8" stroke="#AFD1AE"/>
+  <text x="112" y="166" fill="#214A24" font-size="68" font-family="Arial, Helvetica, sans-serif" font-weight="700">ZAPATILLAS</text>
+  <text x="112" y="216" fill="#527258" font-size="30" font-family="Arial, Helvetica, sans-serif">Running, training y estilo urbano</text>
+  <g transform="translate(130 300)">
+    <rect width="940" height="258" rx="26" fill="#1D4C22"/>
+    <path d="M102 186C164 160 248 132 320 126C418 118 518 164 632 188C704 202 784 206 860 186L860 228L102 228V186Z" fill="#E3EFE1"/>
+    <path d="M152 124C210 86 320 54 438 62C542 70 612 114 690 136C728 146 766 150 806 146L830 172C768 182 704 178 650 166C544 142 460 98 350 100C286 102 228 122 176 148L152 124Z" fill="#0B1A0F"/>
+    <path d="M294 132L344 132L344 170L294 170V132Z" fill="#85B98B"/>
+    <path d="M378 122L428 122L428 170L378 170V122Z" fill="#85B98B"/>
+    <path d="M462 118L512 118L512 170L462 170V118Z" fill="#85B98B"/>
+  </g>
+</svg>
