@@ -332,6 +332,48 @@ export default function ProductsClient({
     }
   }
 
+  async function purgeSelected() {
+    if (!selected) return;
+    if (!selected.deletedAtMs) {
+      setMsg("Solo puedes eliminar definitivo desde la papelera.");
+      return;
+    }
+    if (!window.confirm(`Eliminar definitivamente producto ${selected.slug}?`)) return;
+    setBusyDelete(true);
+    setMsg(null);
+    try {
+      await apiPost("/api/admin/products/purge", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
+      setProducts((prev) => prev.filter((p) => p.id !== selected.id));
+      setSelectedId("");
+      setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas"));
+      setMsg(`Producto ${selected.slug} eliminado definitivamente.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyDelete(false);
+    }
+  }
+
+  async function bulkPurgeTrash() {
+    if (!window.confirm("Eliminar definitivamente productos en papelera?")) return;
+    setBusyBulkTrash(true);
+    setMsg(null);
+    try {
+      const res = (await apiPost(
+        "/api/admin/products/bulk-purge",
+        { olderThanDays: 0, limit: 500 },
+        { csrfCookieName: CSRF_COOKIE_NAME }
+      )) as { processed?: number };
+      setMsg(`Productos eliminados definitivamente: ${res?.processed ?? 0}.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyBulkTrash(false);
+    }
+  }
+
   return (
     <div className="grid xl:grid-cols-[300px_1fr] gap-4 md:gap-6">
       <div className="panel p-3 md:p-4 h-fit rounded-2xl border-slate-200">
@@ -402,7 +444,16 @@ export default function ProductsClient({
             >
               {busyBulkTrash ? "Procesando..." : "Masivo a papelera"}
             </button>
-          ) : null}
+          ) : (
+            <button
+              type="button"
+              className="px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white hover:bg-slate-50 disabled:opacity-50 font-medium"
+              onClick={() => void bulkPurgeTrash()}
+              disabled={busyBulkTrash}
+            >
+              {busyBulkTrash ? "Procesando..." : "Vaciar papelera"}
+            </button>
+          )}
         </div>
 
         <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="w-full border border-slate-300 rounded-xl px-2 py-2 text-sm bg-white">
@@ -425,14 +476,35 @@ export default function ProductsClient({
             <button type="button" onClick={save} disabled={busy} className="btn-brand disabled:opacity-50">
               {busy ? "Guardando..." : "Guardar"}
             </button>
-            <button
-              type="button"
-              onClick={() => (viewMode === "active" ? void deleteSelected() : void restoreSelected())}
-              disabled={busyDelete || !selected}
-              className="btn-soft disabled:opacity-50"
-            >
-              {busyDelete ? "Procesando..." : viewMode === "active" ? "Enviar a papelera" : "Restaurar"}
-            </button>
+            {viewMode === "active" ? (
+              <button
+                type="button"
+                onClick={() => void deleteSelected()}
+                disabled={busyDelete || !selected}
+                className="btn-soft disabled:opacity-50"
+              >
+                {busyDelete ? "Procesando..." : "Enviar a papelera"}
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void restoreSelected()}
+                  disabled={busyDelete || !selected}
+                  className="btn-soft disabled:opacity-50"
+                >
+                  {busyDelete ? "Procesando..." : "Restaurar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void purgeSelected()}
+                  disabled={busyDelete || !selected}
+                  className="btn-soft disabled:opacity-50"
+                >
+                  {busyDelete ? "Procesando..." : "Eliminar definitivo"}
+                </button>
+              </>
+            )}
           </div>
         </div>
 

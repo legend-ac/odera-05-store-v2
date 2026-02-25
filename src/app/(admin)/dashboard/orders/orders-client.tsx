@@ -157,6 +157,22 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
     }
   }
 
+  async function purgeOrder(order: OrderRow) {
+    if (!window.confirm(`Eliminar definitivamente pedido ${order.publicCode}?\nNo se puede deshacer.`)) return;
+    setBusyDeleteId(order.id);
+    setMsg(null);
+    try {
+      await apiPost("/api/admin/orders/purge", { orderId: order.id }, { csrfCookieName: CSRF_COOKIE_NAME });
+      setOrders((prev) => prev.filter((x) => x.id !== order.id));
+      setMsg(`Pedido ${order.publicCode} eliminado definitivamente.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyDeleteId(null);
+    }
+  }
+
   async function bulkTrashByFilter() {
     if (!window.confirm("Mover masivamente a papelera segun filtros de exportacion?\nNo borra definitivamente.")) return;
     setBusyMass(true);
@@ -172,6 +188,25 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
       };
       const res = await apiPost("/api/admin/orders/bulk-delete", payload, { csrfCookieName: CSRF_COOKIE_NAME }) as { processed?: number };
       setMsg(`Pedidos enviados a papelera: ${res?.processed ?? 0}. Recarga la pagina para ver conteo exacto.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyMass(false);
+    }
+  }
+
+  async function bulkPurgeTrash() {
+    if (!window.confirm("Eliminar definitivamente pedidos de papelera?\nNo se puede deshacer.")) return;
+    setBusyMass(true);
+    setMsg(null);
+    try {
+      const res = (await apiPost(
+        "/api/admin/orders/bulk-purge",
+        { olderThanDays: 0, limit: 500 },
+        { csrfCookieName: CSRF_COOKIE_NAME }
+      )) as { processed?: number };
+      setMsg(`Pedidos eliminados definitivamente: ${res?.processed ?? 0}. Recarga para sincronizar vista.`);
     } catch (e) {
       const m = e instanceof Error ? e.message : "Error";
       setMsg(`Error: ${m}`);
@@ -302,7 +337,11 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
             <Button type="button" variant="ghost" onClick={() => void bulkTrashByFilter()} disabled={busyMass}>
               {busyMass ? "Procesando..." : "Mover a papelera (masivo)"}
             </Button>
-          ) : null}
+          ) : (
+            <Button type="button" variant="ghost" onClick={() => void bulkPurgeTrash()} disabled={busyMass}>
+              {busyMass ? "Procesando..." : "Vaciar papelera (definitivo)"}
+            </Button>
+          )}
         </CardBody>
       </Card>
 
@@ -393,9 +432,14 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                     {busyDeleteId === o.id ? "Procesando..." : "Enviar a papelera"}
                   </Button>
                 ) : (
-                  <Button type="button" variant="ghost" onClick={() => void restoreOrder(o)} disabled={busyDeleteId === o.id}>
-                    {busyDeleteId === o.id ? "Procesando..." : "Restaurar"}
-                  </Button>
+                  <>
+                    <Button type="button" variant="ghost" onClick={() => void restoreOrder(o)} disabled={busyDeleteId === o.id}>
+                      {busyDeleteId === o.id ? "Procesando..." : "Restaurar"}
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={() => void purgeOrder(o)} disabled={busyDeleteId === o.id}>
+                      {busyDeleteId === o.id ? "Procesando..." : "Eliminar definitivo"}
+                    </Button>
+                  </>
                 )}
               </div>
             </CardBody>

@@ -119,6 +119,56 @@ async function autoTrashOldCancelledOrders(now: Timestamp, olderThanDays = 90, l
   return count;
 }
 
+async function autoPurgeTrashOrders(now: Timestamp, olderThanDays = 30, limit = 100): Promise<number> {
+  const cutoff = Timestamp.fromMillis(now.toMillis() - olderThanDays * 24 * 60 * 60 * 1000);
+  const qs = await adminDb.collection("orders").where("deletedAt", "<", cutoff).limit(limit).get();
+  if (qs.empty) return 0;
+  const batch = adminDb.batch();
+  let count = 0;
+  for (const doc of qs.docs) {
+    const data = doc.data() as any;
+    batch.delete(doc.ref);
+    const auditRef = adminDb.collection("auditLogs").doc();
+    batch.set(auditRef, {
+      actor: { uid: "cron", email: "cron@local" },
+      action: "ORDER_AUTO_PURGED_TRASH",
+      target: { type: "order", id: doc.id, publicCode: data?.publicCode ?? "" },
+      before: { status: data?.status ?? "", deletedAt: data?.deletedAt ?? null },
+      after: null,
+      meta: { ip: "cron", userAgent: "cron" },
+      createdAt: new Date(),
+    });
+    count += 1;
+  }
+  if (count > 0) await batch.commit();
+  return count;
+}
+
+async function autoPurgeTrashProducts(now: Timestamp, olderThanDays = 30, limit = 100): Promise<number> {
+  const cutoff = Timestamp.fromMillis(now.toMillis() - olderThanDays * 24 * 60 * 60 * 1000);
+  const qs = await adminDb.collection("products").where("deletedAt", "<", cutoff).limit(limit).get();
+  if (qs.empty) return 0;
+  const batch = adminDb.batch();
+  let count = 0;
+  for (const doc of qs.docs) {
+    const data = doc.data() as any;
+    batch.delete(doc.ref);
+    const auditRef = adminDb.collection("auditLogs").doc();
+    batch.set(auditRef, {
+      actor: { uid: "cron", email: "cron@local" },
+      action: "PRODUCT_AUTO_PURGED_TRASH",
+      target: { type: "product", id: doc.id },
+      before: { slug: data?.slug ?? "", deletedAt: data?.deletedAt ?? null },
+      after: null,
+      meta: { ip: "cron", userAgent: "cron" },
+      createdAt: new Date(),
+    });
+    count += 1;
+  }
+  if (count > 0) await batch.commit();
+  return count;
+}
+
 export async function POST(req: Request) {
   try {
     const env = getServerEnv();
@@ -133,8 +183,10 @@ export async function POST(req: Request) {
     const b = await processExpiredForStatus("SCHEDULED", now, 50);
     const c = await processExpiredForStatus("PAYMENT_SENT", now, 50);
     const d = await autoTrashOldCancelledOrders(now, 90, 100);
+    const e = await autoPurgeTrashOrders(now, 30, 100);
+    const f = await autoPurgeTrashProducts(now, 30, 100);
 
-    return NextResponse.json({ ok: true, processed: a + b + c, autoTrashedOldCancelled: d }, { status: 200 });
+    return NextResponse.json({ ok: true, processed: a + b + c, autoTrashedOldCancelled: d, autoPurgedOrders: e, autoPurgedProducts: f }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     console.error("[cron/release-expired] error", msg);
