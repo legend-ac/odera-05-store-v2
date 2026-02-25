@@ -5,6 +5,7 @@ import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 
 type Product = {
   id: string;
+  productType: "zapatillas" | "ropa" | "accesorios";
   slug: string;
   status: "active" | "archived";
   name: string;
@@ -21,6 +22,7 @@ type Product = {
 function emptyProduct(): Product {
   return {
     id: "",
+    productType: "zapatillas",
     slug: "",
     status: "active",
     name: "",
@@ -58,11 +60,7 @@ async function fileToWebp(file: File, maxSize = 1000, quality = 0.82): Promise<{
   ctx.drawImage(img, 0, 0, w, h);
 
   const blob: Blob = await new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error("toBlob failed"))),
-      "image/webp",
-      quality
-    );
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/webp", quality);
   });
 
   URL.revokeObjectURL(url);
@@ -70,7 +68,12 @@ async function fileToWebp(file: File, maxSize = 1000, quality = 0.82): Promise<{
 }
 
 function safeSlug(input: string): string {
-  const s = input.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  const s = input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
   return s || "product";
 }
 
@@ -123,11 +126,20 @@ async function uploadToCloudinary(blob: Blob, slug: string, filename: string): P
 export default function ProductsClient({ initialProducts }: { initialProducts: Product[] }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [selectedId, setSelectedId] = useState<string>("");
+  const [query, setQuery] = useState("");
   const [draft, setDraft] = useState<Product>(() => emptyProduct());
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const selected = useMemo(() => products.find((p) => p.id === selectedId) ?? null, [products, selectedId]);
+  const filteredProducts = useMemo(() => {
+    const token = query.trim().toLowerCase();
+    if (!token) return products;
+    return products.filter((p) =>
+      [p.slug, p.name, p.brand, p.category, p.productType].some((x) => (x ?? "").toLowerCase().includes(token))
+    );
+  }, [products, query]);
+  const activeCount = useMemo(() => products.filter((p) => p.status === "active").length, [products]);
 
   function loadSelected() {
     if (!selected) return;
@@ -151,6 +163,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
     setMsg(null);
     try {
       const payload = {
+        productType: draft.productType,
         slug: draft.slug,
         status: draft.status,
         name: draft.name,
@@ -167,7 +180,6 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
       await apiPost("/api/admin/products/upsert", payload, { csrfCookieName: CSRF_COOKIE_NAME });
       setMsg("Guardado.");
 
-      // Update local list
       setProducts((prev) => {
         const exists = prev.find((p) => p.id === draft.slug);
         const nextItem: Product = { ...draft, id: draft.slug };
@@ -229,6 +241,18 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
       <div className="panel p-3 md:p-4 h-fit rounded-2xl border-slate-200">
         <div className="font-semibold text-slate-900 mb-2">Productos</div>
 
+        <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-emerald-800">Activos: {activeCount}</div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">Total: {products.length}</div>
+        </div>
+
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por slug, nombre o marca"
+          className="mb-3 h-10 w-full rounded-xl border border-slate-300 px-3 text-sm"
+        />
+
         <div className="flex gap-2 mb-3">
           <button
             type="button"
@@ -257,7 +281,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
           className="w-full border border-slate-300 rounded-xl px-2 py-2 text-sm bg-white"
         >
           <option value="">(Selecciona)</option>
-          {products.map((p) => (
+          {filteredProducts.map((p) => (
             <option key={p.id} value={p.id}>
               {p.slug} - {p.status === "active" ? "Activo" : "Archivado"}
             </option>
@@ -265,7 +289,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         </select>
 
         <div className="mt-3 text-xs text-slate-500">
-          Nota: aquí el <b>docId</b> es el <b>slug</b>. Cambiar slug crea otro documento.
+          Nota: aqui el <b>docId</b> es el <b>slug</b>. Cambiar slug crea otro documento.
         </div>
       </div>
 
@@ -273,14 +297,17 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Editor de producto</h1>
-            <p className="text-sm text-slate-600">Crea y actualiza productos con variantes e imágenes.</p>
+            <p className="text-sm text-slate-600">Crea y actualiza productos con variantes e imagenes.</p>
+            {selected ? (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700">
+                <span className="font-semibold">{selected.slug}</span>
+                <span className={selected.status === "active" ? "text-emerald-700" : "text-slate-600"}>
+                  {selected.status === "active" ? "Activo" : "Archivado"}
+                </span>
+              </div>
+            ) : null}
           </div>
-          <button
-            type="button"
-            onClick={save}
-            disabled={busy}
-            className="btn-brand disabled:opacity-50"
-          >
+          <button type="button" onClick={save} disabled={busy} className="btn-brand disabled:opacity-50">
             {busy ? "Guardando..." : "Guardar"}
           </button>
         </div>
@@ -288,7 +315,19 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         {msg ? <div className="text-sm text-slate-700 panel p-3 rounded-2xl border-slate-200">{msg}</div> : null}
 
         <div className="grid gap-4">
-          <div className="grid md:grid-cols-2 gap-3 panel p-3 md:p-4">
+          <div className="grid md:grid-cols-3 gap-3 panel p-3 md:p-4">
+            <div className="grid gap-1">
+              <label className="text-sm font-medium">Tipo de producto</label>
+              <select
+                value={draft.productType}
+                onChange={(e) => setDraft((d) => ({ ...d, productType: e.target.value as Product["productType"] }))}
+                className="border border-slate-300 rounded-md px-3 py-2 text-sm"
+              >
+                <option value="zapatillas">Zapatillas</option>
+                <option value="ropa">Ropa</option>
+                <option value="accesorios">Accesorios</option>
+              </select>
+            </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">Slug (kebab-case)</label>
               <input value={draft.slug} onChange={(e) => setDraft((d) => ({ ...d, slug: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
@@ -323,13 +362,13 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
               <input value={draft.brand} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
             <div className="grid gap-1">
-              <label className="text-sm font-medium">Categoría</label>
+              <label className="text-sm font-medium">Categoria</label>
               <input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm" />
             </div>
           </div>
 
           <div className="grid gap-1 panel p-3 md:p-4">
-            <label className="text-sm font-medium">Descripción</label>
+            <label className="text-sm font-medium">Descripcion</label>
             <textarea value={draft.description} onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm min-h-28" />
           </div>
 
@@ -355,7 +394,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
 
           <div className="border border-neutral-200 rounded-xl p-3 md:p-4 bg-white">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-              <div className="font-medium">Imágenes (spark: solo URLs o /public)</div>
+              <div className="font-medium">Imagenes (spark: solo URLs o /public)</div>
               <label className="text-sm px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 cursor-pointer w-fit">
                 + Convertir a WebP
                 <input
@@ -420,7 +459,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                   </button>
                 </div>
               ))}
-              {!draft.images.length ? <div className="text-sm text-neutral-500">Sin imágenes.</div> : null}
+              {!draft.images.length ? <div className="text-sm text-neutral-500">Sin imagenes.</div> : null}
             </div>
           </div>
 
@@ -439,35 +478,71 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             <div className="grid gap-2">
               {draft.variants.map((v, idx) => (
                 <div key={idx} className="grid md:grid-cols-[160px_120px_120px_1fr_120px_90px] gap-2 items-center">
-                  <input value={v.id} onChange={(e) => setDraft((d) => {
-                    const copy = [...d.variants];
-                    copy[idx] = { ...copy[idx]!, id: e.target.value };
-                    return { ...d, variants: copy };
-                  })} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="id" />
+                  <input
+                    value={v.id}
+                    onChange={(e) =>
+                      setDraft((d) => {
+                        const copy = [...d.variants];
+                        copy[idx] = { ...copy[idx]!, id: e.target.value };
+                        return { ...d, variants: copy };
+                      })
+                    }
+                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+                    placeholder="id"
+                  />
 
-                  <input value={v.size ?? ""} onChange={(e) => setDraft((d) => {
-                    const copy = [...d.variants];
-                    copy[idx] = { ...copy[idx]!, size: e.target.value || undefined };
-                    return { ...d, variants: copy };
-                  })} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="talla" />
+                  <input
+                    value={v.size ?? ""}
+                    onChange={(e) =>
+                      setDraft((d) => {
+                        const copy = [...d.variants];
+                        copy[idx] = { ...copy[idx]!, size: e.target.value || undefined };
+                        return { ...d, variants: copy };
+                      })
+                    }
+                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+                    placeholder="talla"
+                  />
 
-                  <input value={v.color ?? ""} onChange={(e) => setDraft((d) => {
-                    const copy = [...d.variants];
-                    copy[idx] = { ...copy[idx]!, color: e.target.value || undefined };
-                    return { ...d, variants: copy };
-                  })} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="color" />
+                  <input
+                    value={v.color ?? ""}
+                    onChange={(e) =>
+                      setDraft((d) => {
+                        const copy = [...d.variants];
+                        copy[idx] = { ...copy[idx]!, color: e.target.value || undefined };
+                        return { ...d, variants: copy };
+                      })
+                    }
+                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+                    placeholder="color"
+                  />
 
-                  <input value={v.sku ?? ""} onChange={(e) => setDraft((d) => {
-                    const copy = [...d.variants];
-                    copy[idx] = { ...copy[idx]!, sku: e.target.value || undefined };
-                    return { ...d, variants: copy };
-                  })} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="sku (opcional)" />
+                  <input
+                    value={v.sku ?? ""}
+                    onChange={(e) =>
+                      setDraft((d) => {
+                        const copy = [...d.variants];
+                        copy[idx] = { ...copy[idx]!, sku: e.target.value || undefined };
+                        return { ...d, variants: copy };
+                      })
+                    }
+                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+                    placeholder="sku (opcional)"
+                  />
 
-                  <input type="number" value={v.stock} onChange={(e) => setDraft((d) => {
-                    const copy = [...d.variants];
-                    copy[idx] = { ...copy[idx]!, stock: Number(e.target.value) };
-                    return { ...d, variants: copy };
-                  })} className="border border-neutral-300 rounded-md px-3 py-2 text-sm" placeholder="stock" />
+                  <input
+                    type="number"
+                    value={v.stock}
+                    onChange={(e) =>
+                      setDraft((d) => {
+                        const copy = [...d.variants];
+                        copy[idx] = { ...copy[idx]!, stock: Number(e.target.value) };
+                        return { ...d, variants: copy };
+                      })
+                    }
+                    className="border border-neutral-300 rounded-md px-3 py-2 text-sm"
+                    placeholder="stock"
+                  />
 
                   <button type="button" className="px-3 py-2 rounded-lg border border-neutral-300 text-sm bg-white hover:bg-neutral-50" onClick={() => setDraft((d) => ({ ...d, variants: d.variants.filter((_, i) => i !== idx) }))}>
                     Quitar
@@ -476,9 +551,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
               ))}
             </div>
 
-            <div className="mt-2 text-xs text-neutral-500">
-              El stock se decrementa/incrementa exclusivamente en el backend (transactions).
-            </div>
+            <div className="mt-2 text-xs text-neutral-500">El stock se decrementa/incrementa exclusivamente en el backend (transactions).</div>
           </div>
         </div>
 
@@ -489,5 +562,3 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
     </div>
   );
 }
-
-

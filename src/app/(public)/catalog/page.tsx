@@ -4,7 +4,9 @@ import type { ProductCardData } from "@/components/ProductCard";
 
 export const revalidate = 60;
 
-async function loadInitialCatalog(): Promise<ProductCardData[]> {
+type CatalogItem = ProductCardData & { productType?: "zapatillas" | "ropa" | "accesorios" };
+
+async function loadInitialCatalog(): Promise<CatalogItem[]> {
   const snap = await adminDb.collection("products").where("status", "==", "active").limit(150).get();
   const raw = snap.docs.map((d) => {
     const data = d.data() as any;
@@ -22,6 +24,7 @@ async function loadInitialCatalog(): Promise<ProductCardData[]> {
       onSale: Boolean(data.onSale),
       imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
       imageUrls,
+      productType: (String(data?.productType ?? "").toLowerCase() as CatalogItem["productType"]) || undefined,
       dedupeKey,
       updatedAtMs,
     };
@@ -29,7 +32,7 @@ async function loadInitialCatalog(): Promise<ProductCardData[]> {
 
   const byLatest = raw.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
   const seen = new Set<string>();
-  const list: ProductCardData[] = [];
+  const list: CatalogItem[] = [];
   for (const it of byLatest) {
     if (seen.has(it.dedupeKey)) continue;
     seen.add(it.dedupeKey);
@@ -41,6 +44,7 @@ async function loadInitialCatalog(): Promise<ProductCardData[]> {
       onSale: it.onSale,
       imageUrl: it.imageUrl,
       imageUrls: it.imageUrls,
+      productType: it.productType,
     });
     if (list.length >= 50) break;
   }
@@ -55,5 +59,7 @@ export default async function CatalogPage({
   const initialItems = await loadInitialCatalog();
   const q = searchParams?.q;
   const initialQuery = Array.isArray(q) ? q[0] ?? "" : q ?? "";
-  return <CatalogClient initialItems={initialItems} initialQuery={initialQuery} />;
+  const type = searchParams?.type;
+  const initialType = Array.isArray(type) ? type[0] ?? "" : type ?? "";
+  return <CatalogClient initialItems={initialItems} initialQuery={initialQuery} initialType={initialType} />;
 }

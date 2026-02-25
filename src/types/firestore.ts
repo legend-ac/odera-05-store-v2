@@ -1,4 +1,5 @@
 export type ProductStatus = "active" | "archived";
+export type ProductType = "zapatillas" | "ropa" | "accesorios";
 
 export type ProductImage = {
   url: string;
@@ -16,6 +17,7 @@ export type ProductVariant = {
 };
 
 export type ProductDoc = {
+  productType: ProductType;
   status: ProductStatus;
   slug: string;
   name: string;

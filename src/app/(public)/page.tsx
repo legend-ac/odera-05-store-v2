@@ -1,5 +1,4 @@
 import Link from "next/link";
-import FeaturedProducts from "@/components/FeaturedProducts";
 import HomeSocialLinks from "@/components/HomeSocialLinks";
 import { Card, CardBody } from "@/components/ui/card";
 import { Container, Section } from "@/components/ui/layout";
@@ -12,6 +11,30 @@ const trustItems = [
   { title: "Pago por Yape o Plin", desc: "Elige tu metodo y envia tu comprobante en minutos.", value: "Simple" },
   { title: "Atencion por WhatsApp", desc: "Te ayudamos antes y despues de tu compra.", value: "Directa" },
   { title: "Despacho nacional", desc: "Entrega en Lima y envios por agencia a provincia.", value: "Peru" },
+];
+
+const categoryCards = [
+  {
+    title: "Zapatillas",
+    href: "/catalog?type=zapatillas",
+    subtitle: "Running, urbano y futbol",
+    tone: "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/70",
+    cta: "Ver zapatillas",
+  },
+  {
+    title: "Ropa",
+    href: "/catalog?type=ropa",
+    subtitle: "Poleras, casacas y conjuntos",
+    tone: "border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100/70",
+    cta: "Ver ropa",
+  },
+  {
+    title: "Accesorios",
+    href: "/catalog?type=accesorios",
+    subtitle: "Mochilas, medias y mas",
+    tone: "border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100",
+    cta: "Ver accesorios",
+  },
 ];
 
 export default async function HomePage() {
@@ -148,14 +171,26 @@ export default async function HomePage() {
         <Section className="py-0 flex flex-col gap-4">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-display font-bold text-slate-900">Destacados</h2>
-              <p className="text-sm text-slate-600">Productos recomendados por nuestros clientes.</p>
+              <h2 className="text-2xl font-display font-bold text-slate-900">Explora por categoria</h2>
+              <p className="text-sm text-slate-600">Accede rapido a lo que te interesa comprar hoy.</p>
             </div>
-            <Link href="/catalog" className="text-sm text-slate-700 hover:text-slate-900 font-medium">
-              Ver catalogo completo
+            <Link href="/catalog" className="inline-flex h-11 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition-colors">
+              Ver todo
             </Link>
           </div>
-          <FeaturedProducts />
+
+          <div className="grid gap-3 md:grid-cols-3">
+            {categoryCards.map((item) => (
+              <Link key={item.title} href={item.href} className={`group rounded-2xl border p-4 md:p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${item.tone}`}>
+                <p className="text-xs font-semibold uppercase tracking-[.12em] text-slate-600">Categoria</p>
+                <h3 className="mt-2 text-2xl font-display font-bold text-slate-900">{item.title}</h3>
+                <p className="mt-1.5 text-sm text-slate-700">{item.subtitle}</p>
+                <span className="mt-4 inline-flex h-10 items-center rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 group-hover:bg-slate-100 transition-colors">
+                  {item.cta}
+                </span>
+              </Link>
+            ))}
+          </div>
         </Section>
 
         <HomeSocialLinks />

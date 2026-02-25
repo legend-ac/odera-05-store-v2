@@ -16,6 +16,7 @@ export const productVariantSchema = z.object({
 });
 
 export const productUpsertSchema = z.object({
+  productType: z.enum(["zapatillas", "ropa", "accesorios"]),
   slug: z
     .string()
     .min(2)

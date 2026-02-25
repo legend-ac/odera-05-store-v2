@@ -10,18 +10,29 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/fields";
 
 type SortType = "latest" | "price-asc" | "price-desc" | "name";
+type ProductTypeFilter = "" | "zapatillas" | "ropa" | "accesorios";
+type CatalogItem = ProductCardData & { productType?: ProductTypeFilter };
+
+function parseType(value: string): ProductTypeFilter {
+  const t = (value ?? "").toLowerCase();
+  if (t === "zapatillas" || t === "ropa" || t === "accesorios") return t;
+  return "";
+}
 
 export default function CatalogClient({
   initialItems,
   initialQuery,
+  initialType,
 }: {
-  initialItems: ProductCardData[];
+  initialItems: CatalogItem[];
   initialQuery: string;
+  initialType: string;
 }) {
   const [qText, setQText] = useState(initialQuery ?? "");
   const token = useMemo(() => normalizeToken(qText).split(/\s+/g).filter(Boolean)[0] ?? "", [qText]);
+  const [typeFilter, setTypeFilter] = useState<ProductTypeFilter>(parseType(initialType));
   const [sortBy, setSortBy] = useState<SortType>("latest");
-  const [items, setItems] = useState<ProductCardData[] | null>(initialItems ?? []);
+  const [items, setItems] = useState<CatalogItem[] | null>(initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,6 +69,7 @@ export default function CatalogClient({
             onSale: Boolean(data.onSale),
             imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
             imageUrls,
+            productType: parseType(String(data?.productType ?? "")),
             dedupeKey,
             updatedAtMs,
           };
@@ -65,7 +77,7 @@ export default function CatalogClient({
 
         const byLatest = raw.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
         const seen = new Set<string>();
-        const list: ProductCardData[] = [];
+        const list: CatalogItem[] = [];
         for (const it of byLatest) {
           if (seen.has(it.dedupeKey)) continue;
           seen.add(it.dedupeKey);
@@ -77,6 +89,7 @@ export default function CatalogClient({
             onSale: it.onSale,
             imageUrl: it.imageUrl,
             imageUrls: it.imageUrls,
+            productType: it.productType,
           });
         }
 
@@ -93,7 +106,8 @@ export default function CatalogClient({
   }, [token, initialItems]);
 
   const sortedItems = useMemo(() => {
-    const list = [...(items ?? [])];
+    const base = [...(items ?? [])];
+    const list = typeFilter ? base.filter((p) => p.productType === typeFilter) : base;
     if (sortBy === "name") return list.sort((a, b) => a.name.localeCompare(b.name));
     if (sortBy === "price-asc") {
       return list.sort((a, b) => {
@@ -110,7 +124,7 @@ export default function CatalogClient({
       });
     }
     return list;
-  }, [items, sortBy]);
+  }, [items, sortBy, typeFilter]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:py-10 flex flex-col gap-6">
@@ -121,7 +135,7 @@ export default function CatalogClient({
 
       <Card className="rounded-2xl border-slate-200 panel-soft-hover">
         <CardBody className="flex flex-col gap-3">
-          <div className="grid gap-2 md:grid-cols-[1fr_190px_120px]">
+          <div className="grid gap-2 md:grid-cols-[1fr_180px_170px_120px]">
             <Input value={qText} onChange={(e) => setQText(e.target.value)} placeholder="Buscar (ej. nike, polera, negro)" />
             <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
               <option value="latest">Más recientes</option>
@@ -129,15 +143,15 @@ export default function CatalogClient({
               <option value="price-desc">Precio: mayor a menor</option>
               <option value="name">Nombre A-Z</option>
             </Select>
+            <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as ProductTypeFilter)}>
+              <option value="">Todos los tipos</option>
+              <option value="zapatillas">Zapatillas</option>
+              <option value="ropa">Ropa</option>
+              <option value="accesorios">Accesorios</option>
+            </Select>
             <Button type="button" variant="secondary" onClick={() => setQText("")}>
               Limpiar
             </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setQText("zapatillas")} className="chip-link">Zapatillas</button>
-            <button type="button" onClick={() => setQText("oferta")} className="chip-link">Ofertas</button>
-            <button type="button" onClick={() => setQText("futbol")} className="chip-link">Futbol</button>
-            <button type="button" onClick={() => setQText("running")} className="chip-link">Running</button>
           </div>
         </CardBody>
       </Card>
@@ -182,7 +196,7 @@ export default function CatalogClient({
       {items && !items.length ? (
         <Card className="rounded-2xl border-slate-200">
           <CardBody className="py-10 text-center">
-            <p className="text-base font-semibold text-slate-900">No encontramos productos con esa busqueda</p>
+            <p className="text-base font-semibold text-slate-900">No encontramos productos con esa búsqueda</p>
             <p className="text-sm text-slate-600 mt-1">Prueba con otra palabra o limpia el filtro.</p>
             <div className="mt-4">
               <Button type="button" variant="secondary" onClick={() => setQText("")}>

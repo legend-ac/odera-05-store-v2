@@ -17,6 +17,7 @@ export default async function ProductsPage() {
     const data = d.data() as any;
     return {
       id: d.id,
+      productType: (data.productType as string) || "zapatillas",
       slug: data.slug as string,
       status: data.status as string,
       name: data.name as string,
