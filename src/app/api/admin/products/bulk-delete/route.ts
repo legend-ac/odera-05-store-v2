@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
 import { cookies } from "next/headers";
+import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { assertCsrfHeader } from "@/lib/server/csrf";
 import { SESSION_COOKIE_NAME, verifyAdminSessionCookie } from "@/lib/server/adminSession";
@@ -11,7 +11,9 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const bodySchema = z.object({
-  productId: z.string().min(2),
+  status: z.enum(["active", "archived", "ALL"]).optional(),
+  productType: z.string().optional(),
+  limit: z.number().int().min(1).max(500).optional(),
 });
 
 export async function POST(req: Request) {
@@ -24,46 +26,52 @@ export async function POST(req: Request) {
     const parsed = bodySchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: "VALIDATION_ERROR", issues: parsed.error.issues }, { status: 400 });
 
+    const status = parsed.data.status ?? "archived";
+    const productType = (parsed.data.productType ?? "").trim();
+    const limit = parsed.data.limit ?? 200;
+    const now = Timestamp.now();
     const ip = getRequestIp(req);
     const ua = getUserAgent(req);
-    const now = Timestamp.now();
-    const productRef = adminDb.collection("products").doc(parsed.data.productId);
 
-    await adminDb.runTransaction(async (tx) => {
-      const snap = await tx.get(productRef);
-      if (!snap.exists) throw new Error("PRODUCT_NOT_FOUND");
-      const before = snap.data() as any;
-      if (String(before?.status ?? "") !== "archived") {
-        throw new Error("PRODUCT_DELETE_REQUIRES_ARCHIVED");
-      }
+    const qs = await adminDb.collection("products").orderBy("updatedAt", "desc").limit(1500).get();
+    const targets = qs.docs.filter((d) => {
+      const p = d.data() as any;
+      if (p?.deletedAt) return false;
+      if (status !== "ALL" && String(p?.status ?? "") !== status) return false;
+      if (productType && String(p?.productType ?? "") !== productType) return false;
+      return true;
+    }).slice(0, limit);
 
-      tx.update(productRef, {
+    const batch = adminDb.batch();
+    for (const doc of targets) {
+      const p = doc.data() as any;
+      batch.update(doc.ref, {
         deletedAt: now,
         deletedBy: { uid: admin.uid, email: admin.email },
         updatedAt: now,
       });
       const auditRef = adminDb.collection("auditLogs").doc();
-      tx.set(auditRef, {
+      batch.set(auditRef, {
         actor: { uid: admin.uid, email: admin.email },
-        action: "PRODUCT_TRASHED",
-        target: { type: "product", id: parsed.data.productId },
-        before: { name: before?.name ?? "", slug: before?.slug ?? "", status: before?.status ?? "" },
+        action: "PRODUCT_BULK_TRASHED",
+        target: { type: "product", id: doc.id },
+        before: { slug: p?.slug ?? "", status: p?.status ?? "", deletedAt: p?.deletedAt ?? null },
         after: { deletedAt: now },
         meta: { ip, userAgent: ua },
         createdAt: now,
       });
-    });
+    }
+    await batch.commit();
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json({ ok: true, processed: targets.length }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     const codeToStatus: Record<string, number> = {
       CSRF_FAILED: 403,
       NOT_ADMIN: 403,
       AUTH_TOO_OLD: 401,
-      PRODUCT_NOT_FOUND: 404,
-      PRODUCT_DELETE_REQUIRES_ARCHIVED: 409,
     };
     return NextResponse.json({ error: msg }, { status: codeToStatus[msg] ?? 500 });
   }
 }
+

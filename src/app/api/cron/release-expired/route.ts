@@ -83,6 +83,42 @@ async function processExpiredForStatus(status: Extract<OrderStatus, "SCHEDULED" 
   return processed;
 }
 
+async function autoTrashOldCancelledOrders(now: Timestamp, olderThanDays = 90, limit = 100): Promise<number> {
+  const cutoff = Timestamp.fromMillis(now.toMillis() - olderThanDays * 24 * 60 * 60 * 1000);
+  const q = adminDb
+    .collection("orders")
+    .where("status", "in", ["CANCELLED", "CANCELLED_EXPIRED"])
+    .where("createdAt", "<", cutoff)
+    .limit(limit);
+  const qs = await q.get();
+  if (qs.empty) return 0;
+
+  const batch = adminDb.batch();
+  let count = 0;
+  for (const doc of qs.docs) {
+    const data = doc.data() as any;
+    if (data?.deletedAt) continue;
+    batch.update(doc.ref, {
+      deletedAt: now,
+      deletedBy: { uid: "cron", email: "cron@local" },
+      updatedAt: now,
+    });
+    const auditRef = adminDb.collection("auditLogs").doc();
+    batch.set(auditRef, {
+      actor: { uid: "cron", email: "cron@local" },
+      action: "ORDER_AUTO_TRASHED_OLD_CANCELLED",
+      target: { type: "order", id: doc.id, publicCode: data?.publicCode ?? "" },
+      before: { status: data?.status ?? "", deletedAt: data?.deletedAt ?? null },
+      after: { deletedAt: now },
+      meta: { ip: "cron", userAgent: "cron" },
+      createdAt: new Date(),
+    });
+    count += 1;
+  }
+  if (count > 0) await batch.commit();
+  return count;
+}
+
 export async function POST(req: Request) {
   try {
     const env = getServerEnv();
@@ -96,8 +132,9 @@ export async function POST(req: Request) {
     const a = await processExpiredForStatus("PENDING_VALIDATION", now, 50);
     const b = await processExpiredForStatus("SCHEDULED", now, 50);
     const c = await processExpiredForStatus("PAYMENT_SENT", now, 50);
+    const d = await autoTrashOldCancelledOrders(now, 90, 100);
 
-    return NextResponse.json({ ok: true, processed: a + b + c }, { status: 200 });
+    return NextResponse.json({ ok: true, processed: a + b + c, autoTrashedOldCancelled: d }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     console.error("[cron/release-expired] error", msg);

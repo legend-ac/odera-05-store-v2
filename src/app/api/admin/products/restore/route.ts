@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
 import { cookies } from "next/headers";
+import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { assertCsrfHeader } from "@/lib/server/csrf";
 import { SESSION_COOKIE_NAME, verifyAdminSessionCookie } from "@/lib/server/adminSession";
@@ -27,28 +27,29 @@ export async function POST(req: Request) {
     const ip = getRequestIp(req);
     const ua = getUserAgent(req);
     const now = Timestamp.now();
-    const productRef = adminDb.collection("products").doc(parsed.data.productId);
+    const ref = adminDb.collection("products").doc(parsed.data.productId);
 
     await adminDb.runTransaction(async (tx) => {
-      const snap = await tx.get(productRef);
+      const snap = await tx.get(ref);
       if (!snap.exists) throw new Error("PRODUCT_NOT_FOUND");
       const before = snap.data() as any;
-      if (String(before?.status ?? "") !== "archived") {
-        throw new Error("PRODUCT_DELETE_REQUIRES_ARCHIVED");
-      }
+      if (!before?.deletedAt) throw new Error("PRODUCT_NOT_TRASHED");
 
-      tx.update(productRef, {
-        deletedAt: now,
-        deletedBy: { uid: admin.uid, email: admin.email },
+      tx.update(ref, {
+        deletedAt: null,
+        deletedBy: null,
+        restoredAt: now,
+        restoredBy: { uid: admin.uid, email: admin.email },
         updatedAt: now,
       });
+
       const auditRef = adminDb.collection("auditLogs").doc();
       tx.set(auditRef, {
         actor: { uid: admin.uid, email: admin.email },
-        action: "PRODUCT_TRASHED",
+        action: "PRODUCT_RESTORED",
         target: { type: "product", id: parsed.data.productId },
-        before: { name: before?.name ?? "", slug: before?.slug ?? "", status: before?.status ?? "" },
-        after: { deletedAt: now },
+        before: { deletedAt: before?.deletedAt ?? null },
+        after: { deletedAt: null },
         meta: { ip, userAgent: ua },
         createdAt: now,
       });
@@ -62,8 +63,9 @@ export async function POST(req: Request) {
       NOT_ADMIN: 403,
       AUTH_TOO_OLD: 401,
       PRODUCT_NOT_FOUND: 404,
-      PRODUCT_DELETE_REQUIRES_ARCHIVED: 409,
+      PRODUCT_NOT_TRASHED: 409,
     };
     return NextResponse.json({ error: msg }, { status: codeToStatus[msg] ?? 500 });
   }
 }
+

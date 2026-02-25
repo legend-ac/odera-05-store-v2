@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
 import { cookies } from "next/headers";
+import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { assertCsrfHeader } from "@/lib/server/csrf";
 import { SESSION_COOKIE_NAME, verifyAdminSessionCookie } from "@/lib/server/adminSession";
@@ -11,7 +11,9 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const bodySchema = z.object({
-  productId: z.string().min(2),
+  status: z.string().optional(),
+  olderThanDays: z.number().int().min(0).max(3650).optional(),
+  limit: z.number().int().min(1).max(500).optional(),
 });
 
 export async function POST(req: Request) {
@@ -24,45 +26,55 @@ export async function POST(req: Request) {
     const parsed = bodySchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: "VALIDATION_ERROR", issues: parsed.error.issues }, { status: 400 });
 
+    const now = Timestamp.now();
     const ip = getRequestIp(req);
     const ua = getUserAgent(req);
-    const now = Timestamp.now();
-    const productRef = adminDb.collection("products").doc(parsed.data.productId);
+    const limit = parsed.data.limit ?? 200;
+    const status = (parsed.data.status ?? "").trim().toUpperCase();
+    const olderThanDays = parsed.data.olderThanDays ?? 0;
+    const cutoffMs = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
 
-    await adminDb.runTransaction(async (tx) => {
-      const snap = await tx.get(productRef);
-      if (!snap.exists) throw new Error("PRODUCT_NOT_FOUND");
-      const before = snap.data() as any;
-      if (String(before?.status ?? "") !== "archived") {
-        throw new Error("PRODUCT_DELETE_REQUIRES_ARCHIVED");
+    const qs = await adminDb.collection("orders").orderBy("createdAt", "desc").limit(1500).get();
+    const targets = qs.docs.filter((d) => {
+      const o = d.data() as any;
+      if (o?.deletedAt) return false;
+      const s = String(o?.status ?? "");
+      if (status && status !== "ALL" && s !== status) return false;
+      if (olderThanDays > 0) {
+        const ms = typeof o?.createdAt?.toMillis === "function" ? o.createdAt.toMillis() : null;
+        if (!ms || ms > cutoffMs) return false;
       }
+      return true;
+    }).slice(0, limit);
 
-      tx.update(productRef, {
+    const batch = adminDb.batch();
+    for (const doc of targets) {
+      const o = doc.data() as any;
+      batch.update(doc.ref, {
         deletedAt: now,
         deletedBy: { uid: admin.uid, email: admin.email },
         updatedAt: now,
       });
       const auditRef = adminDb.collection("auditLogs").doc();
-      tx.set(auditRef, {
+      batch.set(auditRef, {
         actor: { uid: admin.uid, email: admin.email },
-        action: "PRODUCT_TRASHED",
-        target: { type: "product", id: parsed.data.productId },
-        before: { name: before?.name ?? "", slug: before?.slug ?? "", status: before?.status ?? "" },
+        action: "ORDER_BULK_TRASHED",
+        target: { type: "order", id: doc.id, publicCode: o?.publicCode ?? "" },
+        before: { status: o?.status ?? "", deletedAt: o?.deletedAt ?? null },
         after: { deletedAt: now },
         meta: { ip, userAgent: ua },
         createdAt: now,
       });
-    });
+    }
+    await batch.commit();
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json({ ok: true, processed: targets.length }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     const codeToStatus: Record<string, number> = {
       CSRF_FAILED: 403,
       NOT_ADMIN: 403,
       AUTH_TOO_OLD: 401,
-      PRODUCT_NOT_FOUND: 404,
-      PRODUCT_DELETE_REQUIRES_ARCHIVED: 409,
     };
     return NextResponse.json({ error: msg }, { status: codeToStatus[msg] ?? 500 });
   }

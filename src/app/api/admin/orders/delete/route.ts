@@ -40,14 +40,18 @@ export async function POST(req: Request) {
         throw new Error("ORDER_DELETE_NOT_ALLOWED_STATUS");
       }
 
-      tx.delete(orderRef);
+      tx.update(orderRef, {
+        deletedAt: now,
+        deletedBy: { uid: admin.uid, email: admin.email },
+        updatedAt: now,
+      });
       const auditRef = adminDb.collection("auditLogs").doc();
       tx.set(auditRef, {
         actor: { uid: admin.uid, email: admin.email },
-        action: "ORDER_DELETED",
+        action: "ORDER_TRASHED",
         target: { type: "order", id: parsed.data.orderId, publicCode: before?.publicCode ?? "" },
         before: { status, publicCode: before?.publicCode ?? "", totals: before?.totals ?? null },
-        after: null,
+        after: { deletedAt: now },
         meta: { ip, userAgent: ua },
         createdAt: now,
       });
@@ -66,4 +70,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: codeToStatus[msg] ?? 500 });
   }
 }
-

@@ -22,6 +22,7 @@ type OrderRow = {
   shipping: any;
   reservedUntilMs: number | null;
   createdAtMs: number | null;
+  deletedAtMs?: number | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -77,21 +78,27 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
   const [exportTo, setExportTo] = useState("");
   const [exportStatus, setExportStatus] = useState("ALL");
   const [exportTemplate, setExportTemplate] = useState<"detalle" | "resumen">("detalle");
+  const [viewMode, setViewMode] = useState<"active" | "trash">("active");
+  const [busyMass, setBusyMass] = useState(false);
+
+  const activeOrders = useMemo(() => orders.filter((o) => !o.deletedAtMs), [orders]);
+  const trashedOrders = useMemo(() => orders.filter((o) => !!o.deletedAtMs), [orders]);
+  const baseList = viewMode === "active" ? activeOrders : trashedOrders;
 
   const counts = useMemo(() => {
     const m = new Map<string, number>();
-    for (const o of orders) m.set(o.status, (m.get(o.status) ?? 0) + 1);
+    for (const o of baseList) m.set(o.status, (m.get(o.status) ?? 0) + 1);
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [orders]);
+  }, [baseList]);
 
   const visibleOrders = useMemo(() => {
     const token = query.trim().toLowerCase();
-    return orders.filter((o) => {
+    return baseList.filter((o) => {
       if (statusFilter !== "ALL" && o.status !== statusFilter) return false;
       if (!token) return true;
       return [o.publicCode, o.customerName, o.email, o.phone].some((x) => (x ?? "").toLowerCase().includes(token));
     });
-  }, [orders, query, statusFilter]);
+  }, [baseList, query, statusFilter]);
 
   const exportHref = useMemo(() => {
     const sp = new URLSearchParams();
@@ -119,18 +126,57 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
   }
 
   async function deleteOrder(order: OrderRow) {
-    if (!window.confirm(`Eliminar pedido ${order.publicCode}?\nSolo se permite en estados terminales (Cancelado o Entregado).`)) return;
+    if (!window.confirm(`Mover pedido ${order.publicCode} a papelera?\nSolo se permite en estados terminales (Cancelado o Entregado).`)) return;
     setBusyDeleteId(order.id);
     setMsg(null);
     try {
       await apiPost("/api/admin/orders/delete", { orderId: order.id }, { csrfCookieName: CSRF_COOKIE_NAME });
-      setOrders((prev) => prev.filter((x) => x.id !== order.id));
-      setMsg(`Pedido ${order.publicCode} eliminado.`);
+      setOrders((prev) => prev.map((x) => (x.id === order.id ? { ...x, deletedAtMs: Date.now() } : x)));
+      setMsg(`Pedido ${order.publicCode} enviado a papelera.`);
     } catch (e) {
       const m = e instanceof Error ? e.message : "Error";
       setMsg(`Error: ${m}`);
     } finally {
       setBusyDeleteId(null);
+    }
+  }
+
+  async function restoreOrder(order: OrderRow) {
+    if (!window.confirm(`Restaurar pedido ${order.publicCode} desde papelera?`)) return;
+    setBusyDeleteId(order.id);
+    setMsg(null);
+    try {
+      await apiPost("/api/admin/orders/restore", { orderId: order.id }, { csrfCookieName: CSRF_COOKIE_NAME });
+      setOrders((prev) => prev.map((x) => (x.id === order.id ? { ...x, deletedAtMs: null } : x)));
+      setMsg(`Pedido ${order.publicCode} restaurado.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyDeleteId(null);
+    }
+  }
+
+  async function bulkTrashByFilter() {
+    if (!window.confirm("Mover masivamente a papelera segun filtros de exportacion?\nNo borra definitivamente.")) return;
+    setBusyMass(true);
+    setMsg(null);
+    try {
+      const olderThanDays = exportFrom
+        ? Math.max(0, Math.floor((Date.now() - new Date(`${exportFrom}T00:00:00`).getTime()) / (1000 * 60 * 60 * 24)))
+        : 0;
+      const payload = {
+        status: exportStatus,
+        olderThanDays,
+        limit: 500,
+      };
+      const res = await apiPost("/api/admin/orders/bulk-delete", payload, { csrfCookieName: CSRF_COOKIE_NAME }) as { processed?: number };
+      setMsg(`Pedidos enviados a papelera: ${res?.processed ?? 0}. Recarga la pagina para ver conteo exacto.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyMass(false);
     }
   }
 
@@ -142,7 +188,13 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           <p className="text-sm text-slate-600">Gestiona estado, comprobante y datos de entrega.</p>
         </div>
         <div className="text-xs text-slate-600 flex flex-wrap gap-2 items-center">
-          <Badge tone="default">Total: {orders.length}</Badge>
+          <Button type="button" variant={viewMode === "active" ? "secondary" : "ghost"} onClick={() => setViewMode("active")}>
+            Activos ({activeOrders.length})
+          </Button>
+          <Button type="button" variant={viewMode === "trash" ? "secondary" : "ghost"} onClick={() => setViewMode("trash")}>
+            Papelera ({trashedOrders.length})
+          </Button>
+          <Badge tone="default">Mostrando: {baseList.length}</Badge>
           {counts.map(([s, n]) => (
             <button
               key={s}
@@ -246,6 +298,11 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           >
             Limpiar export
           </Button>
+          {viewMode === "active" ? (
+            <Button type="button" variant="ghost" onClick={() => void bulkTrashByFilter()} disabled={busyMass}>
+              {busyMass ? "Procesando..." : "Mover a papelera (masivo)"}
+            </Button>
+          ) : null}
         </CardBody>
       </Card>
 
@@ -292,21 +349,25 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                   const changed = draft !== current;
                   return (
                       <>
-                        <Select
-                          className="md:w-72 rounded-xl"
-                          value={draft}
-                          onChange={(e) => setStatusDraft((prev) => ({ ...prev, [o.id]: e.target.value }))}
-                        >
-                          {getStatusOptions(current).map((s) => (
-                            <option key={s} value={s}>
-                              {STATUS_LABEL[s as OrderStatus] ?? s}
-                            </option>
-                          ))}
-                        </Select>
+                        {viewMode === "active" ? (
+                          <>
+                            <Select
+                              className="md:w-72 rounded-xl"
+                              value={draft}
+                              onChange={(e) => setStatusDraft((prev) => ({ ...prev, [o.id]: e.target.value }))}
+                            >
+                              {getStatusOptions(current).map((s) => (
+                                <option key={s} value={s}>
+                                  {STATUS_LABEL[s as OrderStatus] ?? s}
+                                </option>
+                              ))}
+                            </Select>
 
-                        <Button type="button" variant="secondary" onClick={() => updateStatus(o.id, draft)} disabled={busyId === o.id || !changed}>
-                          {busyId === o.id ? "Guardando..." : "Guardar estado"}
-                        </Button>
+                            <Button type="button" variant="secondary" onClick={() => updateStatus(o.id, draft)} disabled={busyId === o.id || !changed}>
+                              {busyId === o.id ? "Guardando..." : "Guardar estado"}
+                            </Button>
+                          </>
+                        ) : null}
                         <Button
                           type="button"
                           variant="ghost"
@@ -315,7 +376,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                         >
                           Copiar codigo
                         </Button>
-                        {changed ? <span className="text-xs text-amber-700">Cambio pendiente por guardar</span> : null}
+                        {viewMode === "active" && changed ? <span className="text-xs text-amber-700">Cambio pendiente por guardar</span> : null}
                       </>
                     );
                 })()}
@@ -327,9 +388,15 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                 ) : (
                   <span className="text-xs text-slate-500">Sin comprobante</span>
                 )}
-                <Button type="button" variant="ghost" onClick={() => void deleteOrder(o)} disabled={busyDeleteId === o.id}>
-                  {busyDeleteId === o.id ? "Eliminando..." : "Eliminar pedido"}
-                </Button>
+                {viewMode === "active" ? (
+                  <Button type="button" variant="ghost" onClick={() => void deleteOrder(o)} disabled={busyDeleteId === o.id}>
+                    {busyDeleteId === o.id ? "Procesando..." : "Enviar a papelera"}
+                  </Button>
+                ) : (
+                  <Button type="button" variant="ghost" onClick={() => void restoreOrder(o)} disabled={busyDeleteId === o.id}>
+                    {busyDeleteId === o.id ? "Procesando..." : "Restaurar"}
+                  </Button>
+                )}
               </div>
             </CardBody>
           </Card>

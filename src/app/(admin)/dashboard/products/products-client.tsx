@@ -17,6 +17,7 @@ type Product = {
   salePrice: number | null;
   images: { url: string; alt?: string; isMain: boolean; order: number }[];
   variants: { id: string; size?: string; color?: string; sku?: string; stock: number }[];
+  deletedAtMs?: number | null;
 };
 
 function emptyProduct(defaultType: string): Product {
@@ -142,24 +143,29 @@ export default function ProductsClient({
   const [draft, setDraft] = useState<Product>(() => emptyProduct(fallbackTypes[0]?.key ?? "zapatillas"));
   const [busy, setBusy] = useState(false);
   const [busyDelete, setBusyDelete] = useState(false);
+  const [busyBulkTrash, setBusyBulkTrash] = useState(false);
+  const [viewMode, setViewMode] = useState<"active" | "trash">("active");
   const [msg, setMsg] = useState<string | null>(null);
 
   const selected = useMemo(() => products.find((p) => p.id === selectedId) ?? null, [products, selectedId]);
+  const activeProducts = useMemo(() => products.filter((p) => !p.deletedAtMs), [products]);
+  const trashedProducts = useMemo(() => products.filter((p) => !!p.deletedAtMs), [products]);
+  const baseProducts = viewMode === "active" ? activeProducts : trashedProducts;
   const typeCounts = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of products) map.set(p.productType, (map.get(p.productType) ?? 0) + 1);
+    for (const p of baseProducts) map.set(p.productType, (map.get(p.productType) ?? 0) + 1);
     return map;
-  }, [products]);
-  const activeCount = useMemo(() => products.filter((p) => p.status === "active").length, [products]);
+  }, [baseProducts]);
+  const activeCount = useMemo(() => activeProducts.filter((p) => p.status === "active").length, [activeProducts]);
 
   const filteredProducts = useMemo(() => {
     const token = query.trim().toLowerCase();
-    return products.filter((p) => {
+    return baseProducts.filter((p) => {
       if (typeFilter && p.productType !== typeFilter) return false;
       if (!token) return true;
       return [p.slug, p.name, p.brand, p.category, p.productType].some((x) => (x ?? "").toLowerCase().includes(token));
     });
-  }, [products, query, typeFilter]);
+  }, [baseProducts, query, typeFilter]);
 
   const typeOptions = useMemo(() => {
     const fromSettings = fallbackTypes.map((t) => ({ key: t.key, label: t.label }));
@@ -267,21 +273,62 @@ export default function ProductsClient({
       setMsg("Para eliminar, primero cambia estado a Archivado y guarda.");
       return;
     }
-    if (!window.confirm(`Eliminar producto ${selected.slug}? Esta acción no se puede deshacer.`)) return;
+    if (!window.confirm(`Mover producto ${selected.slug} a papelera?`)) return;
 
     setBusyDelete(true);
     setMsg(null);
     try {
       await apiPost("/api/admin/products/delete", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
-      setProducts((prev) => prev.filter((p) => p.id !== selected.id));
+      setProducts((prev) => prev.map((p) => (p.id === selected.id ? { ...p, deletedAtMs: Date.now() } : p)));
       setSelectedId("");
       setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas"));
-      setMsg(`Producto ${selected.slug} eliminado.`);
+      setMsg(`Producto ${selected.slug} enviado a papelera.`);
     } catch (e) {
       const m = e instanceof Error ? e.message : "Error";
       setMsg(`Error: ${m}`);
     } finally {
       setBusyDelete(false);
+    }
+  }
+
+  async function restoreSelected() {
+    if (!selected) return;
+    if (!selected.deletedAtMs) {
+      setMsg("El producto no esta en papelera.");
+      return;
+    }
+    if (!window.confirm(`Restaurar producto ${selected.slug}?`)) return;
+
+    setBusyDelete(true);
+    setMsg(null);
+    try {
+      await apiPost("/api/admin/products/restore", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
+      setProducts((prev) => prev.map((p) => (p.id === selected.id ? { ...p, deletedAtMs: null } : p)));
+      setMsg(`Producto ${selected.slug} restaurado.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyDelete(false);
+    }
+  }
+
+  async function bulkTrashArchived() {
+    if (!window.confirm("Mover a papelera productos archivados del filtro actual?")) return;
+    setBusyBulkTrash(true);
+    setMsg(null);
+    try {
+      const res = (await apiPost(
+        "/api/admin/products/bulk-delete",
+        { status: "archived", productType: typeFilter || undefined, limit: 500 },
+        { csrfCookieName: CSRF_COOKIE_NAME }
+      )) as { processed?: number };
+      setMsg(`Productos enviados a papelera: ${res?.processed ?? 0}.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyBulkTrash(false);
     }
   }
 
@@ -292,7 +339,7 @@ export default function ProductsClient({
 
         <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-emerald-800">Activos: {activeCount}</div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">Total: {products.length}</div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">Mostrando: {baseProducts.length}</div>
           {typeOptions.map((t) => (
             <div key={t.key} className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
               {t.label}: {typeCounts.get(t.key) ?? 0}
@@ -320,6 +367,20 @@ export default function ProductsClient({
         <div className="flex gap-2 mb-3">
           <button
             type="button"
+            className={`px-3 py-2 rounded-xl border text-sm font-medium ${viewMode === "active" ? "border-slate-700 bg-slate-800 text-white" : "border-slate-300 bg-white hover:bg-slate-50"}`}
+            onClick={() => setViewMode("active")}
+          >
+            Activos ({activeProducts.length})
+          </button>
+          <button
+            type="button"
+            className={`px-3 py-2 rounded-xl border text-sm font-medium ${viewMode === "trash" ? "border-slate-700 bg-slate-800 text-white" : "border-slate-300 bg-white hover:bg-slate-50"}`}
+            onClick={() => setViewMode("trash")}
+          >
+            Papelera ({trashedProducts.length})
+          </button>
+          <button
+            type="button"
             className="px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white hover:bg-slate-50 font-medium"
             onClick={() => {
               setSelectedId("");
@@ -332,13 +393,23 @@ export default function ProductsClient({
           <button type="button" className="px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white hover:bg-slate-50 disabled:opacity-50 font-medium" disabled={!selected} onClick={loadSelected}>
             Cargar
           </button>
+          {viewMode === "active" ? (
+            <button
+              type="button"
+              className="px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white hover:bg-slate-50 disabled:opacity-50 font-medium"
+              onClick={() => void bulkTrashArchived()}
+              disabled={busyBulkTrash}
+            >
+              {busyBulkTrash ? "Procesando..." : "Masivo a papelera"}
+            </button>
+          ) : null}
         </div>
 
         <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} className="w-full border border-slate-300 rounded-xl px-2 py-2 text-sm bg-white">
           <option value="">(Selecciona)</option>
           {filteredProducts.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.slug} - {p.status === "active" ? "Activo" : "Archivado"}
+              {p.slug} - {p.status === "active" ? "Activo" : "Archivado"}{p.deletedAtMs ? " (papelera)" : ""}
             </option>
           ))}
         </select>
@@ -356,11 +427,11 @@ export default function ProductsClient({
             </button>
             <button
               type="button"
-              onClick={() => void deleteSelected()}
+              onClick={() => (viewMode === "active" ? void deleteSelected() : void restoreSelected())}
               disabled={busyDelete || !selected}
               className="btn-soft disabled:opacity-50"
             >
-              {busyDelete ? "Eliminando..." : "Eliminar"}
+              {busyDelete ? "Procesando..." : viewMode === "active" ? "Enviar a papelera" : "Restaurar"}
             </button>
           </div>
         </div>
