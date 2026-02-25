@@ -39,13 +39,35 @@ export default async function HomePage() {
   } catch {
     homePromoEnabled = true;
   }
+  const couponCode = homePromo.couponCode.trim();
+  const quickChips: Array<{ key: string; label: string; value: string; className: string }> = [];
+  if (couponCode) {
+    quickChips.push({
+      key: "coupon",
+      label: "Cupon",
+      value: couponCode,
+      className: "rounded-xl border border-emerald-200 bg-emerald-50/80",
+    });
+  }
+  quickChips.push({
+    key: "shipping",
+    label: "Envio gratis",
+    value: `Desde S/${homePromo.freeShippingFrom}`,
+    className: "rounded-xl border border-blue-200 bg-blue-50/80",
+  });
+  quickChips.push({
+    key: "tracking",
+    label: "Seguimiento",
+    value: "En tiempo real",
+    className: "rounded-xl border border-slate-200 bg-white/85",
+  });
 
   return (
     <Container className="py-6 md:py-8">
       <div className="flex flex-col gap-6 md:gap-8">
         <Section className="py-0">
           <div className="panel-premium bg-brand-mesh overflow-hidden p-4 sm:p-6 md:p-8">
-            <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="grid gap-5 md:grid-cols-[1.12fr_0.88fr]">
               <div className="flex flex-col gap-4 md:gap-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
@@ -68,23 +90,17 @@ export default async function HomePage() {
                   <Link href="/track" className="btn-soft">Seguir mi pedido</Link>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
-                    <p className="text-[11px] text-emerald-700">Cupon</p>
-                    <p className="text-sm font-bold text-emerald-900">{homePromo.couponCode}</p>
-                  </div>
-                  <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3">
-                    <p className="text-[11px] text-blue-700">Envio gratis</p>
-                    <p className="text-sm font-bold text-blue-900">Desde S/{homePromo.freeShippingFrom}</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-white/85 p-3 col-span-2 sm:col-span-1">
-                    <p className="text-[11px] text-slate-500">Seguimiento</p>
-                    <p className="text-sm font-bold text-slate-900">En tiempo real</p>
-                  </div>
+                <div className={quickChips.length === 2 ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-2 sm:grid-cols-3 gap-2.5"}>
+                  {quickChips.map((chip) => (
+                    <div key={chip.key} className={`${chip.className} p-3`}>
+                      <p className="text-[11px] text-slate-600">{chip.label}</p>
+                      <p className="text-sm font-bold text-slate-900">{chip.value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-[var(--brand-700)] via-[var(--brand-600)] to-[var(--brand-500)] p-4 md:p-5 text-white shadow-[0_18px_35px_rgba(31,77,31,0.35)]">
+              <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-[var(--brand-700)] via-[var(--brand-600)] to-[var(--brand-500)] p-4 md:p-5 text-white shadow-[0_18px_35px_rgba(31,77,31,0.35)] self-start">
                 <div className="rounded-xl border border-white/35 p-4 bg-white/5">
                   <p className="text-[11px] uppercase tracking-[.16em] text-white/85">Identidad oficial</p>
                   <p className="mt-2 text-3xl font-display font-bold">ODERA 05</p>
