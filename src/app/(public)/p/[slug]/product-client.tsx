@@ -144,16 +144,16 @@ export default function ProductClient({ slug }: { slug: string }) {
 
   return (
     <>
-      <div className="mx-auto grid max-w-6xl gap-4 px-3 py-4 sm:gap-6 sm:px-4 sm:py-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] lg:py-8">
+      <div className="mx-auto grid max-w-6xl gap-3 px-3 py-4 sm:gap-6 sm:px-4 sm:py-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] lg:py-8">
         <Card className="overflow-hidden">
           <CardBody className="p-0">
-            <div className="relative flex h-[220px] items-center justify-center overflow-hidden bg-slate-100 sm:h-[300px] md:h-[340px] lg:h-[360px] xl:h-[390px]">
+            <div className="relative flex h-[180px] items-center justify-center overflow-hidden bg-slate-100 sm:h-[260px] md:h-[320px] lg:h-[360px] xl:h-[390px]">
               {mainImg ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={mainImg}
                   alt={data.name ?? ""}
-                  className="h-full max-h-full w-auto max-w-full object-contain p-2 sm:p-3"
+                  className="h-full max-h-full w-auto max-w-full object-contain p-1.5 sm:p-3"
                   onError={() => setImgIndex((i) => (i + 1 < galleryUrls.length ? i + 1 : i))}
                 />
               ) : (
@@ -206,7 +206,7 @@ export default function ProductClient({ slug }: { slug: string }) {
         <Card className="lg:sticky lg:top-24 lg:self-start">
           <CardBody className="flex flex-col gap-4 p-4 sm:gap-5 sm:p-6">
             <div className="flex flex-col gap-1">
-              <h1 className="text-[clamp(1.95rem,7vw,3rem)] font-bold leading-[1.05] tracking-[-0.01em]">{String(data.name ?? "")}</h1>
+              <h1 className="text-[clamp(1.75rem,6.6vw,3rem)] font-bold leading-[1.05] tracking-[-0.01em]">{String(data.name ?? "")}</h1>
               <div className="text-sm text-slate-600">{String(data.brand ?? "")}</div>
             </div>
 
@@ -327,7 +327,7 @@ export default function ProductClient({ slug }: { slug: string }) {
       {showCartModal ? (
         <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/55 p-2 sm:items-center sm:p-6">
           <div className="w-full max-w-[390px] sm:max-w-4xl">
-            <Card className="max-h-[92vh] overflow-hidden rounded-2xl sm:max-h-[92vh]">
+            <Card className="max-h-[90vh] overflow-hidden rounded-2xl sm:max-h-[92vh]">
               <CardBody className="flex min-h-0 flex-col gap-4 p-4 sm:gap-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -343,15 +343,15 @@ export default function ProductClient({ slug }: { slug: string }) {
                   </button>
                 </div>
 
-                <div className="min-h-0 space-y-4 overflow-y-auto pr-0.5">
-                  <div className="grid items-center gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[96px_1fr_auto]">
-                    <div className="aspect-square w-full max-w-[84px] rounded-lg bg-slate-100 overflow-hidden sm:max-w-[112px]">
+                <div className="min-h-0 space-y-3 overflow-y-auto pr-0.5">
+                  <div className="grid grid-cols-[72px_1fr] items-start gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[96px_1fr_auto] sm:items-center">
+                    <div className="aspect-square w-full max-w-[72px] rounded-lg bg-slate-100 overflow-hidden sm:max-w-[112px]">
                       {mainImg ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={mainImg} alt={String(data.name ?? "")} className="h-full w-full object-cover" />
                       ) : null}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-semibold text-slate-900">{String(data.name ?? "")}</p>
                       <p className="text-sm text-slate-500">Variante: {selectedVariant?.size ? `Talla ${selectedVariant.size}` : selectedVariant?.id ?? "-"}</p>
                       <div className="mt-2 inline-flex items-center rounded-lg border border-slate-200">
@@ -372,9 +372,9 @@ export default function ProductClient({ slug }: { slug: string }) {
                         </button>
                       </div>
                     </div>
-                    <div className="text-left sm:text-right">
+                    <div className="col-span-2 flex items-end justify-between border-t border-slate-200 pt-2 sm:col-span-1 sm:block sm:border-t-0 sm:pt-0 sm:text-right">
                       <p className="text-xs text-slate-500">Subtotal</p>
-                      <p className="text-[1.9rem] font-bold leading-none sm:text-2xl">{formatPEN(modalSubtotal)}</p>
+                      <p className="text-[1.75rem] font-bold leading-none sm:text-2xl">{formatPEN(modalSubtotal)}</p>
                     </div>
                   </div>
 
@@ -389,15 +389,15 @@ export default function ProductClient({ slug }: { slug: string }) {
                             <Link
                               key={it.id}
                               href={`/p/${it.id}`}
-                              className="w-[148px] shrink-0 snap-start rounded-xl border border-slate-200 bg-white p-2 hover:border-slate-300 sm:w-auto sm:p-2.5"
+                              className="w-[136px] shrink-0 snap-start rounded-xl border border-slate-200 bg-white p-2 hover:border-slate-300 sm:w-auto sm:p-2.5"
                             >
-                              <div className="aspect-[4/3] overflow-hidden rounded-lg bg-slate-100">
+                              <div className="aspect-[3/2] overflow-hidden rounded-lg bg-slate-100 sm:aspect-[4/3]">
                                 {img ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img src={img} alt={it.name} className="h-full w-full object-cover" />
                                 ) : null}
                               </div>
-                              <p className="mt-2 min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight text-slate-900 sm:text-sm">{it.name}</p>
+                              <p className="mt-2 line-clamp-2 text-xs font-semibold leading-tight text-slate-900 sm:min-h-[2rem] sm:text-sm">{it.name}</p>
                               <p className="mt-1 text-sm font-bold text-slate-900">{formatPEN(price)}</p>
                             </Link>
                           );
