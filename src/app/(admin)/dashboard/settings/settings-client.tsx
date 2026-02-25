@@ -11,6 +11,7 @@ type Settings = {
     message?: string;
     rightNote?: string;
     couponCode?: string;
+    discountPercent?: number;
     freeShippingFrom?: number;
   };
   publicContactEmail: string;
@@ -45,6 +46,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
   const promoEnabled = Boolean(s.homePromoEnabled);
   const couponCode = String(s.homePromo?.couponCode ?? "").trim();
   const freeShippingFrom = Number(s.homePromo?.freeShippingFrom ?? 0);
+  const discountPercent = Number(s.homePromo?.discountPercent ?? 0);
   const [issues, setIssues] = useState<string[]>([]);
   const productTypes = Array.isArray(s.productTypes) ? s.productTypes : [];
 
@@ -53,6 +55,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
     if (!(data.storeName ?? "").trim()) errs.push("El nombre de tienda es obligatorio.");
     if (!(data.publicContactEmail ?? "").includes("@")) errs.push("Correo público inválido.");
     if (promoEnabled && couponCode && couponCode.length < 4) errs.push("El código de cupón debe tener al menos 4 caracteres.");
+    if (promoEnabled && (discountPercent < 0 || discountPercent > 100)) errs.push("El porcentaje de descuento debe estar entre 0 y 100.");
     if (promoEnabled && freeShippingFrom < 0) errs.push("Envío gratis desde no puede ser negativo.");
     if (!Array.isArray(data.productTypes) || data.productTypes.length === 0) errs.push("Debes tener al menos un tipo de producto activo.");
     const keys = new Set<string>();
@@ -147,6 +150,20 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
               <input
                 value={s.homePromo?.couponCode ?? ""}
                 onChange={(e) => setS((p) => ({ ...p, homePromo: { ...p.homePromo, couponCode: e.target.value } }))}
+                className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="grid gap-1">
+              <label className="text-sm font-medium">Descuento (%)</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={Number(s.homePromo?.discountPercent ?? 0)}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  setS((p) => ({ ...p, homePromo: { ...p.homePromo, discountPercent: Number.isFinite(n) ? n : 0 } }));
+                }}
                 className="border border-slate-300 rounded-xl px-3 py-2 text-sm"
               />
             </div>
@@ -347,7 +364,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
           <div className="font-medium mb-2">Resumen comercial actual</div>
           <ul className="text-sm text-slate-700 list-disc pl-5 space-y-1">
             <li>Bloque promocional en Home: <b>{promoEnabled ? "Activo" : "Oculto"}</b>.</li>
-            {promoEnabled && couponCode ? <li>Cupon visible: <b>{couponCode}</b>.</li> : <li>Cupon visible: <b>No configurado</b>.</li>}
+            {promoEnabled && couponCode ? <li>Cupon visible: <b>{couponCode}</b> ({discountPercent}% de descuento).</li> : <li>Cupon visible: <b>No configurado</b>.</li>}
             {promoEnabled && freeShippingFrom > 0 ? <li>Envio gratis desde: <b>S/ {freeShippingFrom}</b>.</li> : null}
             <li>Tipos de envio: Delivery Lima Metropolitana o Agencia a provincia.</li>
           </ul>

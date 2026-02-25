@@ -30,6 +30,13 @@ type StorePaymentInstructions = {
   plinNumber?: string;
 };
 
+type StorePromo = {
+  enabled: boolean;
+  couponCode: string;
+  discountPercent: number;
+  freeShippingFrom: number;
+};
+
 async function uploadReceiptToCloudinary(file: File): Promise<string> {
   const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "").trim();
   const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
@@ -83,6 +90,12 @@ export default function CheckoutPage() {
   const [loadingTotals, setLoadingTotals] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [paymentInstructions, setPaymentInstructions] = useState<StorePaymentInstructions>({});
+  const [promo, setPromo] = useState<StorePromo>({
+    enabled: true,
+    couponCode: "ODERA10",
+    discountPercent: 10,
+    freeShippingFrom: 200,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -136,6 +149,12 @@ export default function CheckoutPage() {
           plinName: String(data?.paymentInstructions?.plinName ?? ""),
           plinNumber: String(data?.paymentInstructions?.plinNumber ?? ""),
         });
+        setPromo({
+          enabled: Boolean(data?.homePromoEnabled ?? true),
+          couponCode: String(data?.homePromo?.couponCode ?? "ODERA10").trim().toUpperCase(),
+          discountPercent: Number(data?.homePromo?.discountPercent ?? 10),
+          freeShippingFrom: Number(data?.homePromo?.freeShippingFrom ?? 200),
+        });
       } catch {
         // Public checkout can continue even if settings are missing.
       }
@@ -146,9 +165,15 @@ export default function CheckoutPage() {
   }, []);
 
   const normalizedCoupon = useMemo(() => couponCode.trim().toUpperCase(), [couponCode]);
-  const couponValid = normalizedCoupon === "ODERA10";
-  const discountAmount = useMemo(() => (couponValid ? Math.round(subtotal * 0.1 * 100) / 100 : 0), [couponValid, subtotal]);
-  const shippingCost = useMemo(() => (subtotal >= 200 ? 0 : 10), [subtotal]);
+  const couponVisible = promo.enabled && promo.discountPercent > 0 && promo.couponCode.length >= 4;
+  const couponValid = couponVisible && normalizedCoupon === promo.couponCode;
+  const discountAmount = useMemo(() => {
+    if (!couponValid) return 0;
+    const pct = Math.max(0, Math.min(100, promo.discountPercent));
+    return Math.round(subtotal * (pct / 100) * 100) / 100;
+  }, [couponValid, promo.discountPercent, subtotal]);
+  const shippingThreshold = Number.isFinite(promo.freeShippingFrom) ? Math.max(0, promo.freeShippingFrom) : 200;
+  const shippingCost = useMemo(() => (subtotal >= shippingThreshold ? 0 : 10), [subtotal, shippingThreshold]);
   const totalToPay = useMemo(() => Math.max(0, subtotal - discountAmount) + shippingCost, [subtotal, discountAmount, shippingCost]);
 
   const isCustomerValid = useMemo(() => name.trim().length >= 2 && email.includes("@") && phone.trim().length >= 6, [name, email, phone]);
@@ -220,7 +245,7 @@ export default function CheckoutPage() {
           customer: { name: name.trim(), email: email.trim(), phone: phone.trim() },
           payment: { method: payMethod, receiptImageUrl: receiptUrl },
           shipping,
-          couponCode: normalizedCoupon || undefined,
+          couponCode: couponVisible ? normalizedCoupon || undefined : undefined,
         },
         { idempotencyKey: key }
       );
@@ -403,10 +428,12 @@ export default function CheckoutPage() {
             <span>{formatPEN(it.lineTotal)}</span>
           </div>
         ))}
-        <div className="grid gap-1 pt-2">
-          <label className="text-sm font-medium">Cupon (opcional)</label>
-          <input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="ODERA10" className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-        </div>
+        {couponVisible ? (
+          <div className="grid gap-1 pt-2">
+            <label className="text-sm font-medium">Cupon (opcional)</label>
+            <input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder={promo.couponCode || "CUPON"} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+          </div>
+        ) : null}
         <div className="flex items-center justify-between">
           <span>Subtotal</span>
           <span>{loadingTotals ? "Calculando..." : formatPEN(subtotal)}</span>

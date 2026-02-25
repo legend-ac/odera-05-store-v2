@@ -91,6 +91,14 @@ export async function POST(req: Request) {
     }
     const normItems = Array.from(merged.values());
 
+    const settingsSnapForPromo = await adminDb.doc("settings/store").get();
+    const promoEnabled = Boolean(settingsSnapForPromo.data()?.homePromoEnabled ?? true);
+    const promoCoupon = String(settingsSnapForPromo.data()?.homePromo?.couponCode ?? "ODERA10").trim().toUpperCase();
+    const promoDiscountPctRaw = Number(settingsSnapForPromo.data()?.homePromo?.discountPercent ?? 10);
+    const promoDiscountPct = Math.max(0, Math.min(100, Number.isFinite(promoDiscountPctRaw) ? promoDiscountPctRaw : 0));
+    const promoFreeShippingRaw = Number(settingsSnapForPromo.data()?.homePromo?.freeShippingFrom ?? 200);
+    const promoFreeShippingFrom = Math.max(0, Number.isFinite(promoFreeShippingRaw) ? promoFreeShippingRaw : 200);
+
     const now = Timestamp.now();
     const reservedUntil = Timestamp.fromMillis(now.toMillis() + 20 * 60 * 1000);
 
@@ -181,10 +189,10 @@ export async function POST(req: Request) {
       }
 
       const normalizedCoupon = (couponCode ?? "").trim().toUpperCase();
-      const isCouponValid = normalizedCoupon === "ODERA10";
-      const discountAmount = isCouponValid ? Math.round(subtotal * 0.1 * 100) / 100 : 0;
+      const isCouponValid = promoEnabled && promoCoupon.length >= 4 && normalizedCoupon === promoCoupon && promoDiscountPct > 0;
+      const discountAmount = isCouponValid ? Math.round(subtotal * (promoDiscountPct / 100) * 100) / 100 : 0;
       const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
-      const shippingCost = subtotal >= 200 ? 0 : 10;
+      const shippingCost = subtotal >= promoFreeShippingFrom ? 0 : 10;
       const totalToPay = subtotalAfterDiscount + shippingCost;
 
       const orderDoc = {
@@ -254,10 +262,9 @@ export async function POST(req: Request) {
 
     const wasIdempotent = (result as any).idempotent === true;
 
-    const settingsSnap = await adminDb.doc("settings/store").get();
-    const storeName = settingsSnap.exists ? (settingsSnap.data()?.storeName as string | undefined) : undefined;
+    const storeName = settingsSnapForPromo.exists ? (settingsSnapForPromo.data()?.storeName as string | undefined) : undefined;
     const env = getServerEnv();
-    const businessEmail = (settingsSnap.exists ? (settingsSnap.data()?.publicContactEmail as string | undefined) : undefined) || env.SMTP_USER;
+    const businessEmail = (settingsSnapForPromo.exists ? (settingsSnapForPromo.data()?.publicContactEmail as string | undefined) : undefined) || env.SMTP_USER;
     const origin = new URL(req.url).origin;
     const trackingUrl = `${origin}/t/${encodeURIComponent(result.publicCode)}/${encodeURIComponent(result.trackingToken)}`;
     const lineItems = ((result as any).itemsSnapshots ?? []).map((it: any) => {

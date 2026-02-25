@@ -141,6 +141,7 @@ export default function ProductsClient({
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [draft, setDraft] = useState<Product>(() => emptyProduct(fallbackTypes[0]?.key ?? "zapatillas"));
   const [busy, setBusy] = useState(false);
+  const [busyDelete, setBusyDelete] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const selected = useMemo(() => products.find((p) => p.id === selectedId) ?? null, [products, selectedId]);
@@ -260,6 +261,30 @@ export default function ProductsClient({
     }
   }
 
+  async function deleteSelected() {
+    if (!selected) return;
+    if (selected.status !== "archived") {
+      setMsg("Para eliminar, primero cambia estado a Archivado y guarda.");
+      return;
+    }
+    if (!window.confirm(`Eliminar producto ${selected.slug}? Esta acción no se puede deshacer.`)) return;
+
+    setBusyDelete(true);
+    setMsg(null);
+    try {
+      await apiPost("/api/admin/products/delete", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
+      setProducts((prev) => prev.filter((p) => p.id !== selected.id));
+      setSelectedId("");
+      setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas"));
+      setMsg(`Producto ${selected.slug} eliminado.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyDelete(false);
+    }
+  }
+
   return (
     <div className="grid xl:grid-cols-[300px_1fr] gap-4 md:gap-6">
       <div className="panel p-3 md:p-4 h-fit rounded-2xl border-slate-200">
@@ -325,9 +350,19 @@ export default function ProductsClient({
             <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Editor de producto</h1>
             <p className="text-sm text-slate-600">Crea y actualiza productos con variantes e imágenes.</p>
           </div>
-          <button type="button" onClick={save} disabled={busy} className="btn-brand disabled:opacity-50">
-            {busy ? "Guardando..." : "Guardar"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={save} disabled={busy} className="btn-brand disabled:opacity-50">
+              {busy ? "Guardando..." : "Guardar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void deleteSelected()}
+              disabled={busyDelete || !selected}
+              className="btn-soft disabled:opacity-50"
+            >
+              {busyDelete ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
         </div>
 
         {msg ? <div className="text-sm text-slate-700 panel p-3 rounded-2xl border-slate-200">{msg}</div> : null}

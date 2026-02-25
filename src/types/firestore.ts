@@ -101,6 +101,7 @@ export type StoreSettingsDoc = {
     message?: string;
     rightNote?: string;
     couponCode?: string;
+    discountPercent?: number;
     freeShippingFrom?: number;
   };
   publicContactEmail: string;

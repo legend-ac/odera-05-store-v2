@@ -9,6 +9,7 @@ export const storeSettingsSchema = z.object({
       message: z.string().max(220).optional(),
       rightNote: z.string().max(120).optional(),
       couponCode: z.string().max(40).optional(),
+      discountPercent: z.number().min(0).max(100).optional(),
       freeShippingFrom: z.number().min(0).max(100000).optional(),
     })
     .optional(),

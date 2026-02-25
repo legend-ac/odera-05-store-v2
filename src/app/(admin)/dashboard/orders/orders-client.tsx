@@ -69,6 +69,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
   const [orders, setOrders] = useState<OrderRow[]>(initialOrders);
   const [statusDraft, setStatusDraft] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [busyDeleteId, setBusyDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [query, setQuery] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -104,6 +105,22 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
     }
   }
 
+  async function deleteOrder(order: OrderRow) {
+    if (!window.confirm(`Eliminar pedido ${order.publicCode}?\nSolo se permite en estados terminales (Cancelado o Entregado).`)) return;
+    setBusyDeleteId(order.id);
+    setMsg(null);
+    try {
+      await apiPost("/api/admin/orders/delete", { orderId: order.id }, { csrfCookieName: CSRF_COOKIE_NAME });
+      setOrders((prev) => prev.filter((x) => x.id !== order.id));
+      setMsg(`Pedido ${order.publicCode} eliminado.`);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "Error";
+      setMsg(`Error: ${m}`);
+    } finally {
+      setBusyDeleteId(null);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -112,6 +129,9 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           <p className="text-sm text-slate-600">Gestiona estado, comprobante y datos de entrega.</p>
         </div>
         <div className="text-xs text-slate-600 flex flex-wrap gap-2 items-center">
+          <a href="/api/admin/orders/export" className="btn-soft">
+            Exportar ventas (CSV)
+          </a>
           <Badge tone="default">Total: {orders.length}</Badge>
           {counts.map(([s, n]) => (
             <button
@@ -228,6 +248,9 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                 ) : (
                   <span className="text-xs text-slate-500">Sin comprobante</span>
                 )}
+                <Button type="button" variant="ghost" onClick={() => void deleteOrder(o)} disabled={busyDeleteId === o.id}>
+                  {busyDeleteId === o.id ? "Eliminando..." : "Eliminar pedido"}
+                </Button>
               </div>
             </CardBody>
           </Card>

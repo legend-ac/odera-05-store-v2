@@ -186,9 +186,6 @@ function ConfirmPageInner() {
             <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand inline-flex">
               Enviar mensaje por WhatsApp
             </a>
-            <button type="button" onClick={() => copyText(waText, "Mensaje de WhatsApp")} className="btn-soft">
-              Copiar mensaje
-            </button>
           </div>
         ) : (
           <div className="mt-3 text-sm text-slate-600">WhatsApp del negocio no disponible por el momento.</div>
