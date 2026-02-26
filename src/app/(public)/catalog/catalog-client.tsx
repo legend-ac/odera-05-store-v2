@@ -7,7 +7,7 @@ import ProductCard, { type ProductCardData } from "@/components/ProductCard";
 import { normalizeToken } from "@/lib/searchTokens";
 import { Card, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/fields";
+import { Select } from "@/components/ui/fields";
 
 type SortType = "latest" | "price-asc" | "price-desc" | "name";
 type Audience = "hombre" | "mujer" | "ninos" | "todos";
@@ -74,8 +74,6 @@ export default function CatalogClient({
   const [sortBy, setSortBy] = useState<SortType>("latest");
   const [items, setItems] = useState<CatalogItem[] | null>(initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [showAudience, setShowAudience] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -179,7 +177,6 @@ export default function CatalogClient({
   useEffect(() => {
     if (!typeFilter || !supportsAudienceFilter(typeFilter)) {
       setAudienceFilter("");
-      setShowAudience(false);
     } else if (!audienceFilter) {
       setAudienceFilter("todos");
     }
@@ -189,74 +186,61 @@ export default function CatalogClient({
     <div className="mx-auto max-w-6xl px-4 py-8 md:py-10 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Catalogo</h1>
-        <p className="text-sm text-slate-600">Encuentra productos por nombre, marca o tipo.</p>
+        <p className="text-sm text-slate-600">Encuentra productos por nombre, marca o tipo desde el buscador superior.</p>
       </div>
 
       <Card className="rounded-2xl border-slate-200 panel-soft-hover">
         <CardBody className="flex flex-col gap-3">
-          <div className="grid gap-2 md:grid-cols-[1fr]">
-            <Input value={qText} onChange={(e) => setQText(e.target.value)} placeholder="Buscar (ej. nike, polera, negro)" />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="ghost" onClick={() => setShowAdvanced((v) => !v)} className="!min-h-9 !px-3">
-              {showAdvanced ? "Ocultar filtros" : "Mas filtros"}
-            </Button>
-            {typeFilter && supportsAudienceFilter(typeFilter) ? (
-              <Button type="button" variant="ghost" onClick={() => setShowAudience((v) => !v)} className="!min-h-9 !px-3">
-                {showAudience ? "Ocultar publico" : "Filtrar publico"}
-              </Button>
-            ) : null}
-          </div>
-          {showAdvanced ? (
-            <div className="grid gap-2 md:grid-cols-[240px_220px_auto] md:items-center">
-              {!hasLockedType ? (
-                <label className="grid gap-1 text-xs text-slate-600">
-                  Tipo
-                  <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-                    <option value="">Todos los tipos</option>
-                    {productTypes.map((t) => (
-                      <option key={t.key} value={t.key}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-              ) : null}
+          <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end">
+            {!hasLockedType ? (
               <label className="grid gap-1 text-xs text-slate-600">
-                Orden
-                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
-                  <option value="latest">Mas recientes</option>
-                  <option value="price-asc">Precio: menor a mayor</option>
-                  <option value="price-desc">Precio: mayor a menor</option>
-                  <option value="name">Nombre A-Z</option>
+                Tipo
+                <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+                  <option value="">Todos los tipos</option>
+                  {productTypes.map((t) => (
+                    <option key={t.key} value={t.key}>
+                      {t.label}
+                    </option>
+                  ))}
                 </Select>
               </label>
-              <div className="pt-5 md:pt-0">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setQText("");
-                    if (!hasLockedType) setTypeFilter("");
-                    setAudienceFilter("");
-                    setSortBy("latest");
-                  }}
-                  className="!min-h-10"
-                >
-                  Limpiar filtros
-                </Button>
-              </div>
+            ) : (
+              <div className="hidden md:block" />
+            )}
+            <label className="grid gap-1 text-xs text-slate-600">
+              Orden
+              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
+                <option value="latest">Mas recientes</option>
+                <option value="price-asc">Precio: menor a mayor</option>
+                <option value="price-desc">Precio: mayor a menor</option>
+                <option value="name">Nombre A-Z</option>
+              </Select>
+            </label>
+            <div className="pt-0">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  if (!hasLockedType) setTypeFilter("");
+                  setAudienceFilter(typeFilter && supportsAudienceFilter(typeFilter) ? "todos" : "");
+                  setSortBy("latest");
+                }}
+                className="!min-h-10 w-full md:w-auto"
+              >
+                Limpiar
+              </Button>
             </div>
-          ) : null}
-          {typeFilter && supportsAudienceFilter(typeFilter) && showAudience ? (
+          </div>
+          {typeFilter && supportsAudienceFilter(typeFilter) ? (
             <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 pr-1">Publico</span>
               {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
                 <button
                   key={a}
                   type="button"
                   onClick={() => setAudienceFilter(a)}
                   className={[
-                    "rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                    "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
                     audienceFilter === a
                       ? "border-[var(--brand-500)] bg-[var(--brand-100)] text-[var(--brand-700)]"
                       : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
