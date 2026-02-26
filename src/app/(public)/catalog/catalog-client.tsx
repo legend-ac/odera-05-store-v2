@@ -49,6 +49,8 @@ export default function CatalogClient({
   const [sortBy, setSortBy] = useState<SortType>("latest");
   const [items, setItems] = useState<CatalogItem[] | null>(initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAudience, setShowAudience] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -127,7 +129,9 @@ export default function CatalogClient({
     const byType = typeFilter ? base.filter((p) => p.productType === typeFilter) : base;
     const list =
       typeFilter && supportsAudienceFilter(typeFilter) && audienceFilter
-        ? byType.filter((p) => (p.audience ?? "todos") === audienceFilter || (p.audience ?? "todos") === "todos")
+        ? audienceFilter === "todos"
+          ? byType
+          : byType.filter((p) => (p.audience ?? "todos") === audienceFilter)
         : byType;
     if (sortBy === "name") return list.sort((a, b) => a.name.localeCompare(b.name));
     if (sortBy === "price-asc") {
@@ -150,6 +154,7 @@ export default function CatalogClient({
   useEffect(() => {
     if (!typeFilter || !supportsAudienceFilter(typeFilter)) {
       setAudienceFilter("");
+      setShowAudience(false);
     } else if (!audienceFilter) {
       setAudienceFilter("todos");
     }
@@ -164,14 +169,8 @@ export default function CatalogClient({
 
       <Card className="rounded-2xl border-slate-200 panel-soft-hover">
         <CardBody className="flex flex-col gap-3">
-          <div className="grid gap-2 md:grid-cols-[1fr_180px_170px_120px]">
+          <div className="grid gap-2 md:grid-cols-[1fr_190px_120px]">
             <Input value={qText} onChange={(e) => setQText(e.target.value)} placeholder="Buscar (ej. nike, polera, negro)" />
-            <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
-              <option value="latest">Mas recientes</option>
-              <option value="price-asc">Precio: menor a mayor</option>
-              <option value="price-desc">Precio: mayor a menor</option>
-              <option value="name">Nombre A-Z</option>
-            </Select>
             <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
               <option value="">Todos los tipos</option>
               {productTypes.map((t) => (
@@ -184,7 +183,30 @@ export default function CatalogClient({
               Limpiar
             </Button>
           </div>
-          {typeFilter && supportsAudienceFilter(typeFilter) ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="ghost" onClick={() => setShowAdvanced((v) => !v)} className="!min-h-9 !px-3">
+              {showAdvanced ? "Ocultar filtros" : "Mas filtros"}
+            </Button>
+            {typeFilter && supportsAudienceFilter(typeFilter) ? (
+              <Button type="button" variant="ghost" onClick={() => setShowAudience((v) => !v)} className="!min-h-9 !px-3">
+                {showAudience ? "Ocultar publico" : "Filtrar publico"}
+              </Button>
+            ) : null}
+          </div>
+          {showAdvanced ? (
+            <div className="grid gap-2 md:grid-cols-[220px_auto] md:items-center">
+              <label className="grid gap-1 text-xs text-slate-600">
+                Orden
+                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
+                  <option value="latest">Mas recientes</option>
+                  <option value="price-asc">Precio: menor a mayor</option>
+                  <option value="price-desc">Precio: mayor a menor</option>
+                  <option value="name">Nombre A-Z</option>
+                </Select>
+              </label>
+            </div>
+          ) : null}
+          {typeFilter && supportsAudienceFilter(typeFilter) && showAudience ? (
             <div className="flex flex-wrap items-center gap-2">
               {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
                 <button
