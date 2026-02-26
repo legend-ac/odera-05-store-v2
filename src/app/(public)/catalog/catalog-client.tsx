@@ -77,6 +77,22 @@ export default function CatalogClient({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setQText(initialQuery ?? "");
+  }, [initialQuery]);
+
+  useEffect(() => {
+    setTypeFilter((initialType ?? "").toLowerCase().trim());
+  }, [initialType]);
+
+  useEffect(() => {
+    const normalizedAudience =
+      ["hombre", "mujer", "ninos", "todos"].includes((initialAudience ?? "").toLowerCase())
+        ? (initialAudience.toLowerCase() as Audience)
+        : "";
+    setAudienceFilter(normalizedAudience);
+  }, [initialAudience]);
+
+  useEffect(() => {
     let mounted = true;
     setError(null);
 
