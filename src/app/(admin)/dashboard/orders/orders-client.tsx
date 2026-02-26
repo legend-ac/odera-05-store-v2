@@ -333,15 +333,17 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           >
             Limpiar export
           </Button>
-          {viewMode === "active" ? (
-            <Button type="button" variant="ghost" onClick={() => void bulkTrashByFilter()} disabled={busyMass}>
-              {busyMass ? "Procesando..." : "Mover a papelera (masivo)"}
-            </Button>
-          ) : (
-            <Button type="button" variant="ghost" onClick={() => void bulkPurgeTrash()} disabled={busyMass}>
-              {busyMass ? "Procesando..." : "Vaciar papelera (definitivo)"}
-            </Button>
-          )}
+          <div className="md:col-span-6 flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
+            {viewMode === "active" ? (
+              <Button type="button" variant="ghost" onClick={() => void bulkTrashByFilter()} disabled={busyMass}>
+                {busyMass ? "Procesando..." : "Mover a papelera (masivo)"}
+              </Button>
+            ) : (
+              <Button type="button" variant="ghost" onClick={() => void bulkPurgeTrash()} disabled={busyMass}>
+                {busyMass ? "Procesando..." : "Vaciar papelera (definitivo)"}
+              </Button>
+            )}
+          </div>
           <p className="md:col-span-6 text-[11px] text-slate-500">
             Exportacion profesional: por defecto no incluye pedidos en papelera y se genera compatible con Excel.
           </p>
@@ -450,7 +452,10 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
         ))}
         {!visibleOrders.length ? (
           <Card className="rounded-2xl border-slate-200">
-            <CardBody className="text-sm text-slate-600">Sin pedidos para ese filtro.</CardBody>
+            <CardBody className="text-sm text-slate-600">
+              <p className="font-medium text-slate-800">No hay pedidos con esos filtros.</p>
+              <p className="mt-1">Prueba limpiar filtros o cambiar entre Activos y Papelera.</p>
+            </CardBody>
           </Card>
         ) : null}
       </div>

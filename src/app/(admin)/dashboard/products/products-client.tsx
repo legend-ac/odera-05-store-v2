@@ -379,7 +379,7 @@ export default function ProductsClient({
       <div className="panel p-3 md:p-4 h-fit rounded-2xl border-slate-200 shadow-sm">
         <div className="font-semibold text-slate-900 mb-2">Productos</div>
 
-        <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
+        <div className="mb-3 flex flex-wrap gap-2 text-xs">
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-emerald-800">Activos: {activeCount}</div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">Mostrando: {baseProducts.length}</div>
           {typeOptions.map((t) => (
