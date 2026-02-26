@@ -25,6 +25,30 @@ function supportsAudienceFilter(productType: string): boolean {
   return t.includes("zapat") || t.includes("ropa");
 }
 
+function normalizeAudience(raw: unknown): Audience {
+  const v = normalizeToken(String(raw ?? "")).replace(/\s+/g, "");
+  if (v.startsWith("hombre")) return "hombre";
+  if (v.startsWith("mujer")) return "mujer";
+  if (v.startsWith("nino") || v.startsWith("nina")) return "ninos";
+  return "todos";
+}
+
+function normalizeProductType(raw: unknown): string {
+  return normalizeToken(String(raw ?? "")).replace(/\s+/g, "-");
+}
+
+function matchType(docTypeRaw: unknown, filterTypeRaw: string): boolean {
+  const docType = normalizeProductType(docTypeRaw);
+  const filterType = normalizeProductType(filterTypeRaw);
+  if (!filterType) return true;
+  if (docType === filterType) return true;
+  if (docType.includes(filterType) || filterType.includes(docType)) return true;
+  if (docType.includes("zapat") && filterType.includes("zapat")) return true;
+  if (docType.includes("ropa") && filterType.includes("ropa")) return true;
+  if (docType.includes("acces") && filterType.includes("acces")) return true;
+  return false;
+}
+
 export default function CatalogClient({
   initialItems,
   initialQuery,
@@ -86,8 +110,8 @@ export default function CatalogClient({
             onSale: Boolean(data.onSale),
             imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
             imageUrls,
-            productType: String(data?.productType ?? "").toLowerCase().trim() || undefined,
-            audience: (String(data?.audience ?? "todos").toLowerCase().trim() as Audience) || "todos",
+            productType: String(data?.productType ?? "").trim() || undefined,
+            audience: normalizeAudience(data?.audience),
             dedupeKey,
             updatedAtMs,
           };
@@ -126,7 +150,7 @@ export default function CatalogClient({
 
   const sortedItems = useMemo(() => {
     const base = [...(items ?? [])];
-    const byType = typeFilter ? base.filter((p) => p.productType === typeFilter) : base;
+    const byType = typeFilter ? base.filter((p) => matchType(p.productType, typeFilter)) : base;
     const list =
       typeFilter && supportsAudienceFilter(typeFilter) && audienceFilter
         ? audienceFilter === "todos"
@@ -169,19 +193,8 @@ export default function CatalogClient({
 
       <Card className="rounded-2xl border-slate-200 panel-soft-hover">
         <CardBody className="flex flex-col gap-3">
-          <div className="grid gap-2 md:grid-cols-[1fr_190px_120px]">
+          <div className="grid gap-2 md:grid-cols-[1fr]">
             <Input value={qText} onChange={(e) => setQText(e.target.value)} placeholder="Buscar (ej. nike, polera, negro)" />
-            <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-              <option value="">Todos los tipos</option>
-              {productTypes.map((t) => (
-                <option key={t.key} value={t.key}>
-                  {t.label}
-                </option>
-              ))}
-            </Select>
-            <Button type="button" variant="secondary" onClick={() => setQText("")}>
-              Limpiar
-            </Button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="ghost" onClick={() => setShowAdvanced((v) => !v)} className="!min-h-9 !px-3">
@@ -194,7 +207,18 @@ export default function CatalogClient({
             ) : null}
           </div>
           {showAdvanced ? (
-            <div className="grid gap-2 md:grid-cols-[220px_auto] md:items-center">
+            <div className="grid gap-2 md:grid-cols-[240px_220px_auto] md:items-center">
+              <label className="grid gap-1 text-xs text-slate-600">
+                Tipo
+                <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+                  <option value="">Todos los tipos</option>
+                  {productTypes.map((t) => (
+                    <option key={t.key} value={t.key}>
+                      {t.label}
+                    </option>
+                  ))}
+                </Select>
+              </label>
               <label className="grid gap-1 text-xs text-slate-600">
                 Orden
                 <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
@@ -204,6 +228,21 @@ export default function CatalogClient({
                   <option value="name">Nombre A-Z</option>
                 </Select>
               </label>
+              <div className="pt-5 md:pt-0">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setQText("");
+                    setTypeFilter("");
+                    setAudienceFilter("");
+                    setSortBy("latest");
+                  }}
+                  className="!min-h-10"
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
             </div>
           ) : null}
           {typeFilter && supportsAudienceFilter(typeFilter) && showAudience ? (
