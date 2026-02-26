@@ -41,8 +41,9 @@ function matchType(docTypeRaw: unknown, filterTypeRaw: string): boolean {
   const docType = normalizeProductType(docTypeRaw);
   const filterType = normalizeProductType(filterTypeRaw);
   if (!filterType) return true;
+  if (!docType) return false;
   if (docType === filterType) return true;
-  if (docType.includes(filterType) || filterType.includes(docType)) return true;
+  if (docType.includes(filterType)) return true;
   if (docType.includes("zapat") && filterType.includes("zapat")) return true;
   if (docType.includes("ropa") && filterType.includes("ropa")) return true;
   if (docType.includes("acces") && filterType.includes("acces")) return true;
