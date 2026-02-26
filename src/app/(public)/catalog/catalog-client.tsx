@@ -65,6 +65,7 @@ export default function CatalogClient({
   const [qText, setQText] = useState(initialQuery ?? "");
   const token = useMemo(() => normalizeToken(qText).split(/\s+/g).filter(Boolean)[0] ?? "", [qText]);
   const [typeFilter, setTypeFilter] = useState<string>((initialType ?? "").toLowerCase().trim());
+  const hasLockedType = Boolean((initialType ?? "").trim());
   const [audienceFilter, setAudienceFilter] = useState<Audience | "">(
     (["hombre", "mujer", "ninos", "todos"].includes((initialAudience ?? "").toLowerCase())
       ? (initialAudience.toLowerCase() as Audience)
@@ -208,17 +209,19 @@ export default function CatalogClient({
           </div>
           {showAdvanced ? (
             <div className="grid gap-2 md:grid-cols-[240px_220px_auto] md:items-center">
-              <label className="grid gap-1 text-xs text-slate-600">
-                Tipo
-                <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-                  <option value="">Todos los tipos</option>
-                  {productTypes.map((t) => (
-                    <option key={t.key} value={t.key}>
-                      {t.label}
-                    </option>
-                  ))}
-                </Select>
-              </label>
+              {!hasLockedType ? (
+                <label className="grid gap-1 text-xs text-slate-600">
+                  Tipo
+                  <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+                    <option value="">Todos los tipos</option>
+                    {productTypes.map((t) => (
+                      <option key={t.key} value={t.key}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              ) : null}
               <label className="grid gap-1 text-xs text-slate-600">
                 Orden
                 <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
@@ -234,7 +237,7 @@ export default function CatalogClient({
                   variant="secondary"
                   onClick={() => {
                     setQText("");
-                    setTypeFilter("");
+                    if (!hasLockedType) setTypeFilter("");
                     setAudienceFilter("");
                     setSortBy("latest");
                   }}

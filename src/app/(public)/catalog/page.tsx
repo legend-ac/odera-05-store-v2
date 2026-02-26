@@ -53,6 +53,7 @@ async function loadInitialCatalog(): Promise<CatalogItem[]> {
       imageUrl: it.imageUrl,
       imageUrls: it.imageUrls,
       productType: it.productType,
+      audience: it.audience,
     });
     if (list.length >= 50) break;
   }
