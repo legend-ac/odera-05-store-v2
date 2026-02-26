@@ -190,33 +190,53 @@ export default function CatalogClient({
       </div>
 
       <Card className="rounded-2xl border-slate-200 panel-soft-hover">
-        <CardBody className="flex flex-col gap-3">
-          <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end">
-            {!hasLockedType ? (
-              <label className="grid gap-1 text-xs text-slate-600">
-                Tipo
-                <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-                  <option value="">Todos los tipos</option>
-                  {productTypes.map((t) => (
-                    <option key={t.key} value={t.key}>
-                      {t.label}
-                    </option>
+        <CardBody className="flex flex-col gap-3 md:gap-2">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div className="flex flex-col gap-2 min-w-0">
+              {!hasLockedType ? (
+                <label className="grid gap-1 text-xs text-slate-600 md:max-w-[220px]">
+                  Tipo
+                  <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+                    <option value="">Todos los tipos</option>
+                    {productTypes.map((t) => (
+                      <option key={t.key} value={t.key}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              ) : null}
+              {typeFilter && supportsAudienceFilter(typeFilter) ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 pr-1">Publico</span>
+                  {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() => setAudienceFilter(a)}
+                      className={[
+                        "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                        audienceFilter === a
+                          ? "border-[var(--brand-500)] bg-[var(--brand-100)] text-[var(--brand-700)]"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                      ].join(" ")}
+                    >
+                      {AUDIENCE_LABEL[a]}
+                    </button>
                   ))}
+                </div>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-end md:shrink-0">
+              <label className="grid gap-1 text-xs text-slate-600 md:w-[220px]">
+                Orden
+                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
+                  <option value="latest">Mas recientes</option>
+                  <option value="price-asc">Precio: menor a mayor</option>
+                  <option value="price-desc">Precio: mayor a menor</option>
+                  <option value="name">Nombre A-Z</option>
                 </Select>
               </label>
-            ) : (
-              <div className="hidden md:block" />
-            )}
-            <label className="grid gap-1 text-xs text-slate-600">
-              Orden
-              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
-                <option value="latest">Mas recientes</option>
-                <option value="price-asc">Precio: menor a mayor</option>
-                <option value="price-desc">Precio: mayor a menor</option>
-                <option value="name">Nombre A-Z</option>
-              </Select>
-            </label>
-            <div className="pt-0">
               <Button
                 type="button"
                 variant="secondary"
@@ -225,32 +245,12 @@ export default function CatalogClient({
                   setAudienceFilter(typeFilter && supportsAudienceFilter(typeFilter) ? "todos" : "");
                   setSortBy("latest");
                 }}
-                className="!min-h-10 w-full md:w-auto"
+                className="!min-h-10 md:mb-[1px]"
               >
                 Limpiar
               </Button>
             </div>
           </div>
-          {typeFilter && supportsAudienceFilter(typeFilter) ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 pr-1">Publico</span>
-              {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setAudienceFilter(a)}
-                  className={[
-                    "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
-                    audienceFilter === a
-                      ? "border-[var(--brand-500)] bg-[var(--brand-100)] text-[var(--brand-700)]"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
-                  ].join(" ")}
-                >
-                  {AUDIENCE_LABEL[a]}
-                </button>
-              ))}
-            </div>
-          ) : null}
         </CardBody>
       </Card>
 

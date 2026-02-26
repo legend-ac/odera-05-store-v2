@@ -47,11 +47,17 @@ export default function Header() {
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
     const value = q.trim();
-    if (!value) {
-      router.push("/catalog");
+    if (pathname.startsWith("/catalog")) {
+      const next = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+      if (value) next.set("q", value);
+      else next.delete("q");
+      const qs = next.toString();
+      router.push(qs ? `/catalog?${qs}` : "/catalog");
+      setOpen(false);
       return;
     }
-    router.push(`/catalog?q=${encodeURIComponent(value)}`);
+    if (!value) router.push("/catalog");
+    else router.push(`/catalog?q=${encodeURIComponent(value)}`);
     setOpen(false);
   }
 
