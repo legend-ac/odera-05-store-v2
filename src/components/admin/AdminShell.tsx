@@ -11,7 +11,7 @@ function NavItem({ href, children }: { href: string; children: React.ReactNode }
     <Link
       href={href}
       className={[
-        "text-sm px-3 py-2.5 rounded-xl transition-all whitespace-nowrap font-semibold border",
+        "text-sm px-3 py-2.5 rounded-xl transition-all whitespace-nowrap font-semibold border text-center lg:text-left",
         active
           ? "bg-[var(--brand-100)] text-[var(--brand-700)] border-[var(--brand-500)] shadow-sm"
           : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300",
@@ -40,15 +40,15 @@ export default function AdminShell({ email, children }: { email: string; childre
   const currentRoute = pathname === "/dashboard" ? "Inicio" : pathname.replace("/dashboard/", "").replaceAll("/", " / ");
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(1200px_620px_at_105%_-20%,rgba(37,99,235,.08),transparent_58%),linear-gradient(180deg,#f6f8fc_0%,#edf2f8_100%)]">
+    <div className="min-h-dvh bg-[radial-gradient(1200px_620px_at_105%_-20%,rgba(34,197,94,.10),transparent_58%),linear-gradient(180deg,#f7f9fc_0%,#eef3f9_100%)]">
       <div className="mx-auto max-w-7xl px-4 py-4 md:py-6 grid gap-4 lg:grid-cols-[260px_1fr]">
         <aside className="rounded-2xl border border-slate-200 bg-white p-3 md:p-4 h-fit shadow-[0_12px_30px_rgba(15,23,42,.08)]">
           <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-[var(--brand-100)] to-white p-3">
             <div className="flex items-center gap-3">
-              <span className="grid place-items-center h-10 w-10 rounded-xl border border-[var(--brand-500)] bg-[var(--brand-700)] text-xs font-bold text-white">O5</span>
+              <span className="grid place-items-center h-10 w-10 rounded-xl border border-[var(--brand-500)] bg-[var(--brand-700)] text-xs font-bold text-white">05</span>
               <div>
                 <p className="text-sm font-bold text-slate-900 leading-none">Panel ODERA 05</p>
-                <p className="text-[11px] text-slate-600 mt-1">Gestion comercial diaria</p>
+                <p className="text-[11px] text-slate-600 mt-1">Gestion comercial</p>
               </div>
             </div>
           </div>
@@ -66,7 +66,7 @@ export default function AdminShell({ email, children }: { email: string; childre
             <div>
               <p className="text-sm font-semibold text-slate-900">Administracion de tienda</p>
               <p className="text-xs text-slate-500">Control de pedidos, productos, ventas y configuracion.</p>
-              <p className="text-[11px] text-slate-400 mt-1">Ruta actual: {currentRoute}</p>
+              <p className="text-[11px] text-slate-400 mt-1">Ruta: {currentRoute}</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="text-xs text-slate-700 truncate max-w-[200px] bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">{email}</div>
@@ -82,4 +82,3 @@ export default function AdminShell({ email, children }: { email: string; childre
     </div>
   );
 }
-

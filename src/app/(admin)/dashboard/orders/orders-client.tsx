@@ -7,7 +7,7 @@ import { ALLOWED_NEXT, isOrderStatus, type OrderStatus } from "@/lib/orderStatus
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
-import { Select } from "@/components/ui/fields";
+import { Input, Select } from "@/components/ui/fields";
 
 type OrderRow = {
   id: string;
@@ -229,73 +229,23 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           <Button type="button" variant={viewMode === "trash" ? "secondary" : "ghost"} onClick={() => setViewMode("trash")}>
             Papelera ({trashedOrders.length})
           </Button>
-          <Badge tone="default">Mostrando: {baseList.length}</Badge>
-          {counts.map(([s, n]) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setStatusFilter((prev) => (prev === s ? "ALL" : s))}
-              className={statusFilter === s ? "ring-2 ring-slate-400 rounded-full" : ""}
-            >
-              <Badge tone={toneForStatus(s)}>
-                {STATUS_LABEL[s] ?? s}: {n}
-              </Badge>
-            </button>
-          ))}
+          <Badge tone="default">Mostrando {baseList.length}</Badge>
         </div>
       </div>
 
       <Card className="rounded-2xl border-slate-200 shadow-sm">
-        <CardBody className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por codigo, nombre, correo o telefono"
-            className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-          />
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl min-w-[220px]">
-            <option value="ALL">Todos los estados</option>
-            {counts.map(([s, n]) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s] ?? s}: {n}
-              </option>
-            ))}
-          </Select>
-          <Button type="button" variant="secondary" onClick={() => { setQuery(""); setStatusFilter("ALL"); }}>
-            Limpiar
-          </Button>
-        </CardBody>
-      </Card>
-
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
-        <CardBody className="grid gap-3 md:grid-cols-[180px_180px_1fr_180px_auto_auto] md:items-end">
+        <CardBody className="grid gap-3 md:grid-cols-[1fr_220px_180px] md:items-end">
           <label className="grid gap-1 text-xs text-slate-600">
-            Desde
-            <input
-              type="date"
-              value={exportFrom}
-              onChange={(e) => setExportFrom(e.target.value)}
-              className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
+            Busqueda rapida
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por codigo, nombre, correo o telefono"
             />
           </label>
-
-          <label className="grid gap-1 text-xs text-slate-600">
-            Hasta
-            <input
-              type="date"
-              value={exportTo}
-              onChange={(e) => setExportTo(e.target.value)}
-              className="h-10 rounded-xl border border-slate-300 px-3 text-sm"
-            />
-          </label>
-
           <label className="grid gap-1 text-xs text-slate-600">
             Estado
-            <Select
-              value={exportStatus}
-              onChange={(e) => setExportStatus(e.target.value)}
-              className="rounded-xl min-w-[220px]"
-            >
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl">
               <option value="ALL">Todos los estados</option>
               {counts.map(([s, n]) => (
                 <option key={s} value={s}>
@@ -304,47 +254,104 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
               ))}
             </Select>
           </label>
-
-          <label className="grid gap-1 text-xs text-slate-600">
-            Plantilla
-            <Select
-              value={exportTemplate}
-              onChange={(e) => setExportTemplate(e.target.value === "resumen" ? "resumen" : "detalle")}
-              className="rounded-xl"
-            >
-              <option value="detalle">Detalle</option>
-              <option value="resumen">Resumen ejecutivo</option>
-            </Select>
-          </label>
-
-          <a href={exportHref} className="btn-soft">
-            Exportar Excel (CSV)
-          </a>
-
           <Button
             type="button"
-            variant="ghost"
+            variant="secondary"
             onClick={() => {
-              setExportFrom("");
-              setExportTo("");
-              setExportStatus("ALL");
-              setExportTemplate("detalle");
+              setQuery("");
+              setStatusFilter("ALL");
             }}
           >
-            Limpiar export
+            Limpiar
           </Button>
-          <div className="md:col-span-6 flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
+          <div className="md:col-span-3 flex flex-wrap gap-2 pt-1">
+            {counts.map(([s, n]) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStatusFilter((prev) => (prev === s ? "ALL" : s))}
+                className={statusFilter === s ? "ring-2 ring-slate-300 rounded-full" : ""}
+              >
+                <Badge tone={toneForStatus(s)}>
+                  {STATUS_LABEL[s] ?? s}: {n}
+                </Badge>
+              </button>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
+        <CardBody className="grid gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Exportacion de ventas</p>
+            <p className="text-xs text-slate-500">Formato compatible con Excel y filtros por fecha/estado.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-[170px_170px_1fr_190px] md:items-end">
+            <label className="grid gap-1 text-xs text-slate-600">
+              Desde
+              <Input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} />
+            </label>
+
+            <label className="grid gap-1 text-xs text-slate-600">
+              Hasta
+              <Input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)} />
+            </label>
+
+            <label className="grid gap-1 text-xs text-slate-600">
+              Estado
+              <Select value={exportStatus} onChange={(e) => setExportStatus(e.target.value)} className="rounded-xl min-w-[220px]">
+                <option value="ALL">Todos los estados</option>
+                {counts.map(([s, n]) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABEL[s] ?? s}: {n}
+                  </option>
+                ))}
+              </Select>
+            </label>
+
+            <label className="grid gap-1 text-xs text-slate-600">
+              Plantilla
+              <Select
+                value={exportTemplate}
+                onChange={(e) => setExportTemplate(e.target.value === "resumen" ? "resumen" : "detalle")}
+                className="rounded-xl"
+              >
+                <option value="detalle">Detalle</option>
+                <option value="resumen">Resumen ejecutivo</option>
+              </Select>
+            </label>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+            <a href={exportHref} className="btn-soft !min-h-10">
+              Exportar Excel (CSV)
+            </a>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setExportFrom("");
+                setExportTo("");
+                setExportStatus("ALL");
+                setExportTemplate("detalle");
+              }}
+            >
+              Limpiar export
+            </Button>
+
             {viewMode === "active" ? (
-              <Button type="button" variant="ghost" onClick={() => void bulkTrashByFilter()} disabled={busyMass}>
+              <Button type="button" variant="ghost" onClick={() => void bulkTrashByFilter()} disabled={busyMass} className="!min-h-10">
                 {busyMass ? "Procesando..." : "Mover a papelera (masivo)"}
               </Button>
             ) : (
-              <Button type="button" variant="ghost" onClick={() => void bulkPurgeTrash()} disabled={busyMass}>
+              <Button type="button" variant="ghost" onClick={() => void bulkPurgeTrash()} disabled={busyMass} className="!min-h-10">
                 {busyMass ? "Procesando..." : "Vaciar papelera (definitivo)"}
               </Button>
             )}
           </div>
-          <p className="md:col-span-6 text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-500">
             Exportacion profesional: por defecto no incluye pedidos en papelera y se genera compatible con Excel.
           </p>
         </CardBody>
@@ -422,7 +429,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                         </Button>
                         {viewMode === "active" && changed ? <span className="text-xs text-amber-700">Cambio pendiente por guardar</span> : null}
                       </>
-                    );
+                  );
                 })()}
 
                 {o.receiptImageUrl ? (
