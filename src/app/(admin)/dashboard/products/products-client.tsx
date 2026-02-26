@@ -6,6 +6,7 @@ import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 type Product = {
   id: string;
   productType: string;
+  audience: "hombre" | "mujer" | "ninos" | "todos";
   slug: string;
   status: "active" | "archived";
   name: string;
@@ -20,10 +21,27 @@ type Product = {
   deletedAtMs?: number | null;
 };
 
+const AUDIENCE_OPTIONS: Array<{ key: Product["audience"]; label: string }> = [
+  { key: "hombre", label: "Hombre" },
+  { key: "mujer", label: "Mujer" },
+  { key: "ninos", label: "Ninos" },
+  { key: "todos", label: "Todos (hombre, mujer, ninos)" },
+];
+
+function needsAudienceByType(productType: string): boolean {
+  const t = String(productType ?? "").toLowerCase();
+  return t.includes("zapat") || t.includes("ropa");
+}
+
+function audienceDefaultForType(productType: string): Product["audience"] {
+  return needsAudienceByType(productType) ? "hombre" : "todos";
+}
+
 function emptyProduct(defaultType: string): Product {
   return {
     id: "",
     productType: defaultType,
+    audience: audienceDefaultForType(defaultType),
     slug: "",
     status: "active",
     name: "",
@@ -84,6 +102,7 @@ function validateDraft(draft: Product): string[] {
   if (slug.length < 2) errors.push("El slug es obligatorio (minimo 2 caracteres).");
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) errors.push("El slug debe estar en formato kebab-case (ejemplo: nike-air-max).");
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test((draft.productType ?? "").trim())) errors.push("El tipo de producto debe estar en kebab-case.");
+  if (needsAudienceByType(draft.productType) && !draft.audience) errors.push("Debes elegir publico objetivo para ropa/zapatillas.");
   if ((draft.name ?? "").trim().length < 2) errors.push("El nombre es obligatorio.");
   if (!Number.isFinite(Number(draft.price)) || Number(draft.price) < 0) errors.push("El precio debe ser un numero valido.");
   if (!Array.isArray(draft.variants) || draft.variants.length === 0) errors.push("Agrega al menos una variante.");
@@ -163,7 +182,7 @@ export default function ProductsClient({
     return baseProducts.filter((p) => {
       if (typeFilter && p.productType !== typeFilter) return false;
       if (!token) return true;
-      return [p.slug, p.name, p.brand, p.category, p.productType].some((x) => (x ?? "").toLowerCase().includes(token));
+      return [p.slug, p.name, p.brand, p.category, p.productType, p.audience].some((x) => (x ?? "").toLowerCase().includes(token));
     });
   }, [baseProducts, query, typeFilter]);
 
@@ -199,6 +218,7 @@ export default function ProductsClient({
     try {
       const payload = {
         productType: draft.productType,
+        audience: draft.audience,
         slug: draft.slug,
         status: draft.status,
         name: draft.name,
@@ -460,7 +480,7 @@ export default function ProductsClient({
           <option value="">(Selecciona)</option>
           {filteredProducts.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.slug} - {p.status === "active" ? "Activo" : "Archivado"}{p.deletedAtMs ? " (papelera)" : ""}
+              {p.slug} - {p.status === "active" ? "Activo" : "Archivado"} - {p.audience}{p.deletedAtMs ? " (papelera)" : ""}
             </option>
           ))}
         </select>
@@ -511,16 +531,42 @@ export default function ProductsClient({
         {msg ? <div className="text-sm text-slate-700 panel p-3 rounded-2xl border-slate-200 shadow-sm">{msg}</div> : null}
 
         <div className="grid gap-4">
-          <div className="grid md:grid-cols-3 gap-3 panel p-3 md:p-4 shadow-sm">
+          <div className="grid md:grid-cols-4 gap-3 panel p-3 md:p-4 shadow-sm">
             <div className="grid gap-1">
               <label className="text-sm font-medium">Tipo de producto</label>
-              <select value={draft.productType} onChange={(e) => setDraft((d) => ({ ...d, productType: e.target.value }))} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
+              <select
+                value={draft.productType}
+                onChange={(e) =>
+                  setDraft((d) => {
+                    const nextType = e.target.value;
+                    const keepAudience = needsAudienceByType(nextType);
+                    return { ...d, productType: nextType, audience: keepAudience ? d.audience : "todos" };
+                  })
+                }
+                className="border border-slate-300 rounded-md px-3 py-2 text-sm"
+              >
                 {typeOptions.map((t) => (
                   <option key={t.key} value={t.key}>
                     {t.label}
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="grid gap-1">
+              <label className="text-sm font-medium">Publico objetivo</label>
+              <select
+                value={draft.audience}
+                onChange={(e) => setDraft((d) => ({ ...d, audience: e.target.value as Product["audience"] }))}
+                className="border border-slate-300 rounded-md px-3 py-2 text-sm"
+                disabled={!needsAudienceByType(draft.productType)}
+              >
+                {AUDIENCE_OPTIONS.map((x) => (
+                  <option key={x.key} value={x.key}>
+                    {x.label}
+                  </option>
+                ))}
+              </select>
+              {!needsAudienceByType(draft.productType) ? <span className="text-[11px] text-slate-500">Para accesorios se usa Todos.</span> : null}
             </div>
             <div className="grid gap-1">
               <label className="text-sm font-medium">Slug (kebab-case)</label>

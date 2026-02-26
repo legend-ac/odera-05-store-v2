@@ -191,6 +191,7 @@ export default async function HomePage() {
                 "border-violet-200 bg-gradient-to-br from-violet-50 via-white to-violet-100/70",
               ];
               const tone = tones[idx % tones.length];
+              const supportsAudience = item.key.includes("zapat") || item.key.includes("ropa");
               return (
                 <Link key={item.key} href={`/catalog?type=${encodeURIComponent(item.key)}`} className={`group rounded-2xl border p-3 md:p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${tone}`}>
                   <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -208,6 +209,22 @@ export default async function HomePage() {
                   <span className="mt-4 inline-flex h-10 items-center rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 group-hover:bg-slate-100 transition-colors">
                     {item.cta || `Ver ${item.label.toLowerCase()}`}
                   </span>
+                  {supportsAudience ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {[
+                        { key: "hombre", label: "Hombre" },
+                        { key: "mujer", label: "Mujer" },
+                        { key: "ninos", label: "Ninos" },
+                      ].map((a) => (
+                        <span
+                          key={a.key}
+                          className="inline-flex h-8 items-center rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          {a.label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </Link>
               );
             })}

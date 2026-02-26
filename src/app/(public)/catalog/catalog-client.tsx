@@ -10,22 +10,42 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/fields";
 
 type SortType = "latest" | "price-asc" | "price-desc" | "name";
-type CatalogItem = ProductCardData & { productType?: string };
+type Audience = "hombre" | "mujer" | "ninos" | "todos";
+type CatalogItem = ProductCardData & { productType?: string; audience?: Audience };
+
+const AUDIENCE_LABEL: Record<Audience, string> = {
+  hombre: "Hombre",
+  mujer: "Mujer",
+  ninos: "Ninos",
+  todos: "Todos",
+};
+
+function supportsAudienceFilter(productType: string): boolean {
+  const t = String(productType ?? "").toLowerCase();
+  return t.includes("zapat") || t.includes("ropa");
+}
 
 export default function CatalogClient({
   initialItems,
   initialQuery,
   initialType,
+  initialAudience,
   productTypes,
 }: {
   initialItems: CatalogItem[];
   initialQuery: string;
   initialType: string;
+  initialAudience: string;
   productTypes: { key: string; label: string }[];
 }) {
   const [qText, setQText] = useState(initialQuery ?? "");
   const token = useMemo(() => normalizeToken(qText).split(/\s+/g).filter(Boolean)[0] ?? "", [qText]);
   const [typeFilter, setTypeFilter] = useState<string>((initialType ?? "").toLowerCase().trim());
+  const [audienceFilter, setAudienceFilter] = useState<Audience | "">(
+    (["hombre", "mujer", "ninos", "todos"].includes((initialAudience ?? "").toLowerCase())
+      ? (initialAudience.toLowerCase() as Audience)
+      : "") as Audience | ""
+  );
   const [sortBy, setSortBy] = useState<SortType>("latest");
   const [items, setItems] = useState<CatalogItem[] | null>(initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +85,7 @@ export default function CatalogClient({
             imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
             imageUrls,
             productType: String(data?.productType ?? "").toLowerCase().trim() || undefined,
+            audience: (String(data?.audience ?? "todos").toLowerCase().trim() as Audience) || "todos",
             dedupeKey,
             updatedAtMs,
           };
@@ -85,6 +106,7 @@ export default function CatalogClient({
             imageUrl: it.imageUrl,
             imageUrls: it.imageUrls,
             productType: it.productType,
+            audience: it.audience,
           });
         }
 
@@ -102,7 +124,11 @@ export default function CatalogClient({
 
   const sortedItems = useMemo(() => {
     const base = [...(items ?? [])];
-    const list = typeFilter ? base.filter((p) => p.productType === typeFilter) : base;
+    const byType = typeFilter ? base.filter((p) => p.productType === typeFilter) : base;
+    const list =
+      typeFilter && supportsAudienceFilter(typeFilter) && audienceFilter
+        ? byType.filter((p) => (p.audience ?? "todos") === audienceFilter || (p.audience ?? "todos") === "todos")
+        : byType;
     if (sortBy === "name") return list.sort((a, b) => a.name.localeCompare(b.name));
     if (sortBy === "price-asc") {
       return list.sort((a, b) => {
@@ -119,7 +145,15 @@ export default function CatalogClient({
       });
     }
     return list;
-  }, [items, sortBy, typeFilter]);
+  }, [items, sortBy, typeFilter, audienceFilter]);
+
+  useEffect(() => {
+    if (!typeFilter || !supportsAudienceFilter(typeFilter)) {
+      setAudienceFilter("");
+    } else if (!audienceFilter) {
+      setAudienceFilter("todos");
+    }
+  }, [typeFilter, audienceFilter]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:py-10 flex flex-col gap-6">
@@ -150,6 +184,25 @@ export default function CatalogClient({
               Limpiar
             </Button>
           </div>
+          {typeFilter && supportsAudienceFilter(typeFilter) ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setAudienceFilter(a)}
+                  className={[
+                    "rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
+                    audienceFilter === a
+                      ? "border-[var(--brand-500)] bg-[var(--brand-100)] text-[var(--brand-700)]"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                  ].join(" ")}
+                >
+                  {AUDIENCE_LABEL[a]}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </CardBody>
       </Card>
 

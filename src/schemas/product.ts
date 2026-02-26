@@ -21,6 +21,7 @@ export const productUpsertSchema = z.object({
     .min(2)
     .max(40)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "productType must be kebab-case"),
+  audience: z.enum(["hombre", "mujer", "ninos", "todos"]),
   slug: z
     .string()
     .min(2)
@@ -36,6 +37,17 @@ export const productUpsertSchema = z.object({
   onSale: z.boolean(),
   images: z.array(productImageSchema).max(10),
   variants: z.array(productVariantSchema).min(1).max(50),
+}).superRefine((data, ctx) => {
+  const pt = data.productType.toLowerCase();
+  const requiresAudience = pt.includes("zapat") || pt.includes("ropa");
+  if (!requiresAudience) return;
+  if (!data.audience) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["audience"],
+      message: "audience is required for ropa/zapatillas",
+    });
+  }
 });
 
 export type ProductUpsertInput = z.infer<typeof productUpsertSchema>;

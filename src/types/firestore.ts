@@ -18,6 +18,7 @@ export type ProductVariant = {
 
 export type ProductDoc = {
   productType: ProductType;
+  audience?: "hombre" | "mujer" | "ninos" | "todos";
   status: ProductStatus;
   slug: string;
   name: string;

@@ -4,7 +4,7 @@ import type { ProductCardData } from "@/components/ProductCard";
 
 export const revalidate = 60;
 
-type CatalogItem = ProductCardData & { productType?: string };
+type CatalogItem = ProductCardData & { productType?: string; audience?: "hombre" | "mujer" | "ninos" | "todos" };
 type ProductTypeOption = { key: string; label: string };
 
 const DEFAULT_PRODUCT_TYPES: ProductTypeOption[] = [
@@ -32,6 +32,7 @@ async function loadInitialCatalog(): Promise<CatalogItem[]> {
       imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
       imageUrls,
       productType: (String(data?.productType ?? "").toLowerCase() as CatalogItem["productType"]) || undefined,
+      audience: (String(data?.audience ?? "todos").toLowerCase() as CatalogItem["audience"]) || "todos",
       dedupeKey,
       updatedAtMs,
     };
@@ -83,5 +84,15 @@ export default async function CatalogPage({
   const initialQuery = Array.isArray(q) ? q[0] ?? "" : q ?? "";
   const type = searchParams?.type;
   const initialType = Array.isArray(type) ? type[0] ?? "" : type ?? "";
-  return <CatalogClient initialItems={initialItems} initialQuery={initialQuery} initialType={initialType} productTypes={productTypes} />;
+  const audience = searchParams?.audience;
+  const initialAudience = Array.isArray(audience) ? audience[0] ?? "" : audience ?? "";
+  return (
+    <CatalogClient
+      initialItems={initialItems}
+      initialQuery={initialQuery}
+      initialType={initialType}
+      initialAudience={initialAudience}
+      productTypes={productTypes}
+    />
+  );
 }

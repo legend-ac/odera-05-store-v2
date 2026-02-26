@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       name: input.name,
       description: input.description,
       brand: input.brand,
-      category: `${input.category} ${input.productType}`.trim(),
+      category: `${input.category} ${input.productType} ${input.audience}`.trim(),
     });
 
     await adminDb.runTransaction(async (tx) => {
