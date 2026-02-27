@@ -85,18 +85,18 @@ export default async function HomePage() {
   });
 
   return (
-    <Container className="py-2.5 md:py-4">
-      <div className="flex flex-col gap-2.5 md:gap-3.5">
+    <Container className="py-2 md:py-3">
+      <div className="flex flex-col gap-2 md:gap-3">
         <Section className="py-0">
-          <div className="panel-premium bg-brand-mesh overflow-hidden p-3 sm:p-4 md:p-4.5">
-            <div className="grid items-start gap-2 md:gap-2.5">
+          <div className="panel-premium bg-brand-mesh overflow-hidden p-3 sm:p-3.5 md:p-4">
+            <div className="grid items-start gap-1.5 md:gap-2">
               <div className="flex flex-col gap-2 md:gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
                   <Badge tone="info" className="rounded-xl">Compra facil y segura</Badge>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <h1 className="text-[1.48rem] sm:text-[2.2rem] md:text-[3rem] leading-[1] font-display font-bold text-slate-900">
                     Zapatillas y ropa
                     <br />
@@ -112,9 +112,9 @@ export default async function HomePage() {
                   <Link href="/track" className="btn-soft h-10.5 sm:h-11 px-4 sm:px-5 text-[15px] sm:text-base w-full sm:w-auto">Seguir mi pedido</Link>
                 </div>
 
-                <div className={quickChips.length === 2 ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 sm:grid-cols-3 gap-2"}>
+                <div className={quickChips.length === 2 ? "grid grid-cols-2 gap-1.5" : "grid grid-cols-2 sm:grid-cols-3 gap-1.5"}>
                   {quickChips.map((chip) => (
-                    <div key={chip.key} className={`${chip.className} p-2.5`}>
+                    <div key={chip.key} className={`${chip.className} p-2`}>
                       <p className="text-[11px] text-slate-600">{chip.label}</p>
                       <p className="text-[1.05rem] font-bold text-slate-900">{chip.value}</p>
                     </div>
@@ -142,7 +142,7 @@ export default async function HomePage() {
           </Section>
         ) : null}
 
-        <Section className="py-0 flex flex-col gap-2">
+        <Section className="py-0 flex flex-col gap-1.5">
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-2xl font-display font-bold text-slate-900">Explora por categoria</h2>
@@ -156,34 +156,35 @@ export default async function HomePage() {
           <div className="grid gap-2 md:grid-cols-3">
             {categoryCards.map((item, idx) => {
               const tones = [
-                "border-emerald-300 bg-gradient-to-br from-emerald-50 via-emerald-100/40 to-lime-100/40",
-                "border-amber-300 bg-gradient-to-br from-amber-50 via-yellow-100/35 to-orange-100/40",
-                "border-lime-300 bg-gradient-to-br from-lime-50 via-yellow-100/35 to-emerald-100/40",
-                "border-blue-300 bg-gradient-to-br from-blue-50 via-sky-100/35 to-indigo-100/40",
+                "border-emerald-300/70 bg-gradient-to-br from-emerald-50 via-emerald-100/40 to-lime-100/40",
+                "border-amber-300/70 bg-gradient-to-br from-amber-50 via-yellow-100/35 to-orange-100/40",
+                "border-lime-300/70 bg-gradient-to-br from-lime-50 via-yellow-100/35 to-emerald-100/40",
+                "border-blue-300/70 bg-gradient-to-br from-blue-50 via-sky-100/35 to-indigo-100/40",
               ];
               const tone = tones[idx % tones.length];
               return (
                 <Link
                   key={item.key}
                   href={`/catalog?type=${encodeURIComponent(item.key)}`}
-                  className={`group overflow-hidden rounded-2xl border p-2 md:p-2.5 shadow-[0_6px_14px_rgba(2,6,23,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(2,6,23,0.12)] ${tone}`}
+                  className={`group overflow-hidden rounded-2xl border p-2 shadow-[0_6px_14px_rgba(2,6,23,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(2,6,23,0.12)] ${tone}`}
                 >
-                  <div className="relative h-[132px] sm:h-[150px] md:h-[138px] overflow-hidden rounded-xl border border-slate-200 bg-white/95">
+                  <div className="relative overflow-hidden rounded-xl border border-white/40 bg-slate-900/90">
                     <Image
                       src={pickCategoryAsset(item.key, idx)}
                       alt={`${item.label} ODERA 05`}
                       width={1200}
                       height={680}
                       sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"
-                      className="h-full w-full object-contain object-center p-1.5 transition-transform duration-300 md:group-hover:scale-[1.02]"
+                      className="aspect-[16/10] w-full object-cover object-center transition-transform duration-300 md:group-hover:scale-[1.03]"
                     />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/45 via-black/15 to-transparent" />
                   </div>
 
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <p className="min-w-0 truncate text-[13px] font-medium text-slate-700">
+                  <div className="mt-2.5 flex items-center justify-between gap-2">
+                    <p className="min-w-0 truncate text-[13px] font-medium text-slate-800">
                       {item.subtitle || "Coleccion destacada"}
                     </p>
-                    <span className="inline-flex h-8.5 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100 whitespace-nowrap">
+                    <span className="inline-flex h-9 items-center rounded-xl border border-slate-900/15 bg-white px-3.5 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100 whitespace-nowrap">
                       {item.cta || "Ver"}
                     </span>
                   </div>
