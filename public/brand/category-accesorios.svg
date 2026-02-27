@@ -1,29 +1,32 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="g3" x1="50" y1="20" x2="1120" y2="700" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F2F6FF"/>
-      <stop offset="1" stop-color="#E4ECFA"/>
+    <linearGradient id="g3" x1="0" y1="0" x2="1200" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3D2A06"/>
+      <stop offset="1" stop-color="#685012"/>
     </linearGradient>
+    <radialGradient id="l3" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1010 110) rotate(170) scale(260 200)">
+      <stop stop-color="#FFE37A" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#FFE37A" stop-opacity="0"/>
+    </radialGradient>
   </defs>
   <rect width="1200" height="760" rx="28" fill="url(#g3)"/>
-  <rect x="66" y="72" width="1068" height="616" rx="24" fill="#FFFFFF" fill-opacity="0.82" stroke="#CAD8EE"/>
-  <text x="112" y="166" fill="#1A3D72" font-size="68" font-family="Arial, Helvetica, sans-serif" font-weight="700">ACCESORIOS</text>
-  <text x="112" y="216" fill="#4E6891" font-size="30" font-family="Arial, Helvetica, sans-serif">Mochilas, gorras y complementos</text>
-  <g transform="translate(120 280)">
-    <rect width="300" height="320" rx="26" fill="#1D4C22"/>
-    <rect x="74" y="74" width="152" height="196" rx="24" fill="#E0EDE0"/>
-    <rect x="98" y="52" width="104" height="48" rx="16" stroke="#A4C3A8" stroke-width="10"/>
-    <circle cx="150" cy="174" r="16" fill="#2A5C31"/>
+  <rect width="1200" height="760" rx="28" fill="url(#l3)"/>
+  <rect x="46" y="46" width="1108" height="668" rx="24" stroke="#F2D460" stroke-opacity="0.5"/>
+  <g transform="translate(94 176)">
+    <rect width="320" height="368" rx="26" fill="#2D6A35"/>
+    <rect x="86" y="72" width="148" height="204" rx="24" fill="#E3EFE1"/>
+    <rect x="108" y="50" width="104" height="50" rx="16" stroke="#A5C6A8" stroke-width="10"/>
+    <circle cx="160" cy="172" r="16" fill="#2A5C31"/>
   </g>
-  <g transform="translate(462 280)">
-    <rect width="300" height="320" rx="26" fill="#0F2032"/>
-    <path d="M58 240C58 172 114 118 182 118C250 118 304 172 304 240V248H58V240Z" fill="#DCE6F3"/>
-    <path d="M96 154C120 118 148 100 182 100C216 100 244 118 268 154H96Z" fill="#9FB5D4"/>
+  <g transform="translate(460 176)">
+    <rect width="320" height="368" rx="26" fill="#0F2032"/>
+    <path d="M62 250C62 182 122 126 190 126C258 126 316 182 316 250V258H62V250Z" fill="#DCE6F3"/>
+    <path d="M104 158C128 120 154 102 190 102C226 102 252 120 276 158H104Z" fill="#9FB5D4"/>
   </g>
-  <g transform="translate(804 280)">
-    <rect width="266" height="320" rx="26" fill="#2E6A2F"/>
-    <circle cx="132" cy="170" r="86" fill="#E4F0E2"/>
-    <circle cx="132" cy="170" r="52" fill="#2E6A2F"/>
-    <circle cx="132" cy="170" r="20" fill="#E4F0E2"/>
+  <g transform="translate(826 176)">
+    <rect width="280" height="368" rx="26" fill="#315F1D"/>
+    <circle cx="140" cy="188" r="92" fill="#E8F3D6"/>
+    <circle cx="140" cy="188" r="56" fill="#315F1D"/>
+    <circle cx="140" cy="188" r="22" fill="#E8F3D6"/>
   </g>
 </svg>

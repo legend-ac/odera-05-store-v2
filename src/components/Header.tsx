@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import { usePathname, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/fields";
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/layout";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -64,7 +65,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/92 backdrop-blur-xl">
       <Container className="py-2 md:py-3">
-        <div className="grid grid-cols-[1fr_auto] md:grid-cols-[auto_1fr_auto] items-center gap-2.5">
+        <div className="grid grid-cols-[1fr_auto] items-center gap-2.5">
           <Link href="/" className="flex min-w-0 items-center gap-2">
             <BrandMark />
             <span className="min-w-0">
@@ -72,11 +73,6 @@ export default function Header() {
               <span className="hidden md:block text-[11px] text-slate-500">Tienda oficial de zapatillas y ropa</span>
             </span>
           </Link>
-
-          <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 w-full max-w-2xl justify-self-center">
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Busca por nombre, marca o categoria..." className="h-11" />
-            <button type="submit" className="btn-soft px-4 h-11">Buscar</button>
-          </form>
 
           <div className="flex items-center gap-1.5 justify-self-end">
             <nav className="hidden lg:flex items-center gap-3 mr-1">
@@ -91,24 +87,26 @@ export default function Header() {
                 </span>
               ) : null}
             </Link>
-            <button
+            <Button
               type="button"
               aria-label="Abrir menu"
-              className="lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700"
+              variant="secondary"
+              size="icon"
+              className="lg:hidden"
               onClick={() => setOpen((v) => !v)}
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 7h16M4 12h16M4 17h16" />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
 
-        <form onSubmit={submitSearch} className="mt-2 flex items-center gap-2 md:hidden">
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar productos..." className="h-10" />
-          <button type="submit" className="btn-soft h-10 px-3 text-sm font-semibold">
+        <form onSubmit={submitSearch} className="mt-2 flex items-center gap-2 md:max-w-3xl">
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar productos..." uiSize="sm" className="md:min-h-11" />
+          <Button type="submit" variant="secondary" size="md">
             Buscar
-          </button>
+          </Button>
         </form>
 
         {open ? (

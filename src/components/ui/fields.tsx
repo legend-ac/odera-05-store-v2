@@ -1,24 +1,55 @@
 import * as React from "react";
 import { cn } from "@/lib/cn";
+import { cva } from "@/lib/cva";
 
-export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  const { className, ...rest } = props;
+type FieldSize = "sm" | "md" | "lg";
+
+const fieldBase = cva(
+  "w-full rounded-xl border border-border bg-card text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+  {
+    variants: {
+      size: {
+        sm: "min-h-10 px-3 text-sm",
+        md: "min-h-11 px-3 text-sm",
+        lg: "min-h-12 px-4 text-base",
+      },
+      invalid: {
+        true: "border-destructive ring-1 ring-destructive",
+        false: "",
+      },
+    },
+    defaultVariants: {
+      size: "md",
+      invalid: "false",
+    },
+  }
+);
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  uiSize?: FieldSize;
+  invalid?: boolean;
+}
+
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  uiSize?: FieldSize;
+  invalid?: boolean;
+}
+
+export function Input(props: InputProps) {
+  const { className, uiSize = "md", invalid = false, ...rest } = props;
   return (
     <input
-      className={cn(
-        "w-full min-h-11 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] leading-tight text-slate-900 placeholder:text-slate-400 focus:border-blue-500 sm:min-h-10 sm:text-sm",
-        className
-      )}
+      className={cn(fieldBase({ size: uiSize, invalid: invalid ? "true" : "false" }), className)}
       {...rest}
     />
   );
 }
 
-export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  const { className, ...rest } = props;
+export function Select(props: SelectProps) {
+  const { className, uiSize = "md", invalid = false, ...rest } = props;
   return (
     <select
-      className={cn("w-full min-h-11 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] leading-tight text-slate-900 focus:border-blue-500 sm:min-h-10 sm:text-sm", className)}
+      className={cn(fieldBase({ size: uiSize, invalid: invalid ? "true" : "false" }), className)}
       {...rest}
     />
   );

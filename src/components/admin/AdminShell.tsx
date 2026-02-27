@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
+import { Button } from "@/components/ui/button";
 
 function NavItem({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname();
@@ -70,9 +71,9 @@ export default function AdminShell({ email, children }: { email: string; childre
             </div>
             <div className="flex items-center gap-2">
               <div className="text-xs text-slate-700 truncate max-w-[200px] bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">{email}</div>
-              <button type="button" onClick={logout} className="btn-soft">
+              <Button type="button" onClick={logout} variant="secondary" size="sm">
                 Salir
-              </button>
+              </Button>
             </div>
           </header>
 

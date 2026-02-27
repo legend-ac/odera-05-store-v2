@@ -10,7 +10,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "node scripts/typecheck-stable.mjs",
+    "qa:full": "npm run lint && npm run test && npm run build && npm run typecheck",
     "format:check": "node -e \"console.log('No formatter configured')\"",
     "admin:set-claim": "tsx scripts/set-admin-claim.ts",
     "backup:run": "tsx scripts/backup.ts"

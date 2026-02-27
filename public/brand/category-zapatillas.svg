@@ -1,20 +1,23 @@
 <svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="g1" x1="70" y1="30" x2="1110" y2="700" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#EAF7EA"/>
-      <stop offset="1" stop-color="#D7EBD6"/>
+    <linearGradient id="g1" x1="0" y1="0" x2="1200" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E5A28"/>
+      <stop offset="1" stop-color="#123D1D"/>
     </linearGradient>
+    <radialGradient id="l1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(170 120) rotate(18) scale(220 160)">
+      <stop stop-color="#5AE58A" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#5AE58A" stop-opacity="0"/>
+    </radialGradient>
   </defs>
   <rect width="1200" height="760" rx="28" fill="url(#g1)"/>
-  <rect x="66" y="72" width="1068" height="616" rx="24" fill="#FFFFFF" fill-opacity="0.8" stroke="#AFD1AE"/>
-  <text x="112" y="166" fill="#214A24" font-size="68" font-family="Arial, Helvetica, sans-serif" font-weight="700">ZAPATILLAS</text>
-  <text x="112" y="216" fill="#527258" font-size="30" font-family="Arial, Helvetica, sans-serif">Running, training y estilo urbano</text>
-  <g transform="translate(130 300)">
-    <rect width="940" height="258" rx="26" fill="#1D4C22"/>
-    <path d="M102 186C164 160 248 132 320 126C418 118 518 164 632 188C704 202 784 206 860 186L860 228L102 228V186Z" fill="#E3EFE1"/>
-    <path d="M152 124C210 86 320 54 438 62C542 70 612 114 690 136C728 146 766 150 806 146L830 172C768 182 704 178 650 166C544 142 460 98 350 100C286 102 228 122 176 148L152 124Z" fill="#0B1A0F"/>
-    <path d="M294 132L344 132L344 170L294 170V132Z" fill="#85B98B"/>
-    <path d="M378 122L428 122L428 170L378 170V122Z" fill="#85B98B"/>
-    <path d="M462 118L512 118L512 170L462 170V118Z" fill="#85B98B"/>
+  <rect width="1200" height="760" rx="28" fill="url(#l1)"/>
+  <rect x="46" y="46" width="1108" height="668" rx="24" stroke="#6CDB9A" stroke-opacity="0.45"/>
+  <g transform="translate(90 170)">
+    <rect width="1020" height="410" rx="28" fill="#0E2515" fill-opacity="0.55"/>
+    <path d="M104 300C176 250 282 220 386 224C524 230 658 290 824 322C878 332 934 336 990 330V370H104V300Z" fill="#E1F7E5"/>
+    <path d="M120 250C196 182 312 138 438 134C578 130 690 194 792 238C852 264 910 280 982 280L1004 314C928 324 844 312 764 284C646 242 548 198 436 200C320 202 220 248 148 306L120 250Z" fill="#04170B"/>
+    <path d="M322 250H380V300H322V250Z" fill="#86DAA8"/>
+    <path d="M412 240H470V300H412V240Z" fill="#86DAA8"/>
+    <path d="M502 238H560V300H502V238Z" fill="#86DAA8"/>
   </g>
 </svg>

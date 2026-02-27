@@ -89,7 +89,7 @@ export default async function HomePage() {
       <div className="flex flex-col gap-4 md:gap-8">
         <Section className="py-0">
           <div className="panel-premium bg-brand-mesh overflow-hidden p-3 sm:p-6 md:p-8">
-            <div className="grid items-start gap-4 md:gap-8 lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="grid items-start gap-4 md:gap-8">
               <div className="flex flex-col gap-3 md:gap-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
@@ -119,35 +119,6 @@ export default async function HomePage() {
                       <p className="text-base font-bold text-slate-900">{chip.value}</p>
                     </div>
                   ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-5 md:p-6 shadow-[0_14px_28px_rgba(15,23,42,0.12)]">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Como funciona</p>
-                  <h3 className="mt-1.5 text-[1.6rem] md:text-[1.9rem] font-display font-bold text-slate-900">Compra en 3 pasos</h3>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Flujo simple para el cliente: elegir, pagar y seguir el pedido.
-                  </p>
-                </div>
-                <div className="mt-3 grid gap-2">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3.5">
-                    <p className="text-sm font-semibold text-slate-900">1. Elige tu producto</p>
-                    <p className="text-xs text-slate-600">Selecciona talla, cantidad y agregalo al carrito.</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3.5">
-                    <p className="text-sm font-semibold text-slate-900">2. Paga y sube tu comprobante</p>
-                    <p className="text-xs text-slate-600">Aceptamos Yape y Plin con validacion manual segura.</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3.5">
-                    <p className="text-sm font-semibold text-slate-900">3. Recibe seguimiento en tiempo real</p>
-                    <p className="text-xs text-slate-600">Estado visible por codigo y atencion por WhatsApp.</p>
-                  </div>
-                </div>
-                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                  <p className="text-xs text-slate-700">
-                    Sigue tu pedido cuando quieras desde la opcion <span className="font-semibold">Seguir mi pedido</span>.
-                  </p>
                 </div>
               </div>
             </div>
@@ -185,27 +156,32 @@ export default async function HomePage() {
           <div className="grid gap-3 md:grid-cols-3">
             {categoryCards.map((item, idx) => {
               const tones = [
-                "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/70",
-                "border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100/70",
-                "border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100",
-                "border-violet-200 bg-gradient-to-br from-violet-50 via-white to-violet-100/70",
+                "border-emerald-300 bg-gradient-to-br from-emerald-50 via-emerald-100/40 to-lime-100/40",
+                "border-amber-300 bg-gradient-to-br from-amber-50 via-yellow-100/35 to-orange-100/40",
+                "border-lime-300 bg-gradient-to-br from-lime-50 via-yellow-100/35 to-emerald-100/40",
+                "border-blue-300 bg-gradient-to-br from-blue-50 via-sky-100/35 to-indigo-100/40",
               ];
               const tone = tones[idx % tones.length];
               return (
-                <Link key={item.key} href={`/catalog?type=${encodeURIComponent(item.key)}`} className={`group rounded-2xl border p-3 md:p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${tone}`}>
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <Link
+                  key={item.key}
+                  href={`/catalog?type=${encodeURIComponent(item.key)}`}
+                  className={`group overflow-hidden rounded-2xl border p-2.5 md:p-3 shadow-[0_10px_24px_rgba(2,6,23,0.12)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(2,6,23,0.20)] ${tone}`}
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-slate-200 bg-white">
                     <Image
                       src={pickCategoryAsset(item.key, idx)}
                       alt={`${item.label} ODERA 05`}
-                      width={1200}
-                      height={760}
-                      className="aspect-[4/2.5] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      fill
+                      sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"
+                      className="object-cover object-center transition-transform duration-300 md:group-hover:scale-[1.03]"
                     />
                   </div>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-[.12em] text-slate-600">Categoria</p>
-                  <h3 className="mt-1.5 text-2xl font-display font-bold text-slate-900">{item.label}</h3>
-                  <p className="mt-1.5 text-sm text-slate-700">{item.subtitle || "Productos destacados en esta linea."}</p>
-                  <span className="mt-4 inline-flex h-10 items-center rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 group-hover:bg-slate-100 transition-colors">
+
+                  <h3 className="mt-3 text-[1.7rem] leading-[1.05] font-display font-bold text-slate-900">{item.label}</h3>
+                  <p className="mt-1 text-[15px] text-slate-700">{item.subtitle || "Productos destacados en esta linea."}</p>
+
+                  <span className="mt-3 inline-flex h-10 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100">
                     {item.cta || `Ver ${item.label.toLowerCase()}`}
                   </span>
                 </Link>
@@ -215,6 +191,39 @@ export default async function HomePage() {
         </Section>
 
         <HomeSocialLinks />
+
+        <Section className="py-0">
+          <Card className="border-slate-200 bg-white">
+            <CardBody className="p-4 sm:p-5 md:p-6">
+              <p className="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Como funciona</p>
+              <h3 className="mt-1.5 text-[1.6rem] md:text-[1.9rem] font-display font-bold text-slate-900">Compra en 3 pasos</h3>
+              <p className="mt-2 text-sm text-slate-600">
+                Flujo simple para el cliente: elegir, pagar y seguir el pedido.
+              </p>
+
+              <div className="mt-3 grid gap-2 md:grid-cols-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3.5">
+                  <p className="text-sm font-semibold text-slate-900">1. Elige tu producto</p>
+                  <p className="text-xs text-slate-600">Selecciona talla, cantidad y agregalo al carrito.</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3.5">
+                  <p className="text-sm font-semibold text-slate-900">2. Paga y sube tu comprobante</p>
+                  <p className="text-xs text-slate-600">Aceptamos Yape y Plin con validacion manual segura.</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3.5">
+                  <p className="text-sm font-semibold text-slate-900">3. Recibe seguimiento en tiempo real</p>
+                  <p className="text-xs text-slate-600">Estado visible por codigo y atencion por WhatsApp.</p>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                <p className="text-xs text-slate-700">
+                  Sigue tu pedido cuando quieras desde la opcion <span className="font-semibold">Seguir mi pedido</span>.
+                </p>
+              </div>
+            </CardBody>
+          </Card>
+        </Section>
       </div>
     </Container>
   );

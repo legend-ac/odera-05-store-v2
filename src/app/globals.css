@@ -4,12 +4,27 @@
 
 :root {
   color-scheme: light;
-  --bg: #f3f6fb;
+  --background: #f3f6fb;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --line: #dbe3ee;
-  --text: #0f172a;
+  --border: #dbe3ee;
   --muted: #475569;
+  --ring: #2563eb;
   --primary: #0b1a13;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #0f172a;
+  --success: #059669;
+  --success-foreground: #ffffff;
+  --info: #2563eb;
+  --info-foreground: #ffffff;
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
+
+  /* Legacy aliases to avoid breaking old classes during migration */
+  --bg: var(--background);
+  --line: var(--border);
+  --text: var(--foreground);
   --brand-700: #1f4d1f;
   --brand-600: #2e6a2f;
   --brand-500: #3f7f3a;
@@ -26,8 +41,8 @@ body {
 
 body {
   font-family: var(--font-sans), "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--background);
+  color: var(--foreground);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -55,7 +70,7 @@ a:hover {
 }
 
 *:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -73,7 +88,7 @@ a:hover {
   }
 
   .panel-premium {
-    border: 1px solid rgba(202, 215, 230, 0.9);
+    border: 1px solid color-mix(in srgb, var(--border) 88%, #fff 12%);
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0 14px 44px rgba(15, 23, 42, 0.09);
     backdrop-filter: blur(8px);
@@ -82,7 +97,7 @@ a:hover {
 
   .panel {
     background: var(--card);
-    border: 1px solid var(--line);
+    border: 1px solid var(--border);
     border-radius: 1rem;
     box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
     transition: box-shadow 220ms ease, border-color 220ms ease, transform 220ms ease;

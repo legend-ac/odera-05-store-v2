@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { useCart } from "@/components/cart/CartProvider";
+import { Button } from "@/components/ui/button";
+import { Input, Select } from "@/components/ui/fields";
 import { apiPost, makeIdempotencyKey } from "@/lib/apiClient";
 import type { CreateOrderResponse } from "@/schemas/createOrder";
 import { db } from "@/lib/firebase/client";
@@ -37,6 +39,8 @@ type StorePromo = {
   freeShippingFrom: number;
 };
 
+type FieldErrors = Record<string, string>;
+
 async function uploadReceiptToCloudinary(file: File): Promise<string> {
   const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "").trim();
   const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
@@ -55,6 +59,15 @@ async function uploadReceiptToCloudinary(file: File): Promise<string> {
   if (!res.ok) throw new Error(`RECEIPT_UPLOAD_FAILED:${json?.error?.message ?? res.status}`);
   if (!json?.secure_url) throw new Error("RECEIPT_UPLOAD_NO_URL");
   return String(json.secure_url);
+}
+
+function ErrorText({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="text-xs text-destructive mt-1">
+      {message}
+    </p>
+  );
 }
 
 export default function CheckoutPage() {
@@ -82,9 +95,10 @@ export default function CheckoutPage() {
   const [payMethod, setPayMethod] = useState<PayMethod>("YAPE");
   const [receiptUrl, setReceiptUrl] = useState("");
   const [receiptBusy, setReceiptBusy] = useState(false);
-
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
   const [itemsPreview, setItemsPreview] = useState<ItemPreview[]>([]);
   const [subtotal, setSubtotal] = useState(0);
   const [loadingTotals, setLoadingTotals] = useState(false);
@@ -156,7 +170,7 @@ export default function CheckoutPage() {
           freeShippingFrom: Number(data?.homePromo?.freeShippingFrom ?? 200),
         });
       } catch {
-        // Public checkout can continue even if settings are missing.
+        // Checkout stays available without settings.
       }
     })();
     return () => {
@@ -167,27 +181,78 @@ export default function CheckoutPage() {
   const normalizedCoupon = useMemo(() => couponCode.trim().toUpperCase(), [couponCode]);
   const couponVisible = promo.enabled && promo.discountPercent > 0 && promo.couponCode.length >= 4;
   const couponValid = couponVisible && normalizedCoupon === promo.couponCode;
+
   const discountAmount = useMemo(() => {
     if (!couponValid) return 0;
     const pct = Math.max(0, Math.min(100, promo.discountPercent));
     return Math.round(subtotal * (pct / 100) * 100) / 100;
   }, [couponValid, promo.discountPercent, subtotal]);
+
   const shippingThreshold = Number.isFinite(promo.freeShippingFrom) ? Math.max(0, promo.freeShippingFrom) : 200;
   const shippingCost = useMemo(() => (subtotal >= shippingThreshold ? 0 : 10), [subtotal, shippingThreshold]);
   const totalToPay = useMemo(() => Math.max(0, subtotal - discountAmount) + shippingCost, [subtotal, discountAmount, shippingCost]);
 
-  const isCustomerValid = useMemo(() => name.trim().length >= 2 && email.includes("@") && phone.trim().length >= 6, [name, email, phone]);
+  function setFieldErrorAware<K extends keyof FieldErrors>(key: K, value: string) {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    if (error) setError(null);
+  }
 
-  const isShippingValid = useMemo(() => {
-    const receiverOk = receiverName.trim().length >= 2 && receiverDni.trim().length >= 8 && receiverPhone.trim().length >= 6;
-    if (!receiverOk) return false;
-    if (shippingMethod === "LIMA_DELIVERY") return district.trim().length >= 2 && addressLine1.trim().length >= 5;
-    return department.trim().length >= 2 && province.trim().length >= 2 && agencyName.trim().length >= 2 && agencyAddress.trim().length >= 5;
-  }, [shippingMethod, receiverName, receiverDni, receiverPhone, district, addressLine1, department, province, agencyName, agencyAddress]);
+  function validateFields(): FieldErrors {
+    const next: FieldErrors = {};
 
-  const disabled = useMemo(() => {
-    return busy || receiptBusy || !items.length || !isCustomerValid || !isShippingValid || !receiptUrl;
-  }, [busy, receiptBusy, items.length, isCustomerValid, isShippingValid, receiptUrl]);
+    if (name.trim().length < 2) next.name = "Ingresa tu nombre completo.";
+    if (!email.includes("@")) next.email = "Ingresa un correo valido.";
+    if (phone.trim().length < 6) next.phone = "Ingresa un telefono valido.";
+
+    if (receiverName.trim().length < 2) next.receiverName = "Ingresa quien recibe el pedido.";
+    if (receiverDni.trim().length < 8) next.receiverDni = "Ingresa un DNI valido.";
+    if (receiverPhone.trim().length < 6) next.receiverPhone = "Ingresa un telefono valido.";
+
+    if (shippingMethod === "LIMA_DELIVERY") {
+      if (district.trim().length < 2) next.district = "Ingresa distrito.";
+      if (addressLine1.trim().length < 5) next.addressLine1 = "Ingresa direccion completa.";
+    } else {
+      if (department.trim().length < 2) next.department = "Ingresa departamento.";
+      if (province.trim().length < 2) next.province = "Ingresa provincia.";
+      if (agencyName.trim().length < 2) next.agencyName = "Ingresa agencia.";
+      if (agencyAddress.trim().length < 5) next.agencyAddress = "Ingresa direccion de agencia.";
+    }
+
+    if (!receiptUrl) next.receiptUrl = "Debes subir un comprobante para confirmar.";
+    if (!items.length) next.items = "Tu carrito esta vacio.";
+
+    return next;
+  }
+
+  function focusFirstError(next: FieldErrors) {
+    const order = [
+      "name",
+      "email",
+      "phone",
+      "receiverName",
+      "receiverDni",
+      "receiverPhone",
+      "district",
+      "addressLine1",
+      "department",
+      "province",
+      "agencyName",
+      "agencyAddress",
+      "receiptUrl",
+    ];
+    const first = order.find((key) => next[key]);
+    if (!first) return;
+    const el = document.getElementById(`checkout-${first}`);
+    if (el && "focus" in el) {
+      (el as HTMLElement).focus();
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
 
   async function onPickReceipt(file: File) {
     setError(null);
@@ -195,14 +260,12 @@ export default function CheckoutPage() {
     try {
       const url = await uploadReceiptToCloudinary(file);
       setReceiptUrl(url);
+      setFieldErrorAware("receiptUrl", url);
       notify.success("Comprobante subido");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
-      if (msg.includes("CLOUDINARY_NOT_CONFIGURED")) {
-        setError("El sistema de comprobantes está en mantenimiento temporal.");
-      } else {
-        setError("No se pudo subir el comprobante. Intenta con otra imagen o reintenta en unos segundos.");
-      }
+      if (msg.includes("CLOUDINARY_NOT_CONFIGURED")) setError("El sistema de comprobantes esta en mantenimiento temporal.");
+      else setError("No se pudo subir el comprobante. Intenta nuevamente.");
       setReceiptUrl("");
     } finally {
       setReceiptBusy(false);
@@ -211,6 +274,13 @@ export default function CheckoutPage() {
 
   async function submit() {
     setError(null);
+    const nextErrors = validateFields();
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      focusFirstError(nextErrors);
+      return;
+    }
+
     setBusy(true);
     try {
       const key = makeIdempotencyKey();
@@ -263,136 +333,188 @@ export default function CheckoutPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Finalizar compra</h1>
-        <p className="text-sm text-slate-600 mt-1">Completa tus datos para confirmar tu compra de forma segura.</p>
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Finalizar compra</h1>
+        <p className="text-sm text-muted mt-1">Completa tus datos para confirmar tu compra de forma segura.</p>
       </div>
 
-      {!items.length ? <div className="text-sm text-neutral-600">Tu carrito está vacío.</div> : null}
-
-      <div className="panel p-4 grid gap-3 rounded-2xl border-slate-200">
-        <div className="font-medium text-slate-900">1) Datos personales</div>
-        <label className="text-sm font-medium">Nombre completo</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-        <label className="text-sm font-medium">Correo</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-        <label className="text-sm font-medium">Telefono</label>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-      </div>
-
-      <div className="panel p-4 flex flex-col gap-3 rounded-2xl border-slate-200">
-        <div className="font-medium text-slate-900">2) Tipo de envío y dirección</div>
-        <div className="flex flex-col gap-2 text-sm">
-          <label className="flex items-center gap-2">
-            <input type="radio" checked={shippingMethod === "LIMA_DELIVERY"} onChange={() => setShippingMethod("LIMA_DELIVERY")} />
-            Lima Metropolitana - Delivery
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="radio" checked={shippingMethod === "AGENCIA_PROVINCIA"} onChange={() => setShippingMethod("AGENCIA_PROVINCIA")} />
-            Provincia - Envío por agencia
-          </label>
+      {!items.length ? (
+        <div className="panel p-3 text-sm text-destructive" role="alert">
+          Tu carrito esta vacio.
         </div>
+      ) : null}
 
-        <label className="text-sm font-medium">Nombre de quien recibe o recoge</label>
-        <input value={receiverName} onChange={(e) => setReceiverName(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+      <section className="panel p-4 grid gap-3 rounded-2xl border-border" aria-labelledby="checkout-customer-title">
+        <h2 id="checkout-customer-title" className="font-medium text-foreground">1) Datos personales</h2>
+
+        <div className="grid gap-1">
+          <label htmlFor="checkout-name" className="text-sm font-medium">Nombre completo</label>
+          <Input id="checkout-name" value={name} invalid={Boolean(fieldErrors.name)} onChange={(e) => { setName(e.target.value); setFieldErrorAware("name", e.target.value); }} aria-invalid={Boolean(fieldErrors.name)} aria-describedby={fieldErrors.name ? "checkout-name-error" : undefined} />
+          <ErrorText id="checkout-name-error" message={fieldErrors.name} />
+        </div>
 
         <div className="grid md:grid-cols-2 gap-3">
           <div className="grid gap-1">
-            <label className="text-sm font-medium">DNI</label>
-            <input value={receiverDni} onChange={(e) => setReceiverDni(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+            <label htmlFor="checkout-email" className="text-sm font-medium">Correo</label>
+            <Input id="checkout-email" type="email" value={email} invalid={Boolean(fieldErrors.email)} onChange={(e) => { setEmail(e.target.value); setFieldErrorAware("email", e.target.value); }} aria-invalid={Boolean(fieldErrors.email)} aria-describedby={fieldErrors.email ? "checkout-email-error" : undefined} />
+            <ErrorText id="checkout-email-error" message={fieldErrors.email} />
           </div>
           <div className="grid gap-1">
-            <label className="text-sm font-medium">Telefono</label>
-            <input value={receiverPhone} onChange={(e) => setReceiverPhone(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+            <label htmlFor="checkout-phone" className="text-sm font-medium">Telefono</label>
+            <Input id="checkout-phone" value={phone} invalid={Boolean(fieldErrors.phone)} onChange={(e) => { setPhone(e.target.value); setFieldErrorAware("phone", e.target.value); }} aria-invalid={Boolean(fieldErrors.phone)} aria-describedby={fieldErrors.phone ? "checkout-phone-error" : undefined} />
+            <ErrorText id="checkout-phone-error" message={fieldErrors.phone} />
+          </div>
+        </div>
+      </section>
+
+      <section className="panel p-4 grid gap-3 rounded-2xl border-border" aria-labelledby="checkout-shipping-title">
+        <h2 id="checkout-shipping-title" className="font-medium text-foreground">2) Tipo de envio y direccion</h2>
+
+        <fieldset className="grid gap-2 text-sm">
+          <legend className="text-sm font-medium text-foreground">Metodo de envio</legend>
+          <label className="flex items-center gap-2">
+            <input id="checkout-shipping-lima" type="radio" checked={shippingMethod === "LIMA_DELIVERY"} onChange={() => setShippingMethod("LIMA_DELIVERY")} />
+            Lima Metropolitana - Delivery
+          </label>
+          <label className="flex items-center gap-2">
+            <input id="checkout-shipping-agency" type="radio" checked={shippingMethod === "AGENCIA_PROVINCIA"} onChange={() => setShippingMethod("AGENCIA_PROVINCIA")} />
+            Provincia - Envio por agencia
+          </label>
+        </fieldset>
+
+        <div className="grid gap-1">
+          <label htmlFor="checkout-receiverName" className="text-sm font-medium">Nombre de quien recibe o recoge</label>
+          <Input id="checkout-receiverName" value={receiverName} invalid={Boolean(fieldErrors.receiverName)} onChange={(e) => { setReceiverName(e.target.value); setFieldErrorAware("receiverName", e.target.value); }} aria-invalid={Boolean(fieldErrors.receiverName)} aria-describedby={fieldErrors.receiverName ? "checkout-receiverName-error" : undefined} />
+          <ErrorText id="checkout-receiverName-error" message={fieldErrors.receiverName} />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-3">
+          <div className="grid gap-1">
+            <label htmlFor="checkout-receiverDni" className="text-sm font-medium">DNI</label>
+            <Input id="checkout-receiverDni" value={receiverDni} invalid={Boolean(fieldErrors.receiverDni)} onChange={(e) => { setReceiverDni(e.target.value); setFieldErrorAware("receiverDni", e.target.value); }} aria-invalid={Boolean(fieldErrors.receiverDni)} aria-describedby={fieldErrors.receiverDni ? "checkout-receiverDni-error" : undefined} />
+            <ErrorText id="checkout-receiverDni-error" message={fieldErrors.receiverDni} />
+          </div>
+          <div className="grid gap-1">
+            <label htmlFor="checkout-receiverPhone" className="text-sm font-medium">Telefono</label>
+            <Input id="checkout-receiverPhone" value={receiverPhone} invalid={Boolean(fieldErrors.receiverPhone)} onChange={(e) => { setReceiverPhone(e.target.value); setFieldErrorAware("receiverPhone", e.target.value); }} aria-invalid={Boolean(fieldErrors.receiverPhone)} aria-describedby={fieldErrors.receiverPhone ? "checkout-receiverPhone-error" : undefined} />
+            <ErrorText id="checkout-receiverPhone-error" message={fieldErrors.receiverPhone} />
           </div>
         </div>
 
         {shippingMethod === "LIMA_DELIVERY" ? (
           <>
-            <label className="text-sm font-medium">Distrito</label>
-            <input value={district} onChange={(e) => setDistrict(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Dirección</label>
-            <input value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Referencia (opcional)</label>
-            <input value={addressReference} onChange={(e) => setAddressReference(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+            <div className="grid gap-1">
+              <label htmlFor="checkout-district" className="text-sm font-medium">Distrito</label>
+              <Input id="checkout-district" value={district} invalid={Boolean(fieldErrors.district)} onChange={(e) => { setDistrict(e.target.value); setFieldErrorAware("district", e.target.value); }} aria-invalid={Boolean(fieldErrors.district)} aria-describedby={fieldErrors.district ? "checkout-district-error" : undefined} />
+              <ErrorText id="checkout-district-error" message={fieldErrors.district} />
+            </div>
+            <div className="grid gap-1">
+              <label htmlFor="checkout-addressLine1" className="text-sm font-medium">Direccion</label>
+              <Input id="checkout-addressLine1" value={addressLine1} invalid={Boolean(fieldErrors.addressLine1)} onChange={(e) => { setAddressLine1(e.target.value); setFieldErrorAware("addressLine1", e.target.value); }} aria-invalid={Boolean(fieldErrors.addressLine1)} aria-describedby={fieldErrors.addressLine1 ? "checkout-addressLine1-error" : undefined} />
+              <ErrorText id="checkout-addressLine1-error" message={fieldErrors.addressLine1} />
+            </div>
+            <div className="grid gap-1">
+              <label htmlFor="checkout-addressReference" className="text-sm font-medium">Referencia (opcional)</label>
+              <Input id="checkout-addressReference" value={addressReference} onChange={(e) => setAddressReference(e.target.value)} />
+            </div>
           </>
         ) : (
           <>
-            <label className="text-sm font-medium">Departamento</label>
-            <input value={department} onChange={(e) => setDepartment(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Provincia</label>
-            <input value={province} onChange={(e) => setProvince(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Agencia (ej. Shalom)</label>
-            <input value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Dirección de agencia</label>
-            <input value={agencyAddress} onChange={(e) => setAgencyAddress(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
-            <label className="text-sm font-medium">Referencia (opcional)</label>
-            <input value={agencyReference} onChange={(e) => setAgencyReference(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="grid gap-1">
+                <label htmlFor="checkout-department" className="text-sm font-medium">Departamento</label>
+                <Input id="checkout-department" value={department} invalid={Boolean(fieldErrors.department)} onChange={(e) => { setDepartment(e.target.value); setFieldErrorAware("department", e.target.value); }} aria-invalid={Boolean(fieldErrors.department)} aria-describedby={fieldErrors.department ? "checkout-department-error" : undefined} />
+                <ErrorText id="checkout-department-error" message={fieldErrors.department} />
+              </div>
+              <div className="grid gap-1">
+                <label htmlFor="checkout-province" className="text-sm font-medium">Provincia</label>
+                <Input id="checkout-province" value={province} invalid={Boolean(fieldErrors.province)} onChange={(e) => { setProvince(e.target.value); setFieldErrorAware("province", e.target.value); }} aria-invalid={Boolean(fieldErrors.province)} aria-describedby={fieldErrors.province ? "checkout-province-error" : undefined} />
+                <ErrorText id="checkout-province-error" message={fieldErrors.province} />
+              </div>
+            </div>
+            <div className="grid gap-1">
+              <label htmlFor="checkout-agencyName" className="text-sm font-medium">Agencia (ej. Shalom)</label>
+              <Input id="checkout-agencyName" value={agencyName} invalid={Boolean(fieldErrors.agencyName)} onChange={(e) => { setAgencyName(e.target.value); setFieldErrorAware("agencyName", e.target.value); }} aria-invalid={Boolean(fieldErrors.agencyName)} aria-describedby={fieldErrors.agencyName ? "checkout-agencyName-error" : undefined} />
+              <ErrorText id="checkout-agencyName-error" message={fieldErrors.agencyName} />
+            </div>
+            <div className="grid gap-1">
+              <label htmlFor="checkout-agencyAddress" className="text-sm font-medium">Direccion de agencia</label>
+              <Input id="checkout-agencyAddress" value={agencyAddress} invalid={Boolean(fieldErrors.agencyAddress)} onChange={(e) => { setAgencyAddress(e.target.value); setFieldErrorAware("agencyAddress", e.target.value); }} aria-invalid={Boolean(fieldErrors.agencyAddress)} aria-describedby={fieldErrors.agencyAddress ? "checkout-agencyAddress-error" : undefined} />
+              <ErrorText id="checkout-agencyAddress-error" message={fieldErrors.agencyAddress} />
+            </div>
+            <div className="grid gap-1">
+              <label htmlFor="checkout-agencyReference" className="text-sm font-medium">Referencia (opcional)</label>
+              <Input id="checkout-agencyReference" value={agencyReference} onChange={(e) => setAgencyReference(e.target.value)} />
+            </div>
           </>
         )}
-      </div>
+      </section>
 
-      <div className="panel p-4 grid gap-3 rounded-2xl border-slate-200">
-        <div className="font-medium text-slate-900">3) Pago y comprobante</div>
-        <div className="grid md:grid-cols-2 gap-2 text-sm">
+      <section className="panel p-4 grid gap-3 rounded-2xl border-border" aria-labelledby="checkout-payment-title">
+        <h2 id="checkout-payment-title" className="font-medium text-foreground">3) Pago y comprobante</h2>
+
+        <fieldset className="grid md:grid-cols-2 gap-2 text-sm">
+          <legend className="sr-only">Metodo de pago</legend>
           <label className="flex items-center gap-2">
-            <input type="radio" checked={payMethod === "YAPE"} onChange={() => setPayMethod("YAPE")} />
+            <input id="checkout-pay-yape" type="radio" checked={payMethod === "YAPE"} onChange={() => setPayMethod("YAPE")} />
             Yape
           </label>
           <label className="flex items-center gap-2">
-            <input type="radio" checked={payMethod === "PLIN"} onChange={() => setPayMethod("PLIN")} />
+            <input id="checkout-pay-plin" type="radio" checked={payMethod === "PLIN"} onChange={() => setPayMethod("PLIN")} />
             Plin
           </label>
-        </div>
-        <div className="text-sm text-slate-700 rounded-xl bg-slate-50 border border-slate-200 p-3">
+        </fieldset>
+
+        <div className="text-sm text-foreground rounded-xl bg-background border border-border p-3">
           {payMethod === "YAPE" ? (
             <>
               <div className="font-medium">Datos para pagar por Yape</div>
               <div>Nombre: {paymentInstructions.yapeName?.trim() || "Disponible al momento de confirmar"}</div>
-              <div>Número: {paymentInstructions.yapeNumber?.trim() || "Disponible al momento de confirmar"}</div>
+              <div>Numero: {paymentInstructions.yapeNumber?.trim() || "Disponible al momento de confirmar"}</div>
             </>
           ) : (
             <>
               <div className="font-medium">Datos para pagar por Plin</div>
               <div>Nombre: {paymentInstructions.plinName?.trim() || "Disponible al momento de confirmar"}</div>
-              <div>Número: {paymentInstructions.plinNumber?.trim() || "Disponible al momento de confirmar"}</div>
+              <div>Numero: {paymentInstructions.plinNumber?.trim() || "Disponible al momento de confirmar"}</div>
             </>
           )}
         </div>
 
-        <label className="text-sm font-medium">Subir comprobante de pago</label>
-        <label className="w-fit text-sm px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 cursor-pointer">
-          {receiptBusy ? "Subiendo comprobante..." : "Seleccionar imagen"}
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void onPickReceipt(f);
-              e.currentTarget.value = "";
-            }}
-          />
-        </label>
+        <div className="grid gap-1">
+          <label htmlFor="checkout-receiptUrl" className="text-sm font-medium">Subir comprobante de pago</label>
+          <label className="w-fit text-sm px-3 py-2 rounded-xl border border-border bg-card hover:bg-background cursor-pointer">
+            {receiptBusy ? "Subiendo comprobante..." : "Seleccionar imagen"}
+            <input
+              id="checkout-receiptUrl"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void onPickReceipt(f);
+                e.currentTarget.value = "";
+              }}
+            />
+          </label>
+          <ErrorText id="checkout-receiptUrl-error" message={fieldErrors.receiptUrl} />
+        </div>
+
         {receiptUrl ? (
-          <div className="mt-3 rounded-2xl border bg-white p-4 shadow-sm">
+          <div className="mt-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="text-sm font-semibold">Comprobante cargado</div>
-                <div className="text-xs text-slate-500">{safeHostname(receiptUrl)}</div>
+                <div className="text-xs text-muted">{safeHostname(receiptUrl)}</div>
               </div>
 
               <div className="flex gap-2">
-                <a
-                  href={receiptUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-xl bg-black px-3 py-2 text-xs font-semibold text-white hover:opacity-90"
-                >
-                  Ver comprobante
+                <a href={receiptUrl} target="_blank" rel="noreferrer" className="inline-flex">
+                  <Button type="button" size="sm">Ver comprobante</Button>
                 </a>
-
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(receiptUrl);
@@ -401,62 +523,51 @@ export default function CheckoutPage() {
                       notify.error("No se pudo copiar el link");
                     }
                   }}
-                  className="rounded-xl border px-3 py-2 text-xs font-semibold hover:bg-slate-50"
                 >
                   Copiar
-                </button>
+                </Button>
               </div>
             </div>
 
-            <div className="mt-3 overflow-hidden rounded-xl border bg-slate-50">
+            <div className="mt-3 overflow-hidden rounded-xl border border-border bg-background">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={receiptUrl} alt="Comprobante" className="max-h-72 w-full object-contain" />
             </div>
           </div>
         ) : (
-          <div className="text-xs text-slate-500">Debes subir el comprobante para confirmar el pedido.</div>
+          <div className="text-xs text-muted">Debes subir el comprobante para confirmar el pedido.</div>
         )}
-      </div>
+      </section>
 
-      <div className="panel p-4 text-sm grid gap-2 rounded-2xl border-slate-200">
-        <div className="font-medium mb-1 text-slate-900">4) Resumen del pedido</div>
+      <section className="panel p-4 text-sm grid gap-2 rounded-2xl border-border" aria-labelledby="checkout-summary-title">
+        <h2 id="checkout-summary-title" className="font-medium mb-1 text-foreground">4) Resumen del pedido</h2>
         {itemsPreview.map((it) => (
           <div key={`${it.productId}:${it.variantId}`} className="flex items-center justify-between">
-            <span>
-              {it.name} x {it.qty}
-            </span>
+            <span>{it.name} x {it.qty}</span>
             <span>{formatPEN(it.lineTotal)}</span>
           </div>
         ))}
         {couponVisible ? (
           <div className="grid gap-1 pt-2">
-            <label className="text-sm font-medium">Cupon (opcional)</label>
-            <input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder={promo.couponCode || "CUPON"} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+            <label htmlFor="checkout-coupon" className="text-sm font-medium">Cupon (opcional)</label>
+            <Input id="checkout-coupon" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder={promo.couponCode || "CUPON"} />
           </div>
         ) : null}
-        <div className="flex items-center justify-between">
-          <span>Subtotal</span>
-          <span>{loadingTotals ? "Calculando..." : formatPEN(subtotal)}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span>Descuento</span>
-          <span>{loadingTotals ? "Calculando..." : discountAmount > 0 ? `-${formatPEN(discountAmount)}` : formatPEN(0)}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span>Envio</span>
-          <span>{loadingTotals ? "Calculando..." : shippingCost === 0 ? "Gratis" : formatPEN(shippingCost)}</span>
-        </div>
-        <div className="flex items-center justify-between font-semibold">
-          <span>Total</span>
-          <span>{loadingTotals ? "Calculando..." : formatPEN(totalToPay)}</span>
-        </div>
-      </div>
+        <div className="flex items-center justify-between"><span>Subtotal</span><span>{loadingTotals ? "Calculando..." : formatPEN(subtotal)}</span></div>
+        <div className="flex items-center justify-between"><span>Descuento</span><span>{loadingTotals ? "Calculando..." : discountAmount > 0 ? `-${formatPEN(discountAmount)}` : formatPEN(0)}</span></div>
+        <div className="flex items-center justify-between"><span>Envio</span><span>{loadingTotals ? "Calculando..." : shippingCost === 0 ? "Gratis" : formatPEN(shippingCost)}</span></div>
+        <div className="flex items-center justify-between font-semibold"><span>Total</span><span>{loadingTotals ? "Calculando..." : formatPEN(totalToPay)}</span></div>
+      </section>
 
-      {error ? <div className="text-sm text-red-600">No pudimos procesar tu solicitud. Verifica los datos e inténtalo nuevamente.</div> : null}
+      {error ? (
+        <div className="text-sm text-destructive" role="alert">
+          No pudimos procesar tu solicitud. Verifica los datos e intentalo nuevamente.
+        </div>
+      ) : null}
 
-      <button type="button" disabled={disabled} onClick={submit} className="btn-brand disabled:opacity-50">
+      <Button type="button" onClick={submit} disabled={busy || receiptBusy || !items.length} size="lg">
         {busy ? "Confirmando pedido..." : "Confirmar pedido"}
-      </button>
+      </Button>
     </div>
   );
 }

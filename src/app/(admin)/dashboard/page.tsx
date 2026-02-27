@@ -84,23 +84,34 @@ export default async function DashboardHome() {
 
       <div className="panel overflow-hidden rounded-2xl border-slate-200">
         <div className="px-4 py-3 bg-slate-50 text-sm font-semibold text-slate-900 border-b border-slate-200">Ultimos pedidos</div>
-        <div className="divide-y divide-slate-200">
-          {renderOrders.map((o) => (
-            <div key={o.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <div className="font-medium text-slate-900">{o.publicCode}</div>
-                <div className="text-xs text-slate-600">{o.email ?? "-"}</div>
-              </div>
-              <div className="text-left sm:text-right">
-                <div className="text-xs inline-flex px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 border border-slate-200">
-                  {STATUS_LABEL[o.status] ?? o.status}
-                </div>
-                <div className="text-xs text-slate-600 mt-1">{o.createdAt}</div>
-              </div>
-            </div>
-          ))}
-          {!orders.length ? <div className="px-4 py-4 text-sm text-slate-600">Sin pedidos.</div> : null}
-        </div>
+        {!orders.length ? (
+          <div className="px-4 py-4 text-sm text-slate-600">Sin pedidos.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="bg-slate-50 text-slate-700">
+                <tr>
+                  <th className="text-left px-4 py-3 font-semibold border-b border-slate-200">Pedido</th>
+                  <th className="text-left px-4 py-3 font-semibold border-b border-slate-200">Cliente</th>
+                  <th className="text-left px-4 py-3 font-semibold border-b border-slate-200">Estado</th>
+                  <th className="text-left px-4 py-3 font-semibold border-b border-slate-200">Total</th>
+                  <th className="text-left px-4 py-3 font-semibold border-b border-slate-200">Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {renderOrders.map((o) => (
+                  <tr key={o.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 border-b border-slate-100 font-semibold text-slate-900">{o.publicCode}</td>
+                    <td className="px-4 py-3 border-b border-slate-100 text-slate-700">{o.email ?? "-"}</td>
+                    <td className="px-4 py-3 border-b border-slate-100 text-slate-700">{STATUS_LABEL[o.status] ?? o.status}</td>
+                    <td className="px-4 py-3 border-b border-slate-100 text-slate-900">S/ {Number(o.total ?? 0).toFixed(2)}</td>
+                    <td className="px-4 py-3 border-b border-slate-100 text-slate-600">{o.createdAt}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="panel p-3 text-xs text-slate-600 rounded-2xl border-slate-200 bg-slate-50/70">
