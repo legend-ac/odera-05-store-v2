@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { apiPost } from "@/lib/apiClient";
 import { formatPEN } from "@/lib/money";
@@ -76,8 +75,6 @@ function shippingAddressText(shipping: TrackResponse["shipping"]): string {
 }
 
 function TrackPageInner() {
-  const searchParams = useSearchParams();
-
   const [trackingUrl, setTrackingUrl] = useState("");
   const [publicCode, setPublicCode] = useState("");
   const [trackingToken, setTrackingToken] = useState("");
@@ -146,15 +143,16 @@ function TrackPageInner() {
   }
 
   useEffect(() => {
-    const qCode = searchParams.get("publicCode") ?? "";
-    const qToken = searchParams.get("trackingToken") ?? "";
+    const params = new URLSearchParams(window.location.search);
+    const qCode = params.get("publicCode") ?? "";
+    const qToken = params.get("trackingToken") ?? "";
     if (!qCode || !qToken) return;
 
     setPublicCode(qCode);
     setTrackingToken(qToken);
     void load(qCode, qToken);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     try {
@@ -411,9 +409,5 @@ function TrackPageInner() {
 }
 
 export default function TrackPage() {
-  return (
-    <Suspense fallback={<div className="mx-auto max-w-3xl px-4 py-8 text-sm text-neutral-600">Cargando...</div>}>
-      <TrackPageInner />
-    </Suspense>
-  );
+  return <TrackPageInner />;
 }

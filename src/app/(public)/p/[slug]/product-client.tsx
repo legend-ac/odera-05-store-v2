@@ -14,11 +14,19 @@ import type { ProductCardData } from "@/components/ProductCard";
 type Variant = { id: string; size?: string; color?: string; sku?: string; stock: number };
 type Img = { url: string; alt?: string; isMain: boolean; order: number };
 
-export default function ProductClient({ slug }: { slug: string }) {
+export default function ProductClient({
+  slug,
+  initialProduct = null,
+  initialRecommended = [],
+}: {
+  slug: string;
+  initialProduct?: any | null;
+  initialRecommended?: ProductCardData[];
+}) {
   const { addItem } = useCart();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialProduct);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<any | null>(null);
+  const [data, setData] = useState<any | null>(initialProduct);
 
   const [variantId, setVariantId] = useState<string>("");
   const [qty, setQty] = useState<number>(1);
@@ -26,10 +34,19 @@ export default function ProductClient({ slug }: { slug: string }) {
   const [showSpecs, setShowSpecs] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
   const [addedQty, setAddedQty] = useState(1);
-  const [recommended, setRecommended] = useState<ProductCardData[]>([]);
+  const [recommended, setRecommended] = useState<ProductCardData[]>(initialRecommended);
 
   useEffect(() => {
     let mounted = true;
+    if (initialProduct) {
+      setLoading(false);
+      const variants = Array.isArray(initialProduct.variants) ? (initialProduct.variants as Variant[]) : [];
+      if (variants[0]?.id) setVariantId(String(variants[0].id));
+      return () => {
+        mounted = false;
+      };
+    }
+
     setLoading(true);
     setError(null);
 
@@ -55,10 +72,14 @@ export default function ProductClient({ slug }: { slug: string }) {
     return () => {
       mounted = false;
     };
-  }, [slug]);
+  }, [slug, initialProduct]);
 
   useEffect(() => {
     let mounted = true;
+    if (initialRecommended?.length) return () => {
+      mounted = false;
+    };
+
     (async () => {
       try {
         const q = query(collection(db, "products"), where("status", "==", "active"), limit(20));
@@ -91,7 +112,7 @@ export default function ProductClient({ slug }: { slug: string }) {
     return () => {
       mounted = false;
     };
-  }, [slug]);
+  }, [slug, initialRecommended]);
 
   const variants: Variant[] = useMemo(() => (data?.variants && Array.isArray(data.variants) ? (data.variants as Variant[]) : []), [data]);
   const images: Img[] = useMemo(() => (data?.images && Array.isArray(data.images) ? (data.images as Img[]) : []), [data]);
