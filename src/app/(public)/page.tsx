@@ -86,23 +86,23 @@ export default async function HomePage() {
 
   return (
     <Container className="py-2.5 md:py-4">
-      <div className="flex flex-col gap-2.5 md:gap-4">
+      <div className="flex flex-col gap-2.5 md:gap-3.5">
         <Section className="py-0">
-          <div className="panel-premium bg-brand-mesh overflow-hidden p-3 sm:p-4 md:p-5">
-            <div className="grid items-start gap-2.5 md:gap-3">
+          <div className="panel-premium bg-brand-mesh overflow-hidden p-3 sm:p-4 md:p-4.5">
+            <div className="grid items-start gap-2 md:gap-2.5">
               <div className="flex flex-col gap-2 md:gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
                   <Badge tone="info" className="rounded-xl">Compra facil y segura</Badge>
                 </div>
 
-                <div>
+                <div className="space-y-1.5">
                   <h1 className="text-[1.48rem] sm:text-[2.2rem] md:text-[3rem] leading-[1] font-display font-bold text-slate-900">
                     Zapatillas y ropa
                     <br />
                     con estilo real
                   </h1>
-                  <p className="mt-1.5 text-[14px] sm:text-[15px] md:text-[16px] text-slate-700 max-w-xl">
+                  <p className="text-[14px] sm:text-[15px] md:text-[16px] text-slate-700 max-w-xl">
                     Compra con confianza, seguimiento claro y atencion humana. Tu pedido queda registrado desde el inicio para que siempre sepas en que estado esta.
                   </p>
                 </div>
@@ -112,9 +112,9 @@ export default async function HomePage() {
                   <Link href="/track" className="btn-soft h-10.5 sm:h-11 px-4 sm:px-5 text-[15px] sm:text-base w-full sm:w-auto">Seguir mi pedido</Link>
                 </div>
 
-                <div className={quickChips.length === 2 ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-2 sm:grid-cols-3 gap-2.5"}>
+                <div className={quickChips.length === 2 ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 sm:grid-cols-3 gap-2"}>
                   {quickChips.map((chip) => (
-                    <div key={chip.key} className={`${chip.className} p-2.5 md:p-3`}>
+                    <div key={chip.key} className={`${chip.className} p-2.5`}>
                       <p className="text-[11px] text-slate-600">{chip.label}</p>
                       <p className="text-[1.05rem] font-bold text-slate-900">{chip.value}</p>
                     </div>
@@ -142,7 +142,7 @@ export default async function HomePage() {
           </Section>
         ) : null}
 
-        <Section className="py-0 flex flex-col gap-3">
+        <Section className="py-0 flex flex-col gap-2.5">
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-2xl font-display font-bold text-slate-900">Explora por categoria</h2>
@@ -166,24 +166,27 @@ export default async function HomePage() {
                 <Link
                   key={item.key}
                   href={`/catalog?type=${encodeURIComponent(item.key)}`}
-                  className={`group overflow-hidden rounded-2xl border p-2 md:p-2.5 shadow-[0_8px_18px_rgba(2,6,23,0.1)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(2,6,23,0.16)] ${tone}`}
+                  className={`group overflow-hidden rounded-2xl border p-2 md:p-2.5 shadow-[0_6px_14px_rgba(2,6,23,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(2,6,23,0.12)] ${tone}`}
                 >
-                  <div className="relative aspect-[16/9] overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <div className="relative h-[170px] sm:h-[180px] md:h-[156px] overflow-hidden rounded-xl border border-slate-200 bg-white/95">
                     <Image
                       src={pickCategoryAsset(item.key, idx)}
                       alt={`${item.label} ODERA 05`}
                       fill
                       sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"
-                      className="object-cover object-center transition-transform duration-300 md:group-hover:scale-[1.03]"
+                      className="object-contain object-center p-2 transition-transform duration-300 md:group-hover:scale-[1.02]"
                     />
                   </div>
 
-                  <h3 className="mt-2 text-[1.45rem] leading-[1.05] font-display font-bold text-slate-900">{item.label}</h3>
-                  <p className="mt-1 text-[14px] text-slate-700">{item.subtitle || "Productos destacados en esta linea."}</p>
-
-                  <span className="mt-2 inline-flex h-9.5 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100">
-                    {item.cta || `Ver ${item.label.toLowerCase()}`}
-                  </span>
+                  <div className="mt-2.5 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-[1.35rem] leading-[1.05] font-display font-bold text-slate-900">{item.label}</h3>
+                      <p className="text-[13px] text-slate-700 truncate">{item.subtitle || "Productos destacados."}</p>
+                    </div>
+                    <span className="inline-flex h-9 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100 whitespace-nowrap">
+                      Ver
+                    </span>
+                  </div>
                 </Link>
               );
             })}

@@ -64,12 +64,12 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/92 backdrop-blur-xl">
-      <Container className="py-2 md:py-2.5">
-        <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-[auto_1fr_auto] md:gap-2.5">
+      <Container className="py-1.5 md:py-2">
+        <div className="grid grid-cols-[1fr_auto] items-center gap-2 md:grid-cols-[auto_1fr_auto] md:gap-2">
           <Link href="/" className="flex min-w-0 items-center gap-2">
             <BrandMark />
             <span className="min-w-0">
-              <span className="block truncate text-[13px] font-semibold tracking-tight text-slate-900 md:text-base">ODERA 05 STORE</span>
+              <span className="block truncate text-[13px] font-semibold tracking-tight text-slate-900 md:text-[15px]">ODERA 05 STORE</span>
               <span className="hidden md:block text-[11px] text-slate-500">Tienda oficial de zapatillas y ropa</span>
             </span>
           </Link>
@@ -107,7 +107,7 @@ export default function Header() {
           </div>
         </div>
 
-        <form onSubmit={submitSearch} className="mt-2 flex items-center gap-2 md:hidden">
+        <form onSubmit={submitSearch} className="mt-1.5 flex items-center gap-2 md:hidden">
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar productos..." uiSize="sm" className="md:min-h-11" />
           <Button type="submit" variant="secondary" size="md">Buscar</Button>
         </form>
