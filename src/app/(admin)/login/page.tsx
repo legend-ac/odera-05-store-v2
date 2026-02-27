@@ -10,7 +10,10 @@ function setCsrfCookieIfMissing(): void {
   const existing = document.cookie.match(new RegExp(`${CSRF_COOKIE_NAME}=([^;]+)`));
   if (existing?.[1]) return;
 
-  const token = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  const rand = Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const token = `${Date.now()}-${rand}`;
   const parts = [`${CSRF_COOKIE_NAME}=${encodeURIComponent(token)}`, "path=/", "samesite=strict"];
   if (location.protocol === "https:") parts.push("secure");
   document.cookie = parts.join("; ");
@@ -79,7 +82,15 @@ function LoginPageInner() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-md px-4 py-14 text-sm text-neutral-600">Cargando...</div>}>
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-md px-4 py-14">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            Preparando acceso seguro...
+          </div>
+        </div>
+      }
+    >
       <LoginPageInner />
     </Suspense>
   );

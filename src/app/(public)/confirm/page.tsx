@@ -29,7 +29,7 @@ function normalizeWhatsappTarget(raw: string): string {
 }
 
 function shippingSummary(shipping: any): string {
-  if (!shipping) return "Sin datos de envío";
+  if (!shipping) return "Sin datos de envio";
   if (shipping.method === "LIMA_DELIVERY") {
     return `Delivery Lima - ${shipping.district ?? "-"} - ${shipping.addressLine1 ?? "-"}`;
   }
@@ -137,8 +137,8 @@ function ConfirmPageInner() {
 
   const trackingPack = useMemo(() => {
     return [
-      `Número de pedido: ${publicCode || "-"}`,
-      `Código de seguimiento: ${trackingToken || "-"}`,
+      `Numero de pedido: ${publicCode || "-"}`,
+      `Codigo de seguimiento: ${trackingToken || "-"}`,
       `Link de seguimiento: ${trackingShortUrl || trackingUrl || "-"}`,
     ].join("\n");
   }, [publicCode, trackingToken, trackingShortUrl, trackingUrl]);
@@ -151,17 +151,17 @@ function ConfirmPageInner() {
       </div>
 
       <div className="panel p-5 rounded-2xl border-slate-200 bg-brand-mesh">
-        <div className="text-sm text-slate-600">Número de pedido</div>
+        <div className="text-sm text-slate-600">Numero de pedido</div>
         <div className="text-2xl font-bold text-slate-900 break-all">{publicCode || "-"}</div>
-        <button type="button" onClick={() => copyText(publicCode, "Número de pedido")} className="mt-2 px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
-          Copiar número
+        <button type="button" onClick={() => copyText(publicCode, "Numero de pedido")} className="mt-2 px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
+          Copiar numero
         </button>
 
-        <div className="mt-4 text-sm text-slate-600">Código de seguimiento</div>
+        <div className="mt-4 text-sm text-slate-600">Codigo de seguimiento</div>
         <div className="font-mono text-sm break-all bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 mt-1">{trackingToken || "-"}</div>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button type="button" onClick={() => copyText(trackingToken, "Código de seguimiento")} className="px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
-            Copiar código
+          <button type="button" onClick={() => copyText(trackingToken, "Codigo de seguimiento")} className="px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
+            Copiar codigo
           </button>
           <button type="button" onClick={() => copyText(trackingPack, "Paquete completo de seguimiento")} className="px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50">
             Copiar todo
@@ -179,7 +179,7 @@ function ConfirmPageInner() {
       <div className="panel p-5 rounded-2xl border-slate-200">
         <div className="font-semibold text-slate-900 mb-2">Siguiente paso</div>
         <p className="text-sm text-slate-700">
-          Tu pedido quedó en estado <b>Pendiente de validación de pago</b>. El botón de WhatsApp incluye todo lo importante para que no pierdas la información.
+          Tu pedido quedo en estado <b>Pendiente de validacion de pago</b>. El boton de WhatsApp incluye todo lo importante para que no pierdas la informacion.
         </p>
         {waHref ? (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -197,8 +197,17 @@ function ConfirmPageInner() {
 
 export default function ConfirmPage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-3xl px-4 py-8 text-sm text-neutral-600">Cargando...</div>}>
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+            Preparando confirmacion del pedido...
+          </div>
+        </div>
+      }
+    >
       <ConfirmPageInner />
     </Suspense>
   );
 }
+

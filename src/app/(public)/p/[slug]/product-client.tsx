@@ -150,7 +150,9 @@ export default function ProductClient({
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="text-sm text-slate-500">Cargando producto...</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+          Preparando vista del producto...
+        </div>
       </div>
     );
   }

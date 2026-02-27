@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { SESSION_COOKIE_NAME, verifyAdminSessionCookie } from "@/lib/server/adminSession";
-import { isOrderStatus } from "@/lib/orderStatus";
+import { filterExportRows, parseExportFilters } from "@/lib/orderExport";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,19 +33,7 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url);
     const searchParams = url.searchParams;
-
-    const from = String(searchParams.get("from") ?? "").trim();
-    const to = String(searchParams.get("to") ?? "").trim();
-    const statusRaw = String(searchParams.get("status") ?? "").trim().toUpperCase();
-    const status = isOrderStatus(statusRaw) ? statusRaw : "";
-    const templateRaw = String(searchParams.get("template") ?? "detalle").trim().toLowerCase();
-    const template: "detalle" | "resumen" = templateRaw === "resumen" ? "resumen" : "detalle";
-    const includeTrash = String(searchParams.get("includeTrash") ?? "").trim() === "1";
-
-    const fromMs = from ? Date.parse(`${from}T00:00:00.000Z`) : NaN;
-    const toMsFilter = to ? Date.parse(`${to}T23:59:59.999Z`) : NaN;
-    const hasFrom = Number.isFinite(fromMs);
-    const hasTo = Number.isFinite(toMsFilter);
+    const filters = parseExportFilters(searchParams);
 
     const snap = await adminDb.collection("orders").orderBy("createdAt", "desc").limit(2500).get();
 
@@ -81,13 +69,7 @@ export async function GET(req: Request) {
       };
     });
 
-    const rows = rowsRaw.filter((r) => {
-      if (!includeTrash && r.deletedAtMs) return false;
-      if (status && r.status !== status) return false;
-      if (hasFrom && (r.createdAtMs === null || r.createdAtMs < fromMs)) return false;
-      if (hasTo && (r.createdAtMs === null || r.createdAtMs > toMsFilter)) return false;
-      return true;
-    });
+    const rows = filterExportRows(rowsRaw, filters);
 
     const detailHeaders = [
       "NroPedido",
@@ -107,7 +89,7 @@ export async function GET(req: Request) {
     ];
 
     let csv = "";
-    if (template === "resumen") {
+    if (filters.template === "resumen") {
       const totalPedidos = rows.length;
       const ventaTotal = rows.reduce((acc, r) => acc + r.total, 0);
       const subtotalTotal = rows.reduce((acc, r) => acc + r.subtotal, 0);
@@ -134,10 +116,10 @@ export async function GET(req: Request) {
       const resumenRows: string[][] = [
         ["Reporte", "Resumen ejecutivo de ventas ODERA 05"],
         ["Generado", generatedAt],
-        ["Filtro fecha desde", from || "-"],
-        ["Filtro fecha hasta", to || "-"],
-        ["Filtro estado", status || "TODOS"],
-        ["Incluye papelera", includeTrash ? "SI" : "NO"],
+        ["Filtro fecha desde", filters.from || "-"],
+        ["Filtro fecha hasta", filters.to || "-"],
+        ["Filtro estado", filters.status || "TODOS"],
+        ["Incluye papelera", filters.includeTrash ? "SI" : "NO"],
         [""],
         ["Indicador", "Valor"],
         ["Pedidos", String(totalPedidos)],
@@ -184,7 +166,7 @@ export async function GET(req: Request) {
       status: 200,
       headers: {
         "content-type": "text/csv; charset=utf-8",
-        "content-disposition": `attachment; filename="${template === "resumen" ? "ventas-odera05-resumen.csv" : "ventas-odera05-detalle.csv"}"`,
+        "content-disposition": `attachment; filename="${filters.template === "resumen" ? "ventas-odera05-resumen.csv" : "ventas-odera05-detalle.csv"}"`,
       },
     });
   } catch (e) {
