@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
+
 import { adminDb } from "@/lib/server/firebaseAdmin";
-import ProductClient from "./product-client";
 import type { ProductCardData } from "@/components/ProductCard";
+import ProductClient from "./product-client";
+
+export const revalidate = 120;
 
 type Variant = { id: string; size?: string; color?: string; sku?: string; stock: number };
 type Img = { url: string; alt?: string; isMain: boolean; order: number };
@@ -16,6 +20,13 @@ type ProductInitial = {
   variants: Variant[];
   images: Img[];
 };
+
+function pickMainImage(images: Img[]): string | undefined {
+  const sorted = [...images].sort((a, b) => Number(a?.order ?? 0) - Number(b?.order ?? 0));
+  const urls = sorted.map((x) => String(x?.url ?? "")).filter(Boolean);
+  const main = sorted.find((x) => x?.isMain)?.url;
+  return (main && String(main)) || urls[0];
+}
 
 async function loadInitialProduct(slug: string): Promise<ProductInitial | null> {
   const snap = await adminDb.doc(`products/${slug}`).get();
@@ -57,17 +68,87 @@ async function loadInitialRecommended(slug: string): Promise<ProductCardData[]> 
     });
 }
 
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const product = await loadInitialProduct(params.slug);
+
+  if (!product) {
+    return {
+      title: "Producto no disponible | ODERA 05 STORE",
+      description: "El producto solicitado no esta disponible.",
+      robots: { index: true, follow: true },
+    };
+  }
+
+  const finalPrice = product.onSale && typeof product.salePrice === "number" ? product.salePrice : product.price;
+  const image = pickMainImage(product.images);
+  const description = String(product.description ?? product.name).slice(0, 160);
+
+  return {
+    title: `${product.name} | ODERA 05 STORE`,
+    description,
+    alternates: { canonical: `/p/${params.slug}` },
+    openGraph: {
+      title: `${product.name} | ODERA 05 STORE`,
+      description,
+      type: "website",
+      images: image ? [image] : [],
+    },
+    other: {
+      "product:price:amount": String(finalPrice),
+      "product:price:currency": "PEN",
+    },
+  };
+}
+
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const [initialProduct, initialRecommended] = await Promise.all([
     loadInitialProduct(params.slug),
     loadInitialRecommended(params.slug),
   ]);
 
+  if (!initialProduct) {
+    return (
+      <section className="mx-auto max-w-6xl px-4 py-10">
+        <h1 className="text-2xl font-bold text-slate-900">Producto no disponible</h1>
+        <p className="mt-2 text-sm text-slate-600">Este producto ya no esta activo o fue retirado del catalogo.</p>
+        <a
+          href="/catalog"
+          className="mt-4 inline-flex rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+        >
+          Volver al catalogo
+        </a>
+      </section>
+    );
+  }
+
+  const finalPrice = initialProduct.onSale && typeof initialProduct.salePrice === "number"
+    ? initialProduct.salePrice
+    : initialProduct.price;
+  const image = pickMainImage(initialProduct.images);
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: initialProduct.name,
+    brand: initialProduct.brand ? { "@type": "Brand", name: initialProduct.brand } : undefined,
+    image: image ? [image] : undefined,
+    description: initialProduct.description ?? initialProduct.name,
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "PEN",
+      price: String(finalPrice),
+      availability: "https://schema.org/InStock",
+      url: `/p/${params.slug}`,
+    },
+  };
+
   return (
-    <ProductClient
-      slug={params.slug}
-      initialProduct={initialProduct}
-      initialRecommended={initialRecommended}
-    />
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ProductClient
+        slug={params.slug}
+        initialProduct={initialProduct}
+        initialRecommended={initialRecommended}
+      />
+    </>
   );
 }
