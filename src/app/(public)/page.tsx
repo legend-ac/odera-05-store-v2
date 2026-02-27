@@ -142,7 +142,7 @@ export default async function HomePage() {
           </Section>
         ) : null}
 
-        <Section className="py-0 flex flex-col gap-2.5">
+        <Section className="py-0 flex flex-col gap-2">
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-2xl font-display font-bold text-slate-900">Explora por categoria</h2>
@@ -168,23 +168,23 @@ export default async function HomePage() {
                   href={`/catalog?type=${encodeURIComponent(item.key)}`}
                   className={`group overflow-hidden rounded-2xl border p-2 md:p-2.5 shadow-[0_6px_14px_rgba(2,6,23,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(2,6,23,0.12)] ${tone}`}
                 >
-                  <div className="relative h-[170px] sm:h-[180px] md:h-[156px] overflow-hidden rounded-xl border border-slate-200 bg-white/95">
+                  <div className="relative h-[132px] sm:h-[150px] md:h-[138px] overflow-hidden rounded-xl border border-slate-200 bg-white/95">
                     <Image
                       src={pickCategoryAsset(item.key, idx)}
                       alt={`${item.label} ODERA 05`}
-                      fill
+                      width={1200}
+                      height={680}
                       sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"
-                      className="object-contain object-center p-2 transition-transform duration-300 md:group-hover:scale-[1.02]"
+                      className="h-full w-full object-contain object-center p-1.5 transition-transform duration-300 md:group-hover:scale-[1.02]"
                     />
                   </div>
 
-                  <div className="mt-2.5 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="truncate text-[1.35rem] leading-[1.05] font-display font-bold text-slate-900">{item.label}</h3>
-                      <p className="text-[13px] text-slate-700 truncate">{item.subtitle || "Productos destacados."}</p>
-                    </div>
-                    <span className="inline-flex h-9 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100 whitespace-nowrap">
-                      Ver
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="min-w-0 truncate text-[13px] font-medium text-slate-700">
+                      {item.subtitle || "Coleccion destacada"}
+                    </p>
+                    <span className="inline-flex h-8.5 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100 whitespace-nowrap">
+                      {item.cta || "Ver"}
                     </span>
                   </div>
                 </Link>
