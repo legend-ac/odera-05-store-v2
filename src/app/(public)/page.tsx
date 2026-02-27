@@ -85,38 +85,38 @@ export default async function HomePage() {
   });
 
   return (
-    <Container className="py-3 md:py-5">
-      <div className="flex flex-col gap-3 md:gap-5">
+    <Container className="py-2.5 md:py-4">
+      <div className="flex flex-col gap-2.5 md:gap-4">
         <Section className="py-0">
-          <div className="panel-premium bg-brand-mesh overflow-hidden p-3 sm:p-5 md:p-6">
-            <div className="grid items-start gap-3 md:gap-4">
-              <div className="flex flex-col gap-2.5 md:gap-4">
+          <div className="panel-premium bg-brand-mesh overflow-hidden p-3 sm:p-4 md:p-5">
+            <div className="grid items-start gap-2.5 md:gap-3">
+              <div className="flex flex-col gap-2 md:gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
                   <Badge tone="info" className="rounded-xl">Compra facil y segura</Badge>
                 </div>
 
                 <div>
-                  <h1 className="text-[1.48rem] sm:text-[2.45rem] md:text-[3.5rem] leading-[0.98] font-display font-bold text-slate-900">
+                  <h1 className="text-[1.48rem] sm:text-[2.2rem] md:text-[3rem] leading-[1] font-display font-bold text-slate-900">
                     Zapatillas y ropa
                     <br />
                     con estilo real
                   </h1>
-                  <p className="mt-2 text-[14px] sm:text-[15px] md:text-[17px] text-slate-700 max-w-xl">
+                  <p className="mt-1.5 text-[14px] sm:text-[15px] md:text-[16px] text-slate-700 max-w-xl">
                     Compra con confianza, seguimiento claro y atencion humana. Tu pedido queda registrado desde el inicio para que siempre sepas en que estado esta.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
-                  <Link href="/catalog" className="btn-brand h-11 sm:h-12 px-4 sm:px-6 text-base sm:text-base w-full sm:w-auto">Ver catalogo</Link>
-                  <Link href="/track" className="btn-soft h-11 sm:h-12 px-4 sm:px-6 text-base sm:text-base w-full sm:w-auto">Seguir mi pedido</Link>
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
+                  <Link href="/catalog" className="btn-brand h-10.5 sm:h-11 px-4 sm:px-5 text-[15px] sm:text-base w-full sm:w-auto">Ver catalogo</Link>
+                  <Link href="/track" className="btn-soft h-10.5 sm:h-11 px-4 sm:px-5 text-[15px] sm:text-base w-full sm:w-auto">Seguir mi pedido</Link>
                 </div>
 
                 <div className={quickChips.length === 2 ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-2 sm:grid-cols-3 gap-2.5"}>
                   {quickChips.map((chip) => (
-                    <div key={chip.key} className={`${chip.className} p-3 md:p-4`}>
+                    <div key={chip.key} className={`${chip.className} p-2.5 md:p-3`}>
                       <p className="text-[11px] text-slate-600">{chip.label}</p>
-                      <p className="text-base font-bold text-slate-900">{chip.value}</p>
+                      <p className="text-[1.05rem] font-bold text-slate-900">{chip.value}</p>
                     </div>
                   ))}
                 </div>
@@ -142,7 +142,7 @@ export default async function HomePage() {
           </Section>
         ) : null}
 
-        <Section className="py-0 flex flex-col gap-4">
+        <Section className="py-0 flex flex-col gap-3">
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-2xl font-display font-bold text-slate-900">Explora por categoria</h2>
@@ -153,7 +153,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid gap-2.5 md:grid-cols-3">
+          <div className="grid gap-2 md:grid-cols-3">
             {categoryCards.map((item, idx) => {
               const tones = [
                 "border-emerald-300 bg-gradient-to-br from-emerald-50 via-emerald-100/40 to-lime-100/40",
@@ -166,9 +166,9 @@ export default async function HomePage() {
                 <Link
                   key={item.key}
                   href={`/catalog?type=${encodeURIComponent(item.key)}`}
-                  className={`group overflow-hidden rounded-2xl border p-2.5 md:p-3 shadow-[0_10px_24px_rgba(2,6,23,0.12)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(2,6,23,0.20)] ${tone}`}
+                  className={`group overflow-hidden rounded-2xl border p-2 md:p-2.5 shadow-[0_8px_18px_rgba(2,6,23,0.1)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(2,6,23,0.16)] ${tone}`}
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <div className="relative aspect-[16/9] overflow-hidden rounded-xl border border-slate-200 bg-white">
                     <Image
                       src={pickCategoryAsset(item.key, idx)}
                       alt={`${item.label} ODERA 05`}
@@ -178,10 +178,10 @@ export default async function HomePage() {
                     />
                   </div>
 
-                  <h3 className="mt-3 text-[1.7rem] leading-[1.05] font-display font-bold text-slate-900">{item.label}</h3>
-                  <p className="mt-1 text-[15px] text-slate-700">{item.subtitle || "Productos destacados en esta linea."}</p>
+                  <h3 className="mt-2 text-[1.45rem] leading-[1.05] font-display font-bold text-slate-900">{item.label}</h3>
+                  <p className="mt-1 text-[14px] text-slate-700">{item.subtitle || "Productos destacados en esta linea."}</p>
 
-                  <span className="mt-2.5 inline-flex h-10 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100">
+                  <span className="mt-2 inline-flex h-9.5 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100">
                     {item.cta || `Ver ${item.label.toLowerCase()}`}
                   </span>
                 </Link>

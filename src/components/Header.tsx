@@ -64,8 +64,8 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/92 backdrop-blur-xl">
-      <Container className="py-2 md:py-3">
-        <div className="grid grid-cols-1 items-center gap-2.5 lg:grid-cols-[auto_1fr_auto]">
+      <Container className="py-2 md:py-2.5">
+        <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-[auto_1fr_auto] md:gap-2.5">
           <Link href="/" className="flex min-w-0 items-center gap-2">
             <BrandMark />
             <span className="min-w-0">
@@ -74,7 +74,7 @@ export default function Header() {
             </span>
           </Link>
 
-          <form onSubmit={submitSearch} className="hidden lg:flex items-center gap-2 min-w-0">
+          <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 min-w-0">
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre, marca o categoria..." uiSize="sm" className="md:min-h-11" />
             <Button type="submit" variant="secondary" size="md">Buscar</Button>
           </form>
@@ -97,7 +97,7 @@ export default function Header() {
               aria-label="Abrir menu"
               variant="secondary"
               size="icon"
-              className="lg:hidden"
+              className="md:hidden"
               onClick={() => setOpen((v) => !v)}
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
@@ -107,13 +107,13 @@ export default function Header() {
           </div>
         </div>
 
-        <form onSubmit={submitSearch} className="mt-2 flex items-center gap-2 lg:hidden">
+        <form onSubmit={submitSearch} className="mt-2 flex items-center gap-2 md:hidden">
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar productos..." uiSize="sm" className="md:min-h-11" />
           <Button type="submit" variant="secondary" size="md">Buscar</Button>
         </form>
 
         {open ? (
-          <div className="lg:hidden mt-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="md:hidden mt-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
             <div className="grid grid-cols-2 gap-2">
               <Link href="/catalog" className="chip-link justify-center" onClick={() => setOpen(false)}>Catalogo</Link>
               <Link href="/track" className="chip-link justify-center" onClick={() => setOpen(false)}>Mis pedidos</Link>
