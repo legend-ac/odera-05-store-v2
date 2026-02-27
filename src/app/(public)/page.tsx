@@ -85,12 +85,12 @@ export default async function HomePage() {
   });
 
   return (
-    <Container className="py-4 md:py-8">
-      <div className="flex flex-col gap-4 md:gap-8">
+    <Container className="py-3 md:py-5">
+      <div className="flex flex-col gap-3 md:gap-5">
         <Section className="py-0">
-          <div className="panel-premium bg-brand-mesh overflow-hidden p-3 sm:p-6 md:p-8">
-            <div className="grid items-start gap-4 md:gap-8">
-              <div className="flex flex-col gap-3 md:gap-6">
+          <div className="panel-premium bg-brand-mesh overflow-hidden p-3 sm:p-5 md:p-6">
+            <div className="grid items-start gap-3 md:gap-4">
+              <div className="flex flex-col gap-2.5 md:gap-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="success" className="rounded-xl">Tienda oficial ODERA 05</Badge>
                   <Badge tone="info" className="rounded-xl">Compra facil y segura</Badge>
@@ -153,7 +153,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-2.5 md:grid-cols-3">
             {categoryCards.map((item, idx) => {
               const tones = [
                 "border-emerald-300 bg-gradient-to-br from-emerald-50 via-emerald-100/40 to-lime-100/40",
@@ -181,7 +181,7 @@ export default async function HomePage() {
                   <h3 className="mt-3 text-[1.7rem] leading-[1.05] font-display font-bold text-slate-900">{item.label}</h3>
                   <p className="mt-1 text-[15px] text-slate-700">{item.subtitle || "Productos destacados en esta linea."}</p>
 
-                  <span className="mt-3 inline-flex h-10 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100">
+                  <span className="mt-2.5 inline-flex h-10 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-sm font-semibold text-slate-900 transition-colors group-hover:bg-slate-100">
                     {item.cta || `Ver ${item.label.toLowerCase()}`}
                   </span>
                 </Link>

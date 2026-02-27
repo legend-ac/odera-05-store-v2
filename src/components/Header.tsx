@@ -65,7 +65,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/92 backdrop-blur-xl">
       <Container className="py-2 md:py-3">
-        <div className="grid grid-cols-[1fr_auto] items-center gap-2.5">
+        <div className="grid grid-cols-1 items-center gap-2.5 lg:grid-cols-[auto_1fr_auto]">
           <Link href="/" className="flex min-w-0 items-center gap-2">
             <BrandMark />
             <span className="min-w-0">
@@ -73,6 +73,11 @@ export default function Header() {
               <span className="hidden md:block text-[11px] text-slate-500">Tienda oficial de zapatillas y ropa</span>
             </span>
           </Link>
+
+          <form onSubmit={submitSearch} className="hidden lg:flex items-center gap-2 min-w-0">
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre, marca o categoria..." uiSize="sm" className="md:min-h-11" />
+            <Button type="submit" variant="secondary" size="md">Buscar</Button>
+          </form>
 
           <div className="flex items-center gap-1.5 justify-self-end">
             <nav className="hidden lg:flex items-center gap-3 mr-1">
@@ -102,11 +107,9 @@ export default function Header() {
           </div>
         </div>
 
-        <form onSubmit={submitSearch} className="mt-2 flex items-center gap-2 md:max-w-3xl">
+        <form onSubmit={submitSearch} className="mt-2 flex items-center gap-2 lg:hidden">
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar productos..." uiSize="sm" className="md:min-h-11" />
-          <Button type="submit" variant="secondary" size="md">
-            Buscar
-          </Button>
+          <Button type="submit" variant="secondary" size="md">Buscar</Button>
         </form>
 
         {open ? (
