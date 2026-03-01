@@ -8,6 +8,7 @@ import { SESSION_COOKIE_NAME, verifyAdminSessionCookie } from "@/lib/server/admi
 import { getRequestIp, getUserAgent } from "@/lib/server/ip";
 import { makeProductSearchTokens } from "@/lib/searchTokens";
 import { assertImageUrlAllowed } from "@/lib/server/storageAdapter";
+import { deriveStockDrivenStatus } from "@/lib/productStock";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -51,9 +52,23 @@ export async function POST(req: Request) {
     await adminDb.runTransaction(async (tx) => {
       const snap = await tx.get(productRef);
       const exists = snap.exists;
+      const before = exists ? (snap.data() as any) : null;
+
+      // Regla de stock:
+      // - Si stock total = 0 => archivado automatico (oculto en cliente).
+      // - Si estaba archivado automaticamente y vuelve stock > 0 => reactivar.
+      // - Si admin archiva manualmente, se respeta.
+      const shouldRespectManualArchive = input.status === "archived";
+      const stockDriven = deriveStockDrivenStatus(
+        shouldRespectManualArchive ? "archived" : "active",
+        input.variants,
+        shouldRespectManualArchive ? false : Boolean(before?.autoArchivedByStock)
+      );
 
       const doc = {
         ...input,
+        status: shouldRespectManualArchive ? "archived" : stockDriven.status,
+        autoArchivedByStock: shouldRespectManualArchive ? false : stockDriven.autoArchivedByStock,
         searchTokens,
         slug: input.slug,
         updatedAt: now,

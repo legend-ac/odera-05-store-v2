@@ -3,6 +3,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { getServerEnv } from "@/lib/env";
 import type { OrderStatus } from "@/lib/orderStatus";
+import { deriveStockDrivenStatus } from "@/lib/productStock";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -46,7 +47,17 @@ async function processExpiredForStatus(status: Extract<OrderStatus, "SCHEDULED" 
           if (idx >= 0) {
             const v = variants[idx]!;
             variants[idx] = { ...v, stock: (v.stock as number) + qty };
-            tx.update(productRef, { variants, updatedAt: now });
+            const statusAfterStock = deriveStockDrivenStatus(
+              (p?.status as "active" | "archived") ?? "active",
+              variants,
+              Boolean(p?.autoArchivedByStock)
+            );
+            tx.update(productRef, {
+              variants,
+              status: statusAfterStock.status,
+              autoArchivedByStock: statusAfterStock.autoArchivedByStock,
+              updatedAt: now,
+            });
           }
 
           const stockLogRef = adminDb.collection("stockLogs").doc();

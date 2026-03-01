@@ -8,6 +8,7 @@ import { normalizeToken } from "@/lib/searchTokens";
 import { Card, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/fields";
+import { hasStock } from "@/lib/productStock";
 
 type SortType = "latest" | "price-asc" | "price-desc" | "name";
 type Audience = "hombre" | "mujer" | "ninos" | "todos";
@@ -118,6 +119,7 @@ export default function CatalogClient({
           const mainUrl = sorted.find((x: any) => x?.isMain)?.url ?? imageUrls[0];
           const updatedAtMs = typeof data?.updatedAt?.toMillis === "function" ? data.updatedAt.toMillis() : 0;
           const dedupeKey = String(data?.slug ?? data?.name ?? d.id).trim().toLowerCase();
+          const variants = Array.isArray(data?.variants) ? data.variants : [];
           return {
             id: d.id,
             name: String(data.name ?? ""),
@@ -128,12 +130,13 @@ export default function CatalogClient({
             imageUrls,
             productType: String(data?.productType ?? "").trim() || undefined,
             audience: normalizeAudience(data?.audience),
+            hasStock: hasStock(variants),
             dedupeKey,
             updatedAtMs,
           };
         });
 
-        const byLatest = raw.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+        const byLatest = raw.filter((x: any) => x.hasStock).sort((a, b) => b.updatedAtMs - a.updatedAtMs);
         const seen = new Set<string>();
         const list: CatalogItem[] = [];
         for (const it of byLatest) {

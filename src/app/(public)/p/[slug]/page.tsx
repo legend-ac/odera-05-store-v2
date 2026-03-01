@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import type { ProductCardData } from "@/components/ProductCard";
 import ProductClient from "./product-client";
+import { hasStock } from "@/lib/productStock";
 
 export const revalidate = 120;
 
@@ -32,6 +33,9 @@ async function loadInitialProduct(slug: string): Promise<ProductInitial | null> 
   const snap = await adminDb.doc(`products/${slug}`).get();
   if (!snap.exists) return null;
   const d = snap.data() as any;
+  const variants = Array.isArray(d?.variants) ? (d.variants as Variant[]) : [];
+  const status = String(d?.status ?? "active");
+  if (status !== "active" || !hasStock(variants)) return null;
   return {
     id: snap.id,
     name: String(d?.name ?? ""),
@@ -40,7 +44,7 @@ async function loadInitialProduct(slug: string): Promise<ProductInitial | null> 
     salePrice: typeof d?.salePrice === "number" ? d.salePrice : undefined,
     onSale: Boolean(d?.onSale),
     description: d?.description ? String(d.description) : undefined,
-    variants: Array.isArray(d?.variants) ? (d.variants as Variant[]) : [],
+    variants,
     images: Array.isArray(d?.images) ? (d.images as Img[]) : [],
   };
 }
@@ -49,9 +53,10 @@ async function loadInitialRecommended(slug: string): Promise<ProductCardData[]> 
   const snap = await adminDb.collection("products").where("status", "==", "active").limit(20).get();
   return snap.docs
     .filter((d) => d.id !== slug)
-    .slice(0, 3)
     .map((d) => {
       const product = d.data() as any;
+      const variants = Array.isArray(product?.variants) ? product.variants : [];
+      if (!hasStock(variants)) return null;
       const imgs = Array.isArray(product.images) ? [...product.images] : [];
       const sorted = imgs.sort((a: any, b: any) => Number(a?.order ?? 0) - Number(b?.order ?? 0));
       const imageUrls = sorted.map((x: any) => String(x?.url ?? "")).filter(Boolean);
@@ -65,7 +70,9 @@ async function loadInitialRecommended(slug: string): Promise<ProductCardData[]> 
         imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
         imageUrls,
       } satisfies ProductCardData;
-    });
+    })
+    .filter(Boolean)
+    .slice(0, 3) as ProductCardData[];
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {

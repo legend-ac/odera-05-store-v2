@@ -10,6 +10,7 @@ import { sendTransactionalEmail } from "@/lib/server/email";
 import { ALLOWED_NEXT, isOrderStatus } from "@/lib/orderStatus";
 import { renderOrderEmail } from "@/lib/server/emailTemplates";
 import { formatPEN } from "@/lib/money";
+import { deriveStockDrivenStatus } from "@/lib/productStock";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -125,7 +126,17 @@ export async function POST(req: Request) {
           if (idx >= 0) {
             const v = variants[idx]!;
             variants[idx] = { ...v, stock: (v.stock as number) + qty };
-            tx.update(productRef, { variants, updatedAt: now });
+            const statusAfterStock = deriveStockDrivenStatus(
+              (p?.status as "active" | "archived") ?? "active",
+              variants,
+              Boolean(p?.autoArchivedByStock)
+            );
+            tx.update(productRef, {
+              variants,
+              status: statusAfterStock.status,
+              autoArchivedByStock: statusAfterStock.autoArchivedByStock,
+              updatedAt: now,
+            });
           }
 
           const stockLogRef = adminDb.collection("stockLogs").doc();

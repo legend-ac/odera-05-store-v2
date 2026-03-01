@@ -1,6 +1,7 @@
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import CatalogClient from "./catalog-client";
 import type { ProductCardData } from "@/components/ProductCard";
+import { hasStock } from "@/lib/productStock";
 
 export const revalidate = 60;
 
@@ -23,6 +24,7 @@ async function loadInitialCatalog(): Promise<CatalogItem[]> {
     const mainUrl = sorted.find((x: any) => x?.isMain)?.url ?? imageUrls[0];
     const updatedAtMs = typeof data?.updatedAt?.toMillis === "function" ? data.updatedAt.toMillis() : 0;
     const dedupeKey = String(data?.slug ?? data?.name ?? d.id).trim().toLowerCase();
+    const variants = Array.isArray(data?.variants) ? data.variants : [];
     return {
       id: d.id,
       name: String(data.name ?? ""),
@@ -33,12 +35,13 @@ async function loadInitialCatalog(): Promise<CatalogItem[]> {
       imageUrls,
       productType: (String(data?.productType ?? "").toLowerCase() as CatalogItem["productType"]) || undefined,
       audience: (String(data?.audience ?? "todos").toLowerCase() as CatalogItem["audience"]) || "todos",
+      hasStock: hasStock(variants),
       dedupeKey,
       updatedAtMs,
     };
   });
 
-  const byLatest = raw.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+  const byLatest = raw.filter((x: any) => x.hasStock).sort((a, b) => b.updatedAtMs - a.updatedAtMs);
   const seen = new Set<string>();
   const list: CatalogItem[] = [];
   for (const it of byLatest) {

@@ -12,6 +12,7 @@ import { getServerEnv } from "@/lib/env";
 import { formatPEN } from "@/lib/money";
 import { renderOrderEmail } from "@/lib/server/emailTemplates";
 import type { ProductDoc } from "@/types/firestore";
+import { deriveStockDrivenStatus } from "@/lib/productStock";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -175,7 +176,17 @@ export async function POST(req: Request) {
           qty: it.qty,
         });
 
-        tx.update(productSnap.ref, { variants, updatedAt: now });
+        const statusAfterStock = deriveStockDrivenStatus(
+          (product.status as "active" | "archived") ?? "active",
+          variants,
+          Boolean((product as any).autoArchivedByStock)
+        );
+        tx.update(productSnap.ref, {
+          variants,
+          status: statusAfterStock.status,
+          autoArchivedByStock: statusAfterStock.autoArchivedByStock,
+          updatedAt: now,
+        });
 
         const stockLogRef = adminDb.collection("stockLogs").doc();
         tx.set(stockLogRef, {
