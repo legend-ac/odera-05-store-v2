@@ -116,16 +116,16 @@ export default function ProductClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-sm text-slate-500 animate-pulse">Cargando producto...</div>
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="text-sm text-[#8C7A6B] animate-pulse font-medium">Cargando producto...</div>
       </div>
     );
   }
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3 px-4">
-        <p className="text-sm text-rose-600">{error}</p>
-        <Link href="/catalog" className="text-sm text-emerald-600 underline">Volver al catálogo</Link>
+      <div className="min-h-screen bg-[#FAFAF8] flex flex-col items-center justify-center gap-3 px-4">
+        <p className="text-sm text-rose-500">{error}</p>
+        <Link href="/catalog" className="text-sm text-[#8C7A6B] underline hover:text-[#7A6A5C]">Volver al catálogo</Link>
       </div>
     );
   }
@@ -133,85 +133,98 @@ export default function ProductClient({
 
   return (
     <>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#FAFAF8] text-[#2C2A29]">
 
         {/* ── Breadcrumb ──────────────────────────────────── */}
-        <div className="mx-auto max-w-6xl px-4 pt-4 pb-2 sm:px-6">
-          <nav className="flex items-center gap-1.5 text-[11px] text-slate-500">
-            <Link href="/" className="hover:text-slate-800 transition-colors">Inicio</Link>
-            <svg className="h-2.5 w-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-            <Link href="/catalog" className="hover:text-slate-800 transition-colors">Catálogo</Link>
-            <svg className="h-2.5 w-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-            <span className="text-slate-700 font-medium truncate max-w-[180px]">{String(data.name ?? "")}</span>
+        <div className="mx-auto max-w-6xl px-4 pt-5 pb-3 sm:px-6">
+          <nav className="flex items-center gap-2 text-[11px] font-medium text-[#8C7A6B] uppercase tracking-wider">
+            <Link href="/" className="hover:text-[#2C2A29] transition-colors">Inicio</Link>
+            <span className="text-[#D3CBC2]">/</span>
+            <Link href="/catalog" className="hover:text-[#2C2A29] transition-colors">Catálogo</Link>
+            <span className="text-[#D3CBC2]">/</span>
+            <span className="text-[#2C2A29] truncate max-w-[200px]">{String(data.name ?? "")}</span>
           </nav>
         </div>
 
         {/* ── Layout principal ─────────────────────────────── */}
-        <div className="mx-auto max-w-6xl px-3 pb-10 sm:px-5 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-8 lg:items-start">
+        {/* Aquí centramos mejor en PC con grid-cols-2 simétrico y align-center cuando es posible, añadiendo max-w-5xl o 6xl según guste */}
+        <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-4 sm:px-6 lg:grid lg:grid-cols-2 lg:gap-16 lg:items-start">
 
           {/* ════ GALERÍA ════════════════════════════════════ */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4 lg:gap-5 lg:sticky lg:top-24">
+
             {/* Imagen principal */}
-            <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
+            <div className="relative overflow-hidden rounded-[2rem] bg-white border border-[#EBE8E1] shadow-sm">
               {hasDiscount && (
-                <div className="absolute left-3 top-3 z-10 flex gap-1.5">
-                  <span className="rounded-full bg-rose-500 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+                <div className="absolute left-4 top-4 z-10 flex gap-2">
+                  <span className="rounded-lg bg-[#DE5D4E] px-2.5 py-1 text-[10px] uppercase font-bold text-white tracking-widest shadow-sm">
                     Oferta
                   </span>
-                  <span className="rounded-full bg-slate-900/80 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-white">
+                  <span className="rounded-lg bg-[#2C2A29]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white tracking-widest">
                     -{discountPct}%
                   </span>
                 </div>
               )}
 
-              <div className="relative flex aspect-square items-center justify-center overflow-hidden sm:aspect-[4/3] lg:aspect-square">
+              {/* Contenedor de imagen más pequeño */}
+              <div className="relative flex items-center justify-center overflow-hidden w-full mx-auto h-[320px] sm:h-[400px] lg:h-[420px]">
                 {mainImg ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={mainImg}
                     alt={data.name ?? ""}
-                    className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
+                    className="h-full w-full object-contain p-4 sm:p-8 transition-transform duration-700 group-hover:scale-[1.03]"
                     onError={() => setImgIndex((i) => (i + 1 < galleryUrls.length ? i + 1 : i))}
                   />
                 ) : (
-                  <div className="text-xs text-slate-400">Sin foto</div>
+                  <div className="text-xs text-[#8C7A6B]">Sin foto</div>
                 )}
               </div>
 
-              {/* Controles galería */}
+              {/* Controles galería PC/Móvil */}
               {galleryUrls.length > 1 && (
                 <>
                   <button
                     type="button"
                     aria-label="Imagen anterior"
                     onClick={() => setImgIndex((i) => (i - 1 + galleryUrls.length) % galleryUrls.length)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm border border-slate-200 text-slate-700 shadow-sm hover:bg-white hover:shadow-md transition-all duration-150"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-md shadow-sm border border-[#EBE8E1] text-[#2C2A29] hover:bg-white transition-all duration-200"
                   >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                   </button>
                   <button
                     type="button"
                     aria-label="Siguiente imagen"
                     onClick={() => setImgIndex((i) => (i + 1) % galleryUrls.length)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm border border-slate-200 text-slate-700 shadow-sm hover:bg-white hover:shadow-md transition-all duration-150"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-md shadow-sm border border-[#EBE8E1] text-[#2C2A29] hover:bg-white transition-all duration-200"
                   >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </button>
+
+                  {/* Paginación tipo "Saga Falabella" (Localizada abajo de imagen en móvil) */}
+                  <div className="absolute bottom-4 left-0 right-0 lg:hidden flex justify-center gap-1.5 z-10">
+                    {galleryUrls.map((_, i) => (
+                      <span
+                        key={i}
+                        className={`block h-1.5 rounded-full transition-all duration-300 ${i === imgIndex ? "w-4 bg-[#2C2A29]" : "w-1.5 bg-[#8C7A6B]/50"}`}
+                      />
+                    ))}
+                  </div>
                 </>
               )}
             </div>
 
-            {/* Thumbnails */}
+            {/* Thumbnails (PC - Abajo estilo Adidas u horizontales) */}
             {galleryUrls.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="hidden lg:flex gap-3 overflow-x-auto pb-2 scrollbar-hide justify-center">
                 {galleryUrls.slice(0, 8).map((url, i) => (
                   <button
-                    key={`${url}-${i}`}
+                    key={`${url}-desktop-${i}`}
                     type="button"
                     onClick={() => setImgIndex(i)}
-                    className={`shrink-0 h-16 w-16 overflow-hidden rounded-xl border-2 transition-all duration-150 ${i === imgIndex
-                        ? "border-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.18)]"
-                        : "border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100"
+                    className={`shrink-0 h-[70px] w-[70px] overflow-hidden rounded-2xl border-2 transition-all duration-300 ${i === imgIndex
+                      ? "border-[#2C2A29] opacity-100 ring-2 ring-[#2C2A29]/10 ring-offset-2 ring-offset-[#FAFAF8]"
+                      : "border-transparent opacity-60 hover:opacity-100 hover:border-[#D3CBC2] bg-white border-[#EBE8E1]"
                       }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -220,59 +233,57 @@ export default function ProductClient({
                 ))}
               </div>
             )}
+
           </div>
 
           {/* ════ PANEL DE INFO ══════════════════════════════ */}
-          <div className="mt-4 flex flex-col gap-5 lg:mt-0 lg:sticky lg:top-24">
+          <div className="mt-8 flex flex-col gap-7 lg:mt-0 lg:py-6">
 
             {/* Nombre y marca */}
             <div>
               {data.brand && (
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-600 mb-1">
+                <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-[#8C7A6B] mb-2.5">
                   {String(data.brand)}
                 </p>
               )}
-              <h1 className="text-2xl sm:text-3xl font-display font-extrabold leading-tight text-slate-900">
+              <h1 className="text-[30px] sm:text-[36px] font-display font-bold leading-[1.1] text-[#2C2A29] tracking-tight">
                 {String(data.name ?? "")}
               </h1>
             </div>
 
             {/* Precio */}
-            <div className="flex items-end gap-3 pb-1 border-b border-slate-200">
-              <span className="text-3xl font-extrabold text-slate-900 leading-none">
+            <div className="flex items-end gap-3 pb-5 border-b border-[#EBE8E1]">
+              <span className="text-[32px] sm:text-[38px] font-extrabold text-[#2C2A29] leading-none">
                 {formatPEN(unitPrice)}
               </span>
               {hasDiscount && (
-                <>
-                  <span className="text-base text-slate-400 line-through pb-0.5">
+                <div className="flex flex-col mb-1.5 gap-0.5">
+                  <span className="text-sm font-medium text-[#A39E98] line-through leading-none">
                     {formatPEN(data.price)}
                   </span>
-                  <span className="rounded-lg bg-rose-100 px-2 py-0.5 text-[12px] font-bold text-rose-600">
-                    -{discountPct}% OFF
-                  </span>
-                </>
+                </div>
               )}
             </div>
 
             {/* Especificaciones */}
             {specsText && (
-              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div className="rounded-2xl border border-[#EBE8E1] bg-white overflow-hidden shadow-sm">
                 <button
                   type="button"
                   onClick={() => setShowSpecs((v) => !v)}
-                  className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+                  className="flex w-full items-center justify-between px-6 py-4 text-left hover:bg-[#FAF9F7] transition-colors"
                 >
-                  <span className="text-sm font-semibold text-slate-900">Descripción / Especificaciones</span>
+                  <span className="text-[13px] font-bold uppercase tracking-widest text-[#2C2A29]">Especificaciones</span>
                   <svg
-                    className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${showSpecs ? "rotate-180" : ""}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                    className={`h-4 w-4 text-[#8C7A6B] transition-transform duration-300 ${showSpecs ? "rotate-180" : ""}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 {showSpecs && (
-                  <div className="border-t border-slate-100 px-4 pb-4 pt-3">
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{specsText}</p>
+                  <div className="border-t border-[#EBE8E1] px-6 pb-6 pt-4">
+                    <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-[#5A544F]">{specsText}</p>
                   </div>
                 )}
               </div>
@@ -280,23 +291,23 @@ export default function ProductClient({
 
             {/* Tallas / Variantes como pills */}
             {variants.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <p className="text-sm font-bold text-slate-900">
-                    {variants[0]?.size ? "Talla" : variants[0]?.color ? "Color" : "Variante"}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[12px] font-bold uppercase tracking-widest text-[#2C2A29]">
+                    {variants[0]?.size ? "Talla" : variants[0]?.color ? "Color" : "Opciones"}
                   </p>
                   {selectedVariant && (
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[12px] font-semibold text-[#8C7A6B]">
                       {selectedVariant.stock > 0
-                        ? <span className="text-emerald-600 font-semibold">✓ {selectedVariant.stock} disponibles</span>
-                        : <span className="text-rose-500">Sin stock</span>
+                        ? <span className="text-[#3E5245]">Stock: {selectedVariant.stock}</span>
+                        : <span className="text-[#DE5D4E]">Agotado</span>
                       }
                     </p>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                   {variants.map((v) => {
-                    const label = v.size ? `Talla ${v.size}` : v.color ? v.color : v.id;
+                    const label = v.size ? `${v.size}` : v.color ? v.color : v.id;
                     const active = v.id === variantId;
                     const outOfStock = v.stock <= 0;
                     return (
@@ -305,11 +316,11 @@ export default function ProductClient({
                         type="button"
                         disabled={outOfStock}
                         onClick={() => setVariantId(v.id)}
-                        className={`relative rounded-xl border px-3.5 py-2 text-[13px] font-semibold transition-all duration-150 ${outOfStock
-                            ? "border-slate-200 text-slate-300 cursor-not-allowed line-through"
-                            : active
-                              ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900"
+                        className={`relative rounded-xl px-5 py-2.5 text-[14px] font-bold border-2 transition-all duration-200 min-w-[3.5rem] ${outOfStock
+                          ? "bg-white border-[#EBE8E1] text-[#D3CBC2] line-through cursor-not-allowed"
+                          : active
+                            ? "bg-[#2C2A29] border-[#2C2A29] text-white"
+                            : "bg-white border-[#EBE8E1] text-[#5A544F] hover:border-[#8C7A6B] hover:text-[#2C2A29]"
                           }`}
                       >
                         {label}
@@ -321,27 +332,27 @@ export default function ProductClient({
             )}
 
             {/* Cantidad + CTA */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <p className="text-sm font-bold text-slate-900">Cantidad</p>
+            <div className="flex flex-col gap-5 mt-4">
+              <div className="flex items-center gap-4">
+                <p className="text-[12px] font-bold uppercase tracking-widest text-[#2C2A29] flex-1">Cantidad</p>
                 {/* Stepper +/- */}
-                <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white overflow-hidden">
+                <div className="inline-flex items-center rounded-xl border-2 border-[#EBE8E1] bg-white overflow-hidden h-14 w-32">
                   <button
                     type="button"
-                    aria-label="Menos"
+                    title="Reducir"
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    className="h-10 w-10 flex items-center justify-center text-lg text-slate-600 hover:bg-slate-50 transition-colors"
+                    className="flex-1 h-full flex items-center justify-center text-xl font-medium text-[#8C7A6B] hover:bg-[#FAF9F7] transition-colors"
                   >
                     −
                   </button>
-                  <span className="h-10 min-w-[44px] flex items-center justify-center border-x border-slate-200 text-sm font-bold text-slate-900">
+                  <span className="h-8 min-w-[32px] flex items-center justify-center border-x-2 border-[#EBE8E1] text-[15px] font-bold text-[#2C2A29]">
                     {Math.min(50, Math.max(1, Math.floor(qty || 1)))}
                   </span>
                   <button
                     type="button"
-                    aria-label="Más"
+                    title="Aumentar"
                     onClick={() => setQty((q) => Math.min(Math.min(50, Math.max(1, available)), q + 1))}
-                    className="h-10 w-10 flex items-center justify-center text-lg text-slate-600 hover:bg-slate-50 transition-colors"
+                    className="flex-1 h-full flex items-center justify-center text-xl font-medium text-[#8C7A6B] hover:bg-[#FAF9F7] transition-colors"
                   >
                     +
                   </button>
@@ -358,29 +369,27 @@ export default function ProductClient({
                   setAddedQty(safeQty);
                   setShowCartModal(true);
                 }}
-                className="w-full h-13 rounded-2xl bg-emerald-500 text-base font-bold text-white shadow-[0_4px_20px_rgba(16,185,129,0.35)] hover:bg-emerald-400 hover:shadow-[0_6px_28px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 ease-out disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0"
+                className="group w-full h-[60px] rounded-2xl bg-[#2C2A29] font-extrabold text-white shadow-xl hover:bg-[#1A1918] hover:shadow-2xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {available <= 0 ? "Sin stock disponible" : "Agregar al carrito"}
+                <span className="relative text-[16px] tracking-widest uppercase">
+                  {available <= 0 ? "Agotado" : "Añadir a la Cesta"}
+                </span>
               </button>
-
-              <p className="text-center text-[11px] text-slate-400">
-                La cantidad final se confirma al generar tu pedido.
-              </p>
             </div>
 
-            {/* Trust badges */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Trust badges compacitos */}
+            <div className="grid grid-cols-2 gap-3 pt-4">
               {[
-                { e: "🔒", t: "Compra protegida", d: "Pago validado por el equipo" },
-                { e: "📦", t: "Seguimiento", d: "Estado del pedido en tiempo real" },
-                { e: "✅", t: "100% original", d: "Solo marcas verificadas" },
-                { e: "💬", t: "Soporte directo", d: "Atención por WhatsApp" },
+                { e: "🔒", t: "Compra segura", d: "Pago verificado" },
+                { e: "📦", t: "Envíos directos", d: "Seguimiento real" },
+                { e: "✅", t: "100% Original", d: "Calidad garantizada" },
+                { e: "💬", t: "Atención al Cliente", d: "Soporte WhatsApp" },
               ].map(b => (
-                <div key={b.t} className="flex items-start gap-2 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-                  <span className="text-base shrink-0">{b.e}</span>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{b.t}</p>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">{b.d}</p>
+                <div key={b.t} className="flex items-center gap-3 rounded-2xl border border-[#EBE8E1] bg-white px-4 py-3.5 shadow-sm">
+                  <span className="text-xl opacity-80 shrink-0">{b.e}</span>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-[#2C2A29] truncate">{b.t}</p>
+                    <p className="text-[11px] text-[#8C7A6B] mt-0.5 truncate">{b.d}</p>
                   </div>
                 </div>
               ))}
@@ -390,53 +399,54 @@ export default function ProductClient({
       </div>
 
       {/* ════ MODAL CARRITO ═══════════════════════════════════ */}
+      {/* ════ MODAL CARRITO (WARM TIERRA THEME) ══════════════ */}
       {showCartModal && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 p-2.5 sm:items-center sm:p-6">
-          <div className="w-full max-w-[420px] sm:max-w-2xl">
-            <div className="max-h-[90dvh] overflow-hidden rounded-2xl bg-white shadow-[0_24px_64px_rgba(0,0,0,0.3)]">
-              <div className="flex min-h-0 flex-col gap-4 p-5">
-
-                {/* Header modal */}
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-600 mb-0.5">¡Listo!</p>
-                    <h2 className="text-lg font-extrabold text-slate-900">Producto agregado</h2>
-                  </div>
-                  <button
-                    type="button"
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600 transition-colors"
-                    onClick={() => setShowCartModal(false)}
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[#2C2A29]/60 backdrop-blur-sm p-3 sm:items-center sm:p-6">
+          <div className="w-full max-w-[420px] sm:max-w-[480px] animate-in slide-in-from-bottom-5 fade-in duration-300">
+            <div className="max-h-[85dvh] overflow-hidden rounded-[2rem] bg-white border border-[#EBE8E1] shadow-[0_20px_60px_rgba(44,42,41,0.15)] flex flex-col">
+              <div className="flex-shrink-0 flex items-start justify-between gap-4 p-6 pb-4 border-b border-[#EBE8E1]">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-[#3E5245] mb-1.5 flex items-center gap-1.5">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                    Añadido con éxito
+                  </p>
+                  <h2 className="text-[22px] font-extrabold text-[#2C2A29]">Continúa tu compra</h2>
                 </div>
+                <button
+                  type="button"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FAFAF8] text-[#8C7A6B] hover:bg-[#EBE8E1] hover:text-[#2C2A29] transition-colors"
+                  onClick={() => setShowCartModal(false)}
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
 
-                {/* Preview */}
-                <div className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white border border-slate-200">
-                    {mainImg && <img src={mainImg} alt={String(data.name ?? "")} className="h-full w-full object-cover" />}
+              <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 bg-[#FAFAF8]">
+                {/* Preview del artículo añadido */}
+                <div className="flex gap-4 rounded-2xl bg-white border border-[#EBE8E1] p-4 shadow-sm">
+                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#FAFAF8] border border-[#EBE8E1]">
+                    {mainImg && <img src={mainImg} alt={String(data.name ?? "")} className="h-full w-full object-contain p-1" />}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-900 line-clamp-1">{String(data.name ?? "")}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {selectedVariant?.size ? `Talla ${selectedVariant.size}` : selectedVariant?.color ?? ""}
-                      {" · "}{addedQty} {addedQty === 1 ? "unidad" : "unidades"}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <p className="text-[15px] font-bold text-[#2C2A29] line-clamp-2 leading-tight">{String(data.name ?? "")}</p>
+                    <p className="text-[13px] font-medium text-[#8C7A6B] mt-1.5 flex items-center gap-1.5">
+                      <span className="bg-[#EBE8E1] px-1.5 py-0.5 rounded text-[11px] text-[#5A544F]">
+                        {selectedVariant?.size ? `${selectedVariant.size}` : selectedVariant?.color ?? ""}
+                      </span>
+                      <span className="opacity-40">•</span>
+                      <span>{addedQty} un.</span>
                     </p>
-                    <p className="text-base font-extrabold text-slate-900 mt-1">{formatPEN(modalSubtotal)}</p>
                   </div>
-                  {/* Qty stepper modal */}
-                  <div className="inline-flex flex-col items-center justify-center gap-1">
-                    <button type="button" onClick={() => setAddedQty((q) => Math.max(1, q - 1))} className="h-6 w-6 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-100">−</button>
-                    <span className="text-xs font-bold text-slate-900">{addedQty}</span>
-                    <button type="button" onClick={() => setAddedQty((q) => Math.min(50, q + 1))} className="h-6 w-6 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-100">+</button>
+                  <div className="flex items-center pl-2">
+                    <p className="text-[17px] font-extrabold text-[#2C2A29]">{formatPEN(modalSubtotal)}</p>
                   </div>
                 </div>
 
-                {/* Recomendados */}
+                {/* Recomendados con tema Light */}
                 {recommended.length > 0 && (
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">También te puede gustar</p>
-                    <div className="flex gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-3">
+                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#2C2A29] mb-3">Sugerencias para ti</h3>
+                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                       {recommended.map((it) => {
                         const price = it.onSale && typeof it.salePrice === "number" ? it.salePrice : it.price;
                         const img = it.imageUrl || it.imageUrls?.[0] || "";
@@ -444,36 +454,36 @@ export default function ProductClient({
                           <Link
                             key={it.id}
                             href={`/p/${it.id}`}
-                            className="w-[130px] shrink-0 rounded-xl border border-slate-200 bg-white p-2 hover:border-emerald-300 hover:shadow-sm transition-all duration-150 sm:w-auto"
+                            className="w-[130px] shrink-0 rounded-2xl bg-white border border-[#EBE8E1] p-2.5 hover:border-[#8C7A6B] hover:shadow-md transition-all duration-300 group"
                           >
-                            <div className="aspect-square overflow-hidden rounded-lg bg-slate-100">
-                              {img && <img src={img} alt={it.name} className="h-full w-full object-cover" />}
+                            <div className="aspect-square overflow-hidden rounded-xl bg-[#FAFAF8] mb-3 relative">
+                              {img && <img src={img} alt={it.name} className="h-full w-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />}
                             </div>
-                            <p className="mt-1.5 line-clamp-2 text-[11px] font-semibold text-slate-900">{it.name}</p>
-                            <p className="mt-0.5 text-[12px] font-extrabold text-slate-900">{formatPEN(price)}</p>
+                            <p className="line-clamp-2 text-[12px] font-bold text-[#5A544F] leading-tight mb-1.5 group-hover:text-[#2C2A29]">{it.name}</p>
+                            <p className="text-[14px] font-extrabold text-[#2C2A29]">{formatPEN(price)}</p>
                           </Link>
                         );
                       })}
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* Acciones */}
-                <div className="flex gap-2 pt-1 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setShowCartModal(false)}
-                    className="flex-1 h-11 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                  >
-                    Seguir comprando
-                  </button>
-                  <Link
-                    href="/cart"
-                    className="flex-1 h-11 inline-flex items-center justify-center rounded-xl bg-emerald-500 text-sm font-bold text-white hover:bg-emerald-400 shadow-[0_4px_16px_rgba(16,185,129,0.3)] hover:shadow-[0_4px_20px_rgba(16,185,129,0.45)] transition-all duration-200"
-                  >
-                    Ir al carrito
-                  </Link>
-                </div>
+              {/* Botones Acciones Sticky al fondo */}
+              <div className="flex-shrink-0 flex flex-col gap-3 p-6 pt-0 bg-[#FAFAF8] border-t-0">
+                <Link
+                  href="/cart"
+                  className="w-full h-14 flex items-center justify-center rounded-2xl bg-[#2C2A29] text-[15px] font-extrabold tracking-widest uppercase text-white hover:bg-[#1A1918] shadow-lg transition-all"
+                >
+                  Ver mi carrito
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowCartModal(false)}
+                  className="w-full h-14 flex items-center justify-center rounded-2xl border-2 border-[#EBE8E1] bg-white text-[14px] font-bold uppercase tracking-widest text-[#5A544F] hover:border-[#8C7A6B] hover:text-[#2C2A29] transition-all"
+                >
+                  Seguir viendo
+                </button>
               </div>
             </div>
           </div>
