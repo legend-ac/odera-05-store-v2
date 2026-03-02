@@ -4,11 +4,12 @@
 
 :root {
   color-scheme: light;
-  --background: #f3f6fb;
-  --foreground: #0f172a;
+  --background: #f4f7fc;
+  --foreground: #0d1117;
   --card: #ffffff;
-  --border: #dbe3ee;
-  --muted: #475569;
+  --border: #e2e8f0;
+  --border-subtle: #eef1f6;
+  --muted: #64748b;
   --ring: #2563eb;
   --primary: #0b1a13;
   --primary-foreground: #ffffff;
@@ -21,17 +22,26 @@
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
 
-  /* Legacy aliases to avoid breaking old classes during migration */
+  /* Design system tokens */
+  --surface-muted: #f8fafd;
+  --surface-hover: #f1f5f9;
+  --shadow-card: 0 2px 12px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-elevated: 0 12px 40px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-brand: 0 8px 24px rgba(31, 77, 31, 0.28);
+
+  /* Brand palette */
+  --brand-700: #164e20;
+  --brand-600: #1e6b2a;
+  --brand-500: #2d8a3a;
+  --brand-400: #4aaa57;
+  --brand-100: #d8eedc;
+  --brand-50: #f0faf1;
+
+  /* Legacy aliases */
   --bg: var(--background);
   --line: var(--border);
   --text: var(--foreground);
-  --brand-700: #1f4d1f;
-  --brand-600: #2e6a2f;
-  --brand-500: #3f7f3a;
-  --brand-100: #dcead8;
   --sale: #e11d48;
-  --success: #059669;
-  --info: #2563eb;
 }
 
 html,
@@ -82,49 +92,59 @@ a:hover {
 @layer components {
   .bg-brand-mesh {
     background-image:
-      radial-gradient(1200px 480px at 100% -15%, rgba(46, 106, 47, 0.23), transparent 55%),
-      radial-gradient(1000px 500px at -20% 110%, rgba(59, 130, 246, 0.2), transparent 52%),
-      linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+      radial-gradient(1200px 480px at 100% -15%, rgba(45, 138, 58, 0.18), transparent 55%),
+      radial-gradient(1000px 500px at -20% 110%, rgba(59, 130, 246, 0.14), transparent 52%),
+      linear-gradient(180deg, #ffffff 0%, #f4f7fc 100%);
   }
 
   .panel-premium {
-    border: 1px solid color-mix(in srgb, var(--border) 88%, #fff 12%);
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 14px 44px rgba(15, 23, 42, 0.09);
-    backdrop-filter: blur(8px);
-    border-radius: 1.2rem;
+    border: 1px solid color-mix(in srgb, var(--border) 80%, #fff 20%);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 1.25rem;
   }
 
   .panel {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 1rem;
-    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
-    transition: box-shadow 220ms ease, border-color 220ms ease, transform 220ms ease;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
   }
 
   .panel-soft-hover:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
-    transform: translateY(-1px);
+    border-color: #c8d5e5;
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px);
   }
 
   .btn-brand {
-    @apply inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-[15px] leading-tight font-semibold text-white transition duration-200 sm:min-h-10 sm:text-sm;
-    background: linear-gradient(135deg, var(--brand-700), var(--brand-500));
+    @apply inline-flex min-h-11 select-none items-center justify-center rounded-xl px-4 py-2.5 text-[15px] leading-tight font-semibold text-white transition-all duration-150 active:scale-[0.97] sm:min-h-10 sm:text-sm;
+    background: linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 100%);
+    box-shadow: var(--shadow-brand);
   }
 
   .btn-brand:hover {
-    @apply shadow-[0_12px_24px_rgba(15,23,42,0.24)];
+    box-shadow: 0 14px 32px rgba(31, 77, 31, 0.38);
     transform: translateY(-1px);
   }
 
+  .btn-brand:active {
+    transform: translateY(0) scale(0.97);
+    box-shadow: var(--shadow-brand);
+  }
+
   .btn-soft {
-    @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[15px] leading-tight font-medium text-slate-700 transition duration-200 sm:min-h-10 sm:text-sm;
+    @apply inline-flex min-h-11 select-none items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[15px] leading-tight font-medium text-slate-700 transition-all duration-150 active:scale-[0.97] sm:min-h-10 sm:text-sm;
   }
 
   .btn-soft:hover {
-    @apply bg-slate-50 text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.08)];
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
   }
 
   .chip-link {
@@ -160,7 +180,15 @@ a:hover {
   }
 
   .fade-in-up {
-    animation: fadeInUp 320ms ease both;
+    animation: fadeInUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .fade-in {
+    animation: fadeIn 250ms ease both;
+  }
+
+  .slide-up-sm {
+    animation: slideUpSm 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .skeleton {
@@ -174,8 +202,8 @@ a:hover {
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.66), transparent);
-    animation: shimmer 1.2s infinite;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+    animation: shimmer 1.4s ease-in-out infinite;
   }
 }
 
@@ -188,10 +216,33 @@ a:hover {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slideUpSm {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
   }
 }
