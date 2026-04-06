@@ -5,6 +5,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { apiPost } from "@/lib/apiClient";
 import { formatPEN } from "@/lib/money";
 import { db } from "@/lib/firebase/client";
+import { Input, Select } from "@/components/ui/fields";
+import { Button } from "@/components/ui/button";
 
 type TrackResponse = {
   orderId: string;
@@ -39,27 +41,34 @@ type TrackResponse = {
   payment: { operationCode?: string; method?: string; paymentSentAt?: any };
 };
 
-function statusLabel(status: string) {
-  const map: Record<string, string> = {
-    PENDING_VALIDATION: "Pendiente de validación de pago",
-    SCHEDULED: "Pedido registrado",
-    PAYMENT_SENT: "Pago reportado",
-    PAID: "Pago confirmado",
-    PREPARING: "Preparando pedido",
-    SHIPPED: "En camino",
-    DELIVERED: "Entregado",
-    CANCELLED: "Cancelado",
-    EXPIRED: "Vencido",
-  };
-  return map[status] ?? status;
+const STATUS_STYLE: Record<string, { dot: string; badge: string; label: string }> = {
+  PENDING_VALIDATION: { dot: "bg-amber-500", badge: "bg-amber-50 text-amber-700 border-amber-200", label: "Pendiente de validación" },
+  SCHEDULED: { dot: "bg-slate-400", badge: "bg-slate-50 text-slate-700 border-slate-200", label: "Pedido registrado" },
+  PAYMENT_SENT: { dot: "bg-blue-500", badge: "bg-blue-50 text-blue-700 border-blue-200", label: "Pago reportado" },
+  PAID: { dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Pago confirmado" },
+  PREPARING: { dot: "bg-violet-500", badge: "bg-violet-50 text-violet-700 border-violet-200", label: "Preparando pedido" },
+  SHIPPED: { dot: "bg-violet-500", badge: "bg-violet-50 text-violet-700 border-violet-200", label: "En camino" },
+  DELIVERED: { dot: "bg-emerald-600", badge: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "Entregado" },
+  CANCELLED: { dot: "bg-rose-500", badge: "bg-rose-50 text-rose-700 border-rose-200", label: "Cancelado" },
+  EXPIRED: { dot: "bg-rose-400", badge: "bg-rose-50 text-rose-600 border-rose-200", label: "Vencido" },
+};
+
+function StatusPill({ status }: { status: string }) {
+  const s = STATUS_STYLE[status] ?? { dot: "bg-slate-400", badge: "bg-slate-50 text-slate-700 border-slate-200", label: status };
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${s.badge}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+      {s.label}
+    </span>
+  );
 }
 
 function shippingLabel(shipping: TrackResponse["shipping"]): string {
   if (!shipping) return "";
   if (shipping.method === "LIMA_DELIVERY") {
-    return `Delivery Lima Metropolitana - ${shipping.district} (Recibe: ${shipping.receiverName})`;
+    return `Delivery Lima — ${shipping.district} (Recibe: ${shipping.receiverName})`;
   }
-  return `Agencia provincia - ${shipping.department}, ${shipping.province} (${shipping.agencyName}) - Recoge: ${shipping.receiverName}`;
+  return `Agencia provincia — ${shipping.department}, ${shipping.province} (${shipping.agencyName}) — Recoge: ${shipping.receiverName}`;
 }
 
 function onlyDigits(v: string): string {
@@ -241,15 +250,17 @@ function TrackPageInner() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
+      {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Seguimiento de pedido</h1>
-        <p className="text-sm text-slate-600 mt-1">Consulta el estado de tu compra con tu número de pedido y código de seguimiento.</p>
+        <p className="text-sm text-slate-500 mt-1">Consulta el estado de tu compra con tu número de pedido y código de seguimiento.</p>
       </div>
 
-      <div className="grid gap-3 border border-slate-200 rounded-2xl p-4 bg-white">
+      {/* Search Form */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] p-5 flex flex-col gap-4">
         {recent.length ? (
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Pedidos recientes en este dispositivo</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold uppercase tracking-widest text-slate-500">Pedidos recientes</label>
             <div className="flex flex-wrap gap-2">
               {recent.map((r) => (
                 <button
@@ -260,7 +271,7 @@ function TrackPageInner() {
                     setTrackingToken(r.trackingToken);
                     void load(r.publicCode, r.trackingToken);
                   }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs hover:bg-slate-50"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-[var(--surface-muted)] text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-[var(--surface-hover)] transition-all duration-150"
                 >
                   {r.publicCode}
                 </button>
@@ -269,139 +280,132 @@ function TrackPageInner() {
           </div>
         ) : null}
 
-        <label className="text-sm font-medium">Pegar enlace de seguimiento (opcional)</label>
-        <div className="flex gap-2">
-          <input
-            value={trackingUrl}
-            onChange={(e) => setTrackingUrl(e.target.value)}
-            placeholder="https://.../track?publicCode=OD-0001&trackingToken=..."
-            className="border border-slate-300 rounded-xl px-3 py-2 text-sm w-full"
-          />
-          <button type="button" onClick={applyTrackingUrl} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
-            Cargar
-          </button>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-slate-700">Pegar enlace de seguimiento (opcional)</label>
+          <div className="flex gap-2">
+            <Input value={trackingUrl} onChange={(e) => setTrackingUrl(e.target.value)} placeholder="https://.../track?publicCode=OD-0001&trackingToken=..." uiSize="sm" />
+            <Button type="button" variant="secondary" size="sm" onClick={applyTrackingUrl}>Cargar</Button>
+          </div>
         </div>
 
-        <label className="text-sm font-medium">Número de pedido (ejemplo: OD-1234)</label>
-        <div className="flex gap-2">
-          <input
-            value={publicCode}
-            onChange={(e) => setPublicCode(e.target.value)}
-            className="border border-slate-300 rounded-xl px-3 py-2 text-sm w-full"
-          />
-          <button type="button" onClick={() => copyText(publicCode, "Número")} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
-            Copiar
-          </button>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-slate-700">Número de pedido (ejemplo: OD-1234)</label>
+          <div className="flex gap-2">
+            <Input value={publicCode} onChange={(e) => setPublicCode(e.target.value)} uiSize="sm" />
+            <Button type="button" variant="secondary" size="sm" onClick={() => copyText(publicCode, "Número")}>Copiar</Button>
+          </div>
         </div>
 
-        <label className="text-sm font-medium">Código de seguimiento</label>
-        <div className="flex gap-2">
-          <input
-            value={trackingToken}
-            onChange={(e) => setTrackingToken(e.target.value)}
-            className="border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono w-full"
-          />
-          <button type="button" onClick={() => copyText(trackingToken, "Código")} className="px-3 py-2 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">
-            Copiar
-          </button>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-slate-700">Código de seguimiento</label>
+          <div className="flex gap-2">
+            <Input value={trackingToken} onChange={(e) => setTrackingToken(e.target.value)} uiSize="sm" className="font-mono" />
+            <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingToken, "Código")}>Copiar</Button>
+          </div>
         </div>
 
-        <button type="button" onClick={() => load()} disabled={busy} className="btn-brand disabled:opacity-50">
+        <Button type="button" onClick={() => load()} disabled={busy} size="md">
           {busy ? "Buscando..." : "Consultar pedido"}
-        </button>
+        </Button>
 
-        {copyMsg ? <div className="text-xs text-emerald-700">{copyMsg}</div> : null}
-        {error ? <div className="text-sm text-red-600">{error}</div> : null}
+        {copyMsg ? (
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+            {copyMsg}
+          </div>
+        ) : null}
+        {error ? (
+          <div className="flex items-center gap-2 text-sm text-destructive bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5">
+            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            {error}
+          </div>
+        ) : null}
       </div>
 
+      {/* Order Result */}
       {data ? (
-        <div className="border border-slate-200 rounded-2xl p-5 flex flex-col gap-3 bg-white">
-          <div className="flex items-center justify-between">
-            <div className="font-semibold text-slate-900">Pedido {data.publicCode}</div>
-            <div className="text-sm px-2 py-1 rounded-xl bg-slate-100">{statusLabel(data.status)}</div>
-          </div>
-
-          {data.shipping ? <div className="text-sm text-neutral-700">Envío: {shippingLabel(data.shipping)}</div> : null}
-
-          {data.reservedUntilMs ? (
-            <div className="text-sm text-neutral-600">
-              Reserva vigente hasta: {new Date(data.reservedUntilMs).toLocaleString("es-PE")} {expired ? "(vencida)" : ""}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] overflow-hidden fade-in-up">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <span className="font-mono text-sm font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">{data.publicCode}</span>
             </div>
-          ) : null}
-
-          <div className="text-sm">
-            {data.itemsSnapshots?.map((it, idx) => (
-              <div key={idx} className="flex justify-between">
-                <span>
-                  {it.nameSnapshot} x {it.qty}
-                </span>
-                <span>{formatPEN(it.unitPriceSnapshot * it.qty)}</span>
-              </div>
-            ))}
+            <StatusPill status={data.status} />
           </div>
 
-          {data.totals ? (
-            <>
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>{formatPEN(data.totals.subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Descuento</span>
-                <span>{data.totals.discountAmount ? `-${formatPEN(data.totals.discountAmount)}` : formatPEN(0)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Envío</span>
-                <span>{data.totals.shippingCost ? formatPEN(data.totals.shippingCost) : "Gratis"}</span>
-              </div>
-              <div className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>{formatPEN(data.totals.totalToPay)}</span>
-              </div>
-              {data.couponCode ? (
-                <div className="text-xs text-emerald-700">Cupón aplicado: {data.couponCode}</div>
-              ) : null}
-            </>
-          ) : null}
+          <div className="p-5 flex flex-col gap-3">
+            {data.shipping ? <p className="text-sm text-slate-600">Envío: {shippingLabel(data.shipping)}</p> : null}
 
-          <div className="pt-2 border-t border-neutral-200">
-            <div className="text-sm font-medium mb-2">Notificar por WhatsApp</div>
-            {waHref ? (
-              <a href={waHref} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm inline-flex font-semibold">
-                Enviar mensaje completo por WhatsApp
-              </a>
-            ) : (
-              <div className="text-xs text-neutral-500">WhatsApp no disponible por el momento.</div>
-            )}
+            {data.reservedUntilMs ? (
+              <p className="text-sm text-slate-500">
+                Reserva vigente hasta: {new Date(data.reservedUntilMs).toLocaleString("es-PE")}{expired ? " (vencida)" : ""}
+              </p>
+            ) : null}
+
+            <div className="border-t border-slate-100 pt-3 flex flex-col gap-1.5 text-sm">
+              {data.itemsSnapshots?.map((it, idx) => (
+                <div key={idx} className="flex justify-between">
+                  <span className="text-slate-700">{it.nameSnapshot} x {it.qty}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatPEN(it.unitPriceSnapshot * it.qty)}</span>
+                </div>
+              ))}
+            </div>
+
+            {data.totals ? (
+              <div className="border-t border-slate-100 pt-3 flex flex-col gap-1 text-sm">
+                <div className="flex justify-between"><span className="text-slate-500">Subtotal</span><span className="tabular-nums">{formatPEN(data.totals.subtotal)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Descuento</span><span className="tabular-nums">{data.totals.discountAmount ? `-${formatPEN(data.totals.discountAmount)}` : formatPEN(0)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Envío</span><span className="tabular-nums">{data.totals.shippingCost ? formatPEN(data.totals.shippingCost) : "Gratis"}</span></div>
+                <div className="flex justify-between font-semibold text-slate-900"><span>Total</span><span className="tabular-nums">{formatPEN(data.totals.totalToPay)}</span></div>
+                {data.couponCode ? (
+                  <div className="text-xs font-semibold text-emerald-700 mt-1">Cupón aplicado: {data.couponCode}</div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="border-t border-slate-100 pt-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Notificar por WhatsApp</p>
+              {waHref ? (
+                <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand inline-flex items-center gap-2">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Zm5.2 12.7c-.2.6-1.2 1.1-1.7 1.2-.5.1-1.1.1-1.8-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.4-1.1-2.7 0-1.3.7-1.9.9-2.2.3-.3.6-.4.8-.4h.6c.2 0 .5 0 .7.5.2.5.8 1.9.9 2 .1.2.1.4 0 .6-.1.2-.2.4-.3.5-.1.2-.3.4-.4.5-.1.1-.2.3-.1.5.1.2.4.8 1 1.3.7.7 1.3 1 1.5 1.1.2.1.4.1.6-.1.2-.2.8-.9 1-1.2.2-.3.4-.3.6-.2.2.1 1.5.7 1.8.9.3.2.4.2.5.4.1.2.1.9-.1 1.5Z" />
+                  </svg>
+                  Enviar mensaje por WhatsApp
+                </a>
+              ) : (
+                <p className="text-xs text-slate-500">WhatsApp no disponible por el momento.</p>
+              )}
+            </div>
           </div>
         </div>
       ) : null}
 
+      {/* Payment form */}
       {data && (data.status === "SCHEDULED" || data.status === "PAYMENT_SENT") ? (
-        <div className="border border-slate-200 rounded-2xl p-5 flex flex-col gap-3 bg-white">
-          <div className="font-medium">Enviar comprobante</div>
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] p-5 flex flex-col gap-4 fade-in-up">
+          <p className="font-semibold text-slate-900">Enviar comprobante</p>
 
-          <label className="text-sm font-medium">Código de operación</label>
-          <input value={operationCode} onChange={(e) => setOperationCode(e.target.value)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-slate-700">Código de operación</label>
+            <Input value={operationCode} onChange={(e) => setOperationCode(e.target.value)} uiSize="sm" />
+          </div>
 
-          <label className="text-sm font-medium">Medio de pago</label>
-          <select value={method} onChange={(e) => setMethod(e.target.value as any)} className="border border-slate-300 rounded-xl px-3 py-2 text-sm w-48">
-            <option value="YAPE">Yape</option>
-            <option value="PLIN">Plin</option>
-            <option value="OTHER">Otro</option>
-          </select>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-slate-700">Medio de pago</label>
+            <Select value={method} onChange={(e) => setMethod(e.target.value as any)} uiSize="sm" className="w-48">
+              <option value="YAPE">Yape</option>
+              <option value="PLIN">Plin</option>
+              <option value="OTHER">Otro</option>
+            </Select>
+          </div>
 
-          <button
-            type="button"
-            onClick={submitPayment}
-            disabled={busyPay || !operationCode}
-            className="btn-brand disabled:opacity-50"
-          >
+          <Button type="button" onClick={submitPayment} disabled={busyPay || !operationCode} size="md">
             {busyPay ? "Enviando..." : "Enviar comprobante"}
-          </button>
+          </Button>
 
-          {payMsg ? <div className="text-sm text-neutral-700">{payMsg}</div> : null}
-          <div className="text-xs text-neutral-500">Usa el mismo código que aparece en tu comprobante.</div>
+          {payMsg ? (
+            <div className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">{payMsg}</div>
+          ) : null}
+          <p className="text-xs text-slate-500">Usa el mismo código que aparece en tu comprobante.</p>
         </div>
       ) : null}
     </div>

@@ -1,9 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { Metadata } from "next";
 import HomeSocialLinks from "@/components/HomeSocialLinks";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Inicio — Zapatillas, Ropa y Accesorios Originales",
+  description:
+    "Zapatillas, ropa y accesorios originales con envío a todo el Perú. Paga con Yape o Plin y sigue tu pedido en tiempo real.",
+};
 
 const DEFAULTS = {
   cards: [
@@ -85,7 +92,7 @@ export default async function HomePage() {
       )}
 
       {/* ══ 2. HERO ════════════════════════════════════════════════════ */}
-      <div className="bg-gradient-to-b from-[#0d1f15] via-slate-900 to-[#111827] px-4 pt-8 pb-10 sm:pt-10 sm:pb-12 text-center">
+      <div className="relative bg-gradient-to-b from-[#0d1f15] via-slate-900 to-[#111827] px-4 pt-8 pb-10 sm:pt-10 sm:pb-12 text-center">
         {/* Orb decorativo sutil */}
         <div className="pointer-events-none absolute left-1/2 top-24 -translate-x-1/2 h-64 w-64 rounded-full bg-emerald-500/8 blur-3xl" aria-hidden />
         <div className="relative mx-auto max-w-xl flex flex-col items-center gap-4">

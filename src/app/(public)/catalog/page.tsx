@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import CatalogClient from "./catalog-client";
 import type { ProductCardData } from "@/components/ProductCard";
 import { hasStock } from "@/lib/productStock";
+
+export const metadata: Metadata = {
+  title: "Catálogo",
+  description:
+    "Explora zapatillas, ropa y accesorios originales. Filtra por categoría, público y precio. Envío a todo el Perú.",
+};
 
 export const revalidate = 60;
 

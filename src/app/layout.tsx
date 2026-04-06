@@ -20,8 +20,34 @@ const sans = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "ODERA 05 STORE",
-  description: "ODERA 05 STORE - Catalogo y pedidos.",
+  title: {
+    default: "ODERA 05 STORE — Zapatillas y Ropa Original",
+    template: "%s | ODERA 05 STORE",
+  },
+  description:
+    "Tienda peruana de zapatillas, ropa y accesorios originales. Pago con Yape y Plin, seguimiento de pedido en tiempo real y envío a Lima y provincias.",
+  keywords: [
+    "zapatillas originales",
+    "ropa deportiva",
+    "tienda peruana",
+    "ODERA 05",
+    "Yape",
+    "Plin",
+    "envio Lima",
+    "envio provincias",
+  ],
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
+  openGraph: {
+    title: "ODERA 05 STORE — Zapatillas y Ropa Original",
+    description:
+      "Tienda peruana de zapatillas, ropa y accesorios originales. Pago con Yape y Plin.",
+    siteName: "ODERA 05 STORE",
+    locale: "es_PE",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
