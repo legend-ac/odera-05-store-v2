@@ -25,7 +25,7 @@ function CategoryCard({ category, index }: { category: Category; index: number }
   return (
     <Link
       href={`/catalog?type=${encodeURIComponent(category.key)}`}
-      className="group block relative overflow-hidden"
+      className="category-card group block relative overflow-hidden"
       style={{
         border: hovered ? "1px solid var(--vermeil)" : "1px solid var(--ash-2)",
         borderRadius: "2px",
@@ -36,12 +36,12 @@ function CategoryCard({ category, index }: { category: Category; index: number }
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="relative aspect-[4/5] overflow-hidden">
+      <div className="category-card__media relative aspect-[4/5] overflow-hidden">
         <Image
           src={categoryImage(category, index)}
           alt={category.label}
           fill
-          sizes="(max-width: 640px) 100vw, 33vw"
+          sizes="(max-width: 639px) 42vw, 33vw"
           className="object-cover transition duration-500 group-hover:scale-[1.04]"
         />
         {/* Dark overlay */}
@@ -65,7 +65,7 @@ function CategoryCard({ category, index }: { category: Category; index: number }
 
       {/* Info */}
       <div
-        className="p-4 flex items-start justify-between gap-3"
+        className="category-card__content p-4 flex items-start justify-between gap-3"
         style={{
           background: "var(--ink-2)",
           borderTop: "1px solid var(--ash-2)",
@@ -73,7 +73,7 @@ function CategoryCard({ category, index }: { category: Category; index: number }
       >
         <div>
           <h3
-            className="font-black"
+            className="category-card__title font-black"
             style={{
               fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
               fontSize: "22px",
@@ -83,12 +83,12 @@ function CategoryCard({ category, index }: { category: Category; index: number }
           >
             {category.label}
           </h3>
-          <p style={{ fontSize: "11px", color: "var(--ash)", marginTop: "2px" }}>
+          <p className="category-card__subtitle" style={{ fontSize: "11px", color: "var(--ash)", marginTop: "2px" }}>
             {category.subtitle}
           </p>
         </div>
         <span
-          className="font-black transition-transform duration-200 group-hover:translate-x-1"
+          className="category-card__arrow font-black transition-transform duration-200 group-hover:translate-x-1"
           style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: "20px",

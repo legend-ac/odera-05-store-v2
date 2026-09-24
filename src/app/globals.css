@@ -527,4 +527,29 @@ a:hover { text-decoration: none; }
 @media (max-width: 639px) {
   .shopping-flow { padding-left: 1rem !important; padding-right: 1rem !important; }
   .shopping-flow section { padding: 1rem !important; }
+
+  /* Category navigation is intentionally a compact list on phones. A tall
+     product-editorial card makes the visitor scroll through imagery before
+     they can understand the three shopping paths. */
+  .category-card {
+    display: grid !important;
+    grid-template-columns: minmax(116px, 39%) minmax(0, 1fr);
+    min-height: 132px;
+  }
+
+  .category-card__media {
+    min-height: 132px;
+    aspect-ratio: auto !important;
+  }
+
+  .category-card__content {
+    align-items: center !important;
+    padding: 1rem !important;
+    border-top: 0 !important;
+    border-left: 1px solid var(--ash-2);
+  }
+
+  .category-card__title { font-size: 24px !important; }
+  .category-card__subtitle { max-width: 18ch; line-height: 1.45; }
+  .category-card__arrow { align-self: center; padding-top: 0 !important; }
 }
