@@ -94,8 +94,8 @@ export default async function HomePage() {
 
       {/* ── HERO ── */}
       <section
-        className="home-hero relative overflow-hidden"
-        style={{ display: "flex", flexDirection: "column" }}
+        className="relative overflow-hidden"
+        style={{ display: "flex", flexDirection: "column", background: "var(--ink)" }}
       >
         {/* Speed lines background */}
         <div
@@ -111,12 +111,12 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="home-hero__shell relative z-10 mx-auto grid w-full flex-1 md:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]">
+        <div className="relative z-10 grid w-full flex-1 lg:grid-cols-2" style={{ minHeight: "clamp(500px, 85vh, 900px)" }}>
 
           {/* Left — Text panel */}
-          <div className="home-hero__copy flex flex-col justify-center px-6 py-12 sm:px-10 md:px-12 lg:px-16">
+          <div className="flex flex-col justify-center order-2 lg:order-1 px-6 py-10 sm:px-10 lg:px-16">
             {/* Eyebrow */}
-            <div className="home-hero__eyebrow flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-5">
               <span className="h-px w-14" style={{ background: "var(--vermeil)" }} />
               <span
                 className="font-black"
@@ -166,7 +166,7 @@ export default async function HomePage() {
 
             {/* Subtitle japonés */}
             <p
-              className="home-hero__microcopy mt-4 mb-6"
+              className="mt-4 mb-5"
               style={{ fontSize: "11px", letterSpacing: "0.18em", color: "var(--ash)" }}
             >
               ザパティージャス・ロパ ——{" "}
@@ -174,14 +174,14 @@ export default async function HomePage() {
             </p>
 
             <p
-              className="home-hero__description max-w-sm mb-8"
+              className="max-w-sm mb-7"
               style={{ fontSize: "14px", color: "var(--ash)", lineHeight: "1.7" }}
             >
               Zapatillas, ropa y accesorios seleccionados para todos los días.
             </p>
 
             {/* CTAs */}
-            <div className="home-hero__actions flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3">
               <Link href="/catalog" className="btn-brand" style={{ fontSize: "13px", padding: "12px 24px" }}>
                 Comprar ahora →
               </Link>
@@ -192,7 +192,7 @@ export default async function HomePage() {
 
             {/* Stats */}
             <div
-              className="home-hero__stats mt-10 pt-6 grid grid-cols-3 gap-4"
+              className="mt-8 pt-5 grid grid-cols-3 gap-4"
               style={{ borderTop: "1px solid var(--ash-2)" }}
             >
               {[
@@ -228,44 +228,53 @@ export default async function HomePage() {
           </div>
 
           {/* Right — Image */}
-          <div className="home-hero__media relative overflow-hidden">
+          <div
+            className="relative order-1 lg:order-2 overflow-hidden flex items-center justify-center"
+            style={{
+              /* Mobile: altura fija natural; desktop: ocupa toda la columna */
+              minHeight: "clamp(260px, 44vw, 560px)",
+              background: "var(--ink)",
+            }}
+          >
             <Image
               src="/brand/category-zapatillas.jpg"
               alt="Colección ODERA 05"
               fill
               priority
               sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
+              className="object-contain"
+              style={{ padding: "clamp(16px, 5%, 56px)" }}
             />
-            {/* Gradient overlays */}
+            {/* Gradiente sutil: solo difumina los bordes laterales en desktop para fusionar con el texto */}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 pointer-events-none hidden lg:block"
               style={{
-                background: `
-                  linear-gradient(270deg, transparent 40%, rgba(14,14,18,0.95) 100%),
-                  linear-gradient(0deg, rgba(14,14,18,0.4) 0%, transparent 40%)
-                `,
+                background:
+                  "linear-gradient(to right, rgba(14,14,18,0.85) 0%, transparent 20%, transparent 80%, rgba(14,14,18,0.5) 100%)",
               }}
             />
-            {/* Vermeil corner accent */}
+            {/* Gradiente móvil: desvanece solo la parte inferior para transición suave al texto */}
             <div
-              className="absolute top-0 right-0"
+              className="absolute inset-0 pointer-events-none lg:hidden"
               style={{
-                width: 64,
-                height: 64,
-                background: "var(--vermeil)",
-                clipPath: "polygon(100% 0, 100% 100%, 0 0)",
+                background:
+                  "linear-gradient(to bottom, transparent 60%, rgba(14,14,18,0.9) 100%)",
               }}
             />
+            {/* Badge sutil sin triángulo */}
             <div
-              className="absolute bottom-6 right-6 font-bold uppercase"
+              className="absolute bottom-4 right-4"
               style={{
-                fontSize: "10px",
-                letterSpacing: "0.2em",
-                color: "rgba(243,238,228,0.5)",
+                background: "rgba(14,14,18,0.75)",
+                backdropFilter: "blur(4px)",
+                border: "1px solid var(--ash-2)",
+                borderRadius: "2px",
+                padding: "4px 10px",
               }}
             >
-              Selección semanal · stock limitado
+              <span className="font-bold uppercase" style={{ fontSize: "9px", letterSpacing: "0.2em", color: "rgba(243,238,228,0.6)" }}>
+                Selección semanal
+              </span>
             </div>
           </div>
         </div>
