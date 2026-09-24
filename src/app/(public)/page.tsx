@@ -111,10 +111,10 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="relative z-10 grid w-full flex-1 lg:grid-cols-2" style={{ minHeight: "clamp(500px, 85vh, 900px)" }}>
+        <div className="relative z-10 grid w-full lg:grid-cols-2" style={{ minHeight: "clamp(480px, 88vh, 860px)" }}>
 
           {/* Left — Text panel */}
-          <div className="flex flex-col justify-center order-2 lg:order-1 px-6 py-10 sm:px-10 lg:px-16">
+          <div className="flex flex-col justify-center px-6 py-12 sm:px-10 lg:px-16">
             {/* Eyebrow */}
             <div className="flex items-center gap-3 mb-5">
               <span className="h-px w-14" style={{ background: "var(--vermeil)" }} />
@@ -133,7 +133,7 @@ export default async function HomePage() {
 
             {/* Main headline */}
             <h1
-              className="home-hero__title leading-none"
+              className="leading-none"
               style={{
                 fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
                 fontSize: "clamp(58px, 7.4vw, 108px)",
@@ -227,52 +227,36 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Right — Image */}
+          {/* Right — Image: usa object-cover para llenar toda la columna */}
           <div
-            className="relative order-1 lg:order-2 overflow-hidden flex items-center justify-center"
-            style={{
-              /* Mobile: altura fija natural; desktop: ocupa toda la columna */
-              minHeight: "clamp(260px, 44vw, 560px)",
-              background: "var(--ink)",
-            }}
+            className="relative overflow-hidden"
+            style={{ minHeight: "clamp(300px, 50vw, 860px)" }}
           >
             <Image
               src="/brand/category-zapatillas.jpg"
               alt="Colección ODERA 05"
               fill
               priority
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-contain"
-              style={{ padding: "clamp(16px, 5%, 56px)" }}
+              sizes="(max-width: 1024px) 100vw, 55vw"
+              className="object-cover"
+              style={{ objectPosition: "center center" }}
             />
-            {/* Gradiente sutil: solo difumina los bordes laterales en desktop para fusionar con el texto */}
+            {/* En desktop: fade izquierdo suave (20%) para fundir con panel de texto */}
             <div
               className="absolute inset-0 pointer-events-none hidden lg:block"
-              style={{
-                background:
-                  "linear-gradient(to right, rgba(14,14,18,0.85) 0%, transparent 20%, transparent 80%, rgba(14,14,18,0.5) 100%)",
-              }}
+              style={{ background: "linear-gradient(to right, rgba(14,14,18,0.6) 0%, transparent 22%)" }}
             />
-            {/* Gradiente móvil: desvanece solo la parte inferior para transición suave al texto */}
+            {/* En móvil: fade inferior para transición al texto */}
             <div
               className="absolute inset-0 pointer-events-none lg:hidden"
-              style={{
-                background:
-                  "linear-gradient(to bottom, transparent 60%, rgba(14,14,18,0.9) 100%)",
-              }}
+              style={{ background: "linear-gradient(to top, rgba(14,14,18,0.55) 0%, transparent 45%)" }}
             />
-            {/* Badge sutil sin triángulo */}
+            {/* Badge discreto */}
             <div
               className="absolute bottom-4 right-4"
-              style={{
-                background: "rgba(14,14,18,0.75)",
-                backdropFilter: "blur(4px)",
-                border: "1px solid var(--ash-2)",
-                borderRadius: "2px",
-                padding: "4px 10px",
-              }}
+              style={{ background: "rgba(14,14,18,0.65)", backdropFilter: "blur(6px)", border: "1px solid rgba(90,88,104,0.5)", borderRadius: "2px", padding: "4px 10px" }}
             >
-              <span className="font-bold uppercase" style={{ fontSize: "9px", letterSpacing: "0.2em", color: "rgba(243,238,228,0.6)" }}>
+              <span style={{ fontSize: "9px", letterSpacing: "0.18em", color: "rgba(243,238,228,0.55)", fontWeight: 700, textTransform: "uppercase" }}>
                 Selección semanal
               </span>
             </div>
