@@ -532,7 +532,7 @@ export default function ProductsClient({
   const currentImage = mainImage(draft);
 
   return (
-    <div className="grid gap-4">
+    <div className="admin-product-page grid gap-5">
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
@@ -629,6 +629,7 @@ export default function ProductsClient({
         )}
       </section>
 
+      <div className="admin-catalog-workspace grid gap-4">
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 bg-slate-50/70 p-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -1105,6 +1106,7 @@ export default function ProductsClient({
           )}
         </div>
       </section>
+      </div>
     </div>
   );
 }

@@ -637,6 +637,43 @@ a:hover { text-decoration: none; }
 .admin-workspace .rounded-xl { border-radius: 12px; }
 .admin-workspace .rounded-2xl { border-radius: 16px; }
 
+/* Catalog: browsing and editing are two different jobs. On wide screens
+   they stay side-by-side, so the operator never loses the selected item. */
+.admin-product-page > section:first-child {
+  border-radius: 16px;
+  border-color: #dfe7f1;
+  box-shadow: var(--shadow-card);
+}
+
+.admin-catalog-workspace > section {
+  border-radius: 16px;
+  border-color: #dfe7f1;
+  box-shadow: var(--shadow-card);
+}
+
+.admin-catalog-workspace > section:last-child {
+  border-top: 3px solid #2563eb;
+}
+
+.admin-catalog-workspace thead { background: #f8fafc !important; }
+.admin-catalog-workspace tbody tr:hover { background: #f5f8ff !important; }
+
+@media (min-width: 1280px) {
+  .admin-catalog-workspace {
+    grid-template-columns: minmax(440px, .92fr) minmax(560px, 1.18fr);
+    align-items: start;
+  }
+
+  .admin-catalog-workspace > section:last-child {
+    position: sticky;
+    top: 1.25rem;
+    max-height: calc(100dvh - 2.5rem);
+    overflow: auto;
+  }
+
+  .admin-catalog-workspace > section:first-child .max-h-\[520px\] { max-height: calc(100dvh - 350px); }
+}
+
 @media (max-width: 1023px) {
   .admin-sidebar { border-radius: 14px; }
   .admin-nav-item { flex: 0 0 auto; }
