@@ -133,7 +133,7 @@ export default async function HomePage() {
 
             {/* Main headline */}
             <h1
-              className="leading-none"
+              className="home-hero__title leading-none"
               style={{
                 fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
                 fontSize: "clamp(52px, 6.2vw, 96px)",
@@ -181,7 +181,7 @@ export default async function HomePage() {
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="home-hero__actions flex flex-wrap items-center gap-3">
               <Link href="/catalog" className="btn-brand" style={{ fontSize: "13px", padding: "12px 26px" }}>
                 Comprar ahora →
               </Link>
@@ -192,7 +192,7 @@ export default async function HomePage() {
 
             {/* Stats */}
             <div
-              className="mt-8 pt-5 grid grid-cols-3 gap-4 max-w-md"
+              className="home-hero__stats mt-8 pt-5 grid grid-cols-3 gap-4 max-w-md"
               style={{ borderTop: "1px solid var(--ash-2)" }}
             >
               {[
@@ -228,7 +228,7 @@ export default async function HomePage() {
           </div>
 
           {/* Right — Character card: Hidden on mobile (conversion-first UX), sleek compact card on desktop */}
-          <div className="hidden lg:flex lg:col-span-5 items-center justify-center p-6 lg:p-8">
+          <div className="home-hero__character flex lg:col-span-5 items-center justify-center p-0 lg:p-8">
             <div
               className="home-hero__media-card relative w-full max-w-[340px] xl:max-w-[380px] h-[440px] xl:h-[490px] rounded overflow-hidden"
               style={{
