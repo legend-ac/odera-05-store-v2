@@ -14,7 +14,8 @@
     "qa:full": "npm run lint && npm run test && npm run build && npm run typecheck",
     "format:check": "node -e \"console.log('No formatter configured')\"",
     "admin:set-claim": "tsx scripts/set-admin-claim.ts",
-    "backup:run": "tsx scripts/backup.ts"
+    "backup:run": "tsx scripts/backup.ts",
+    "inventory:backfill": "tsx scripts/backfill-inventory.ts"
   },
   "dependencies": {
     "firebase": "^10.12.0",

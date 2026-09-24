@@ -27,6 +27,20 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "inventoryState",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "inventoryTotal",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

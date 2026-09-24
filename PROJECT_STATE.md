@@ -2,7 +2,7 @@
 
 ## 1) Executive Snapshot
 - Project: `odera-05-store` (Next.js 14 + Firebase + Vercel)
-- Local path: `C:\Users\youte\Downloads\odera-05-store-guia\odera-05-store`
+- Project folder: `odera-05-store`
 - Default branch: `main`
 - Deployment target: `https://odera-05-store-v2.vercel.app`
 - Business scope: e-commerce (catalog, cart, checkout with proof upload, manual payment validation, tracking, admin panel)

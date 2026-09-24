@@ -3,10 +3,16 @@ import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { getServerEnv } from "@/lib/env";
 import type { OrderStatus } from "@/lib/orderStatus";
-import { deriveStockDrivenStatus } from "@/lib/productStock";
+import { deriveStockDrivenStatus, getInventorySummary } from "@/lib/productStock";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+type StockRelease = {
+  productId: string;
+  variantId: string;
+  qty: number;
+};
 
 async function processExpiredForStatus(status: Extract<OrderStatus, "SCHEDULED" | "PENDING_VALIDATION" | "PAYMENT_SENT">, now: Timestamp, limit = 50): Promise<number> {
   const q = adminDb.collection("orders").where("status", "==", status).where("reservedUntil", "<", now).limit(limit);
@@ -28,25 +34,47 @@ async function processExpiredForStatus(status: Extract<OrderStatus, "SCHEDULED" 
         const reservedUntil = data.reservedUntil as FirebaseFirestore.Timestamp | undefined;
         if (!reservedUntil || reservedUntil.toMillis() >= now.toMillis()) return;
 
-        // Restore stock
         const items = Array.isArray(data.itemsSnapshots) ? data.itemsSnapshots : [];
-        for (const it of items) {
-          const productId = it.productId as string;
-          const variantId = it.variantSnapshot?.id as string;
-          const qty = it.qty as number;
+        const releases: StockRelease[] = items
+          .map((it: any) => ({
+            productId: it.productId as string,
+            variantId: it.variantSnapshot?.id as string,
+            qty: it.qty as number,
+          }))
+          .filter((it: { productId: string; variantId: string; qty: number }) =>
+            Boolean(it.productId && it.variantId && Number.isFinite(it.qty))
+          );
 
-          if (!productId || !variantId || !Number.isFinite(qty)) continue;
+        const productRefs = new Map<string, FirebaseFirestore.DocumentReference>();
+        for (const it of releases) {
+          if (!productRefs.has(it.productId)) {
+            productRefs.set(it.productId, adminDb.collection("products").doc(it.productId));
+          }
+        }
 
-          const productRef = adminDb.collection("products").doc(productId);
-          const pSnap = await tx.get(productRef);
-          if (!pSnap.exists) continue;
+        const productSnaps = new Map<string, FirebaseFirestore.DocumentSnapshot>();
+        for (const [productId, productRef] of productRefs) {
+          productSnaps.set(productId, await tx.get(productRef));
+        }
+
+        for (const [productId, productRef] of productRefs) {
+          const pSnap = productSnaps.get(productId);
+          if (!pSnap?.exists) continue;
 
           const p = pSnap.data() as any;
           const variants = Array.isArray(p.variants) ? [...p.variants] : [];
-          const idx = variants.findIndex((v) => v.id === variantId);
-          if (idx >= 0) {
+          let changed = false;
+
+          for (const it of releases.filter((release: StockRelease) => release.productId === productId)) {
+            const idx = variants.findIndex((v) => v.id === it.variantId);
+            if (idx < 0) continue;
+
             const v = variants[idx]!;
-            variants[idx] = { ...v, stock: (v.stock as number) + qty };
+            variants[idx] = { ...v, stock: (v.stock as number) + it.qty };
+            changed = true;
+          }
+
+          if (changed) {
             const statusAfterStock = deriveStockDrivenStatus(
               (p?.status as "active" | "archived") ?? "active",
               variants,
@@ -56,15 +84,19 @@ async function processExpiredForStatus(status: Extract<OrderStatus, "SCHEDULED" 
               variants,
               status: statusAfterStock.status,
               autoArchivedByStock: statusAfterStock.autoArchivedByStock,
+              ...getInventorySummary(variants),
+              inventoryUpdatedAt: now,
               updatedAt: now,
             });
           }
+        }
 
+        for (const it of releases) {
           const stockLogRef = adminDb.collection("stockLogs").doc();
           tx.set(stockLogRef, {
-            productId,
-            variantId,
-            delta: qty,
+            productId: it.productId,
+            variantId: it.variantId,
+            delta: it.qty,
             reason: "RELEASE",
             orderId: orderRef.id,
             createdAt: new Date(),

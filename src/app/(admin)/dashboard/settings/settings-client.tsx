@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { Input } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,8 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [issues, setIssues] = useState<string[]>([]);
+  const [healthBusy, setHealthBusy] = useState<"email" | "cloudinary" | null>(null);
+  const [healthStatus, setHealthStatus] = useState<Record<string, string>>({});
 
   const enabledSocials = [s.socialLinks?.instagram, s.socialLinks?.tiktok, s.socialLinks?.facebook, s.socialLinks?.whatsapp].filter(Boolean).length;
   const paymentConfigured = Boolean((s.paymentInstructions?.yapeNumber ?? "").trim() || (s.paymentInstructions?.plinNumber ?? "").trim());
@@ -180,6 +183,26 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
     }
   }
 
+  async function runHealthCheck(kind: "email" | "cloudinary") {
+    setHealthBusy(kind);
+    setMsg(null);
+    try {
+      const endpoint = kind === "email" ? "/api/admin/health/test-email" : "/api/admin/health/test-cloudinary";
+      const res = (await apiPost(endpoint, {}, { csrfCookieName: CSRF_COOKIE_NAME })) as { ok?: boolean; to?: string; url?: string };
+      setHealthStatus((prev) => ({
+        ...prev,
+        [kind]: kind === "email" ? `OK: enviado a ${res.to ?? "admin"}` : "OK: subida probada",
+      }));
+      setMsg(kind === "email" ? "Correo de prueba enviado correctamente." : "Cloudinary subio una imagen de prueba correctamente.");
+    } catch (e) {
+      const error = e instanceof Error ? e.message : "Error";
+      setHealthStatus((prev) => ({ ...prev, [kind]: `Error: ${error}` }));
+      setMsg(`Error: ${error}`);
+    } finally {
+      setHealthBusy(null);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
@@ -212,6 +235,42 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
           <StatusBadge ok={paymentConfigured} labelOn="Listos" labelOff="Pendiente" />
         </div>
       </div>
+
+      <SectionCard
+        title="Salud y pruebas"
+        subtitle="Comprueba servicios críticos antes de vender"
+        badge={<StatusBadge ok={Boolean(healthStatus.email || healthStatus.cloudinary)} labelOn="Probado" labelOff="Sin probar" />}
+        icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944 11.955 11.955 0 013.382 5.984 12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
+      >
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-[var(--surface-muted)] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-900">Correo SMTP</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">Envia un correo real al admin actual.</p>
+              </div>
+              <StatusBadge ok={healthStatus.email?.startsWith("OK") ?? false} labelOn="OK" labelOff="Pendiente" />
+            </div>
+            {healthStatus.email && <p className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-600">{healthStatus.email}</p>}
+            <Button type="button" className="mt-3" variant="secondary" size="sm" onClick={() => void runHealthCheck("email")} disabled={healthBusy !== null}>
+              {healthBusy === "email" ? "Probando..." : "Enviar correo de prueba"}
+            </Button>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-[var(--surface-muted)] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-900">Cloudinary</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">Sube una imagen minima para validar preset y cloud.</p>
+              </div>
+              <StatusBadge ok={healthStatus.cloudinary?.startsWith("OK") ?? false} labelOn="OK" labelOff="Pendiente" />
+            </div>
+            {healthStatus.cloudinary && <p className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-600">{healthStatus.cloudinary}</p>}
+            <Button type="button" className="mt-3" variant="secondary" size="sm" onClick={() => void runHealthCheck("cloudinary")} disabled={healthBusy !== null}>
+              {healthBusy === "cloudinary" ? "Probando..." : "Probar subida de imagen"}
+            </Button>
+          </div>
+        </div>
+      </SectionCard>
 
       {/* Toast de notificación */}
       {msg && <Toast msg={msg} onClose={() => setMsg(null)} />}
@@ -437,7 +496,13 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
                 {t.imageUrl ? (
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={t.imageUrl} alt={t.label} className="h-full w-full object-cover" />
+                    <Image
+                      src={t.imageUrl}
+                      alt={t.label}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
                     <span className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 py-0.5 text-[8px] text-white font-bold">1:1</span>
                   </div>
                 ) : (

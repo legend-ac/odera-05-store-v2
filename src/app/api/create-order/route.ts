@@ -12,7 +12,7 @@ import { getServerEnv } from "@/lib/env";
 import { formatPEN } from "@/lib/money";
 import { renderOrderEmail } from "@/lib/server/emailTemplates";
 import type { ProductDoc } from "@/types/firestore";
-import { deriveStockDrivenStatus } from "@/lib/productStock";
+import { deriveStockDrivenStatus, getInventorySummary } from "@/lib/productStock";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -185,6 +185,8 @@ export async function POST(req: Request) {
           variants,
           status: statusAfterStock.status,
           autoArchivedByStock: statusAfterStock.autoArchivedByStock,
+          ...getInventorySummary(variants),
+          inventoryUpdatedAt: now,
           updatedAt: now,
         });
 

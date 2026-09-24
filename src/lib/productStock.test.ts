@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveStockDrivenStatus, getTotalStock, hasStock } from "./productStock";
+import { deriveStockDrivenStatus, getInventorySummary, getTotalStock, hasStock } from "./productStock";
 
 describe("productStock", () => {
   it("suma stock total correctamente", () => {
@@ -30,5 +30,10 @@ describe("productStock", () => {
     expect(result.status).toBe("archived");
     expect(result.autoArchivedByStock).toBe(false);
   });
-});
 
+  it("resume el inventario para filtros operativos", () => {
+    expect(getInventorySummary([{ stock: 0 }, { stock: 2 }])).toEqual({ inventoryTotal: 2, inventoryState: "LOW" });
+    expect(getInventorySummary([{ stock: 4 }])).toEqual({ inventoryTotal: 4, inventoryState: "HEALTHY" });
+    expect(getInventorySummary([])).toEqual({ inventoryTotal: 0, inventoryState: "OUT" });
+  });
+});

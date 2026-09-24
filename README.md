@@ -80,6 +80,11 @@ node --loader ts-node/esm scripts/set-admin-claim.ts <UID>
 - `middleware.ts` SOLO verifica **presencia** de cookie.
 - La verificación real (session cookie + claim admin) se hace en `src/app/(admin)/dashboard/layout.tsx` en runtime **nodejs**.
 
+## Inventario operativo
+- Usa **Dashboard → Inventario** para priorizar agotados y reposiciones, y ajustar stock por talla/color sin editar toda la ficha.
+- Cada ajuste es una transacción: no permite stock negativo y guarda actor, motivo, antes/después y fecha en `stockLogs` / `auditLogs`.
+- Antes del primer uso en una tienda existente ejecuta `npm run inventory:backfill` para ver el alcance y luego `npm run inventory:backfill -- --apply` para materializar los campos de inventario. Despliega también `firestore.indexes.json`.
+
 ## Limitaciones
 - Sin Blaze => no Firebase Storage (por defecto).
 - Gmail SMTP tiene límites (usa correos transaccionales mínimos).

@@ -1,280 +1,117 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import HomeSocialLinks from "@/components/HomeSocialLinks";
+import FeaturedProducts from "@/components/FeaturedProducts";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Inicio — Zapatillas, Ropa y Accesorios Originales",
-  description:
-    "Zapatillas, ropa y accesorios originales con envío a todo el Perú. Paga con Yape o Plin y sigue tu pedido en tiempo real.",
+  title: "Zapatillas, ropa y accesorios",
+  description: "Zapatillas, ropa y accesorios originales con envíos a todo el Perú.",
 };
 
-const DEFAULTS = {
-  cards: [
-    { key: "zapatillas", label: "Zapatillas", subtitle: "Running, urbano y futbol", cta: "Ver zapatillas", urgency: "🔥 Más vendido" },
-    { key: "ropa", label: "Ropa", subtitle: "Poleras, casacas y conjuntos", cta: "Ver ropa", urgency: "⚡ Nueva temporada" },
-    { key: "accesorios", label: "Accesorios", subtitle: "Mochilas, medias y más", cta: "Ver accesorios", urgency: "🎒 Stock limitado" },
-  ],
-  promo: { couponCode: "ODERA10", message: "10% OFF en tu primer pedido.", freeShippingFrom: 200 },
-};
+type Category = { key: string; label: string; subtitle: string; cta: string; imageUrl?: string };
 
-// Gradientes más cálidos, que se vean bonitos sin tapar demasiado la imagen
-const ACCENTS = [
-  { grad: "from-emerald-600/70 via-emerald-900/55 to-slate-900/90", pill: "bg-emerald-500" },
-  { grad: "from-amber-500/70   via-orange-800/55   to-slate-900/90", pill: "bg-amber-500" },
-  { grad: "from-violet-500/70  via-violet-800/55   to-slate-900/90", pill: "bg-violet-500" },
-  { grad: "from-sky-500/70     via-sky-800/55      to-slate-900/90", pill: "bg-sky-500" },
+const DEFAULT_CATEGORIES: Category[] = [
+  { key: "zapatillas", label: "Zapatillas", subtitle: "Running, urbano y fútbol", cta: "Ver zapatillas" },
+  { key: "ropa", label: "Ropa", subtitle: "Poleras, casacas y conjuntos", cta: "Ver ropa" },
+  { key: "accesorios", label: "Accesorios", subtitle: "Los detalles para completar tu look", cta: "Ver accesorios" },
 ];
 
-function img(key: string, idx: number, url?: string) {
-  if (url) return url;
-  if (key.includes("zapat")) return "/brand/category-zapatillas.jpg";
-  if (key.includes("ropa")) return "/brand/category-ropa.jpg";
-  if (key.includes("acces")) return "/brand/category-accesorios.jpg";
-  return ["/brand/category-zapatillas.jpg", "/brand/category-ropa.jpg", "/brand/category-accesorios.jpg"][idx % 3]!;
+function categoryImage(category: Category, index: number): string {
+  if (category.imageUrl) return category.imageUrl;
+  if (category.key.includes("zapat")) return "/brand/category-zapatillas.jpg";
+  if (category.key.includes("ropa")) return "/brand/category-ropa.jpg";
+  if (category.key.includes("acces")) return "/brand/category-accesorios.jpg";
+  return ["/brand/category-zapatillas.jpg", "/brand/category-ropa.jpg", "/brand/category-accesorios.jpg"][index % 3]!;
 }
 
 export default async function HomePage() {
-  type Card = { key: string; label: string; subtitle: string; cta: string; enabled: boolean; imageUrl?: string; urgency?: string };
-  let cards: Card[] = DEFAULTS.cards.map(c => ({ ...c, enabled: true }));
-  let promoOn = true;
-  let promo = { ...DEFAULTS.promo };
+  let categories = DEFAULT_CATEGORIES;
+  let promo = { enabled: true, message: "Envío gratis desde S/ 200", couponCode: "" };
 
   try {
-    const snap = await adminDb.doc("settings/store").get();
-    if (snap.exists) {
-      const d = snap.data() as any;
-      promoOn = Boolean(d?.homePromoEnabled ?? true);
+    const snapshot = await adminDb.doc("settings/store").get();
+    if (snapshot.exists) {
+      const data = snapshot.data() as any;
       promo = {
-        couponCode: String(d?.homePromo?.couponCode ?? promo.couponCode),
-        message: String(d?.homePromo?.message ?? promo.message),
-        freeShippingFrom: Number(d?.homePromo?.freeShippingFrom ?? promo.freeShippingFrom),
+        enabled: Boolean(data?.homePromoEnabled ?? true),
+        message: String(data?.homePromo?.message ?? promo.message),
+        couponCode: String(data?.homePromo?.couponCode ?? "").trim(),
       };
-      if (Array.isArray(d?.productTypes) && d.productTypes.length) {
-        cards = d.productTypes
-          .filter((x: any) => x?.enabled !== false)
-          .map((x: any, i: number) => ({
-            key: String(x.key ?? ""), label: String(x.label ?? ""),
-            subtitle: String(x.subtitle ?? ""), cta: String(x.cta ?? "Ver colección"),
-            enabled: true,
-            imageUrl: typeof x.imageUrl === "string" && x.imageUrl ? x.imageUrl : undefined,
-            urgency: DEFAULTS.cards[i]?.urgency,
+      if (Array.isArray(data?.productTypes) && data.productTypes.length) {
+        const configured = data.productTypes
+          .filter((item: any) => item?.enabled !== false)
+          .map((item: any) => ({
+            key: String(item?.key ?? "").trim(),
+            label: String(item?.label ?? "").trim(),
+            subtitle: String(item?.subtitle ?? "").trim(),
+            cta: String(item?.cta ?? "Ver colección").trim(),
+            imageUrl: typeof item?.imageUrl === "string" && item.imageUrl ? item.imageUrl : undefined,
           }))
-          .filter((x: Card) => x.key && x.label);
+          .filter((item: Category) => item.key && item.label);
+        if (configured.length) categories = configured;
       }
     }
-  } catch { /* defaults */ }
-
-  const coupon = promo.couponCode.trim();
+  } catch {
+    // The storefront remains available with its local defaults.
+  }
 
   return (
-    <div className="bg-slate-50 min-h-screen">
-
-      {/* ══ 1. BARRA PROMO — slim y elegante ══════════════════════════ */}
-      {promoOn && (
-        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-2 text-center">
-          <p className="text-[12px] font-medium text-white/95 tracking-wide">
-            {coupon && (
-              <span className="mr-2 rounded-md bg-white/20 px-2 py-0.5 font-mono font-bold text-[11px] tracking-widest">
-                {coupon}
-              </span>
-            )}
-            {promo.message}
-            {" · "}
-            <Link href="/catalog" className="font-semibold underline-offset-2 underline whitespace-nowrap hover:text-emerald-100 transition-colors">
-              Ver colección →
-            </Link>
-          </p>
+    <div className="bg-white text-zinc-950">
+      {promo.enabled && (
+        <div className="border-b border-zinc-800 bg-zinc-950 px-4 py-2 text-center text-[11px] font-medium tracking-wide text-white sm:text-xs">
+          {promo.couponCode && <span className="mr-2 border border-zinc-600 px-1.5 py-0.5 font-mono text-[10px]">{promo.couponCode}</span>}
+          {promo.message}
         </div>
       )}
 
-      {/* ══ 2. HERO ════════════════════════════════════════════════════ */}
-      <div className="relative bg-gradient-to-b from-[#0d1f15] via-slate-900 to-[#111827] px-4 pt-8 pb-10 sm:pt-10 sm:pb-12 text-center">
-        {/* Orb decorativo sutil */}
-        <div className="pointer-events-none absolute left-1/2 top-24 -translate-x-1/2 h-64 w-64 rounded-full bg-emerald-500/8 blur-3xl" aria-hidden />
-        <div className="relative mx-auto max-w-xl flex flex-col items-center gap-4">
-
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400/80">
-            Tienda oficial · ODERA 05
-          </p>
-
-          <h1 className="text-[2rem] sm:text-[2.5rem] md:text-[3rem] font-display font-extrabold leading-[1.1] text-white">
-            Zapatillas y ropa
-            <span className="block bg-gradient-to-r from-emerald-400 via-emerald-300 to-lime-300 bg-clip-text text-transparent mt-0.5">
-              con estilo real
-            </span>
-          </h1>
-
-          <p className="text-[13px] text-slate-400 leading-relaxed max-w-xs">
-            Marcas originales · Pago con Yape y Plin · Seguimiento en tiempo real
-          </p>
-
-          {/* Pills de beneficios */}
-          <div className="flex flex-wrap justify-center gap-1.5 mt-1">
-            {[
-              { e: "🚚", t: `Envío gratis +S/${promo.freeShippingFrom}` },
-              { e: "💳", t: "Yape y Plin" },
-              { e: "📞", t: "Atención directa" },
-            ].map(p => (
-              <span key={p.t} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-[11px] font-medium text-slate-300">
-                <span>{p.e}</span>{p.t}
-              </span>
-            ))}
+      <section className="mx-auto grid max-w-7xl lg:grid-cols-[1.02fr_0.98fr]">
+        <div className="flex min-h-[430px] flex-col justify-end bg-zinc-950 px-6 py-12 text-white sm:min-h-[520px] sm:px-10 lg:px-14">
+          <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.22em] text-zinc-400">ODERA 05 · Perú</p>
+          <h1 className="max-w-xl font-display text-5xl font-bold leading-[0.92] tracking-[-0.045em] sm:text-6xl lg:text-7xl">Muévete<br />a tu manera.</h1>
+          <p className="mt-6 max-w-sm text-sm leading-6 text-zinc-300">Zapatillas, ropa y accesorios seleccionados para todos los días.</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/catalog" className="inline-flex h-11 items-center bg-white px-5 text-sm font-bold text-zinc-950 transition hover:bg-zinc-200">Comprar ahora</Link>
+            <Link href="/track" className="inline-flex h-11 items-center border border-zinc-600 px-5 text-sm font-semibold text-white transition hover:border-white">Seguir pedido</Link>
           </div>
+        </div>
+        <div className="relative min-h-[330px] overflow-hidden bg-zinc-100 lg:min-h-0">
+          <Image src="/brand/category-zapatillas.jpg" alt="Colección ODERA 05" fill priority sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-6 pb-6 pt-16 text-xs font-medium text-white sm:px-8">Selección semanal · stock limitado</div>
+        </div>
+      </section>
 
-          {/* CTAs */}
-          <div className="flex items-center gap-2.5 mt-1">
-            <Link
-              href="/catalog"
-              className="inline-flex h-11 items-center rounded-xl bg-emerald-500 px-7 text-[14px] font-bold text-white shadow-[0_4px_20px_rgba(16,185,129,0.35)] hover:bg-emerald-400 hover:shadow-[0_6px_24px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 ease-out"
-            >
-              Ver catálogo
+      <section className="border-y border-zinc-200">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-zinc-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {["Productos originales", "Envíos a Lima y provincias", "Pagos con Yape y Plin"].map((item, index) => <div key={item} className="flex items-center gap-4 px-6 py-4 text-sm sm:px-7"><span className="font-mono text-xs text-zinc-400">0{index + 1}</span><span className="font-medium">{item}</span></div>)}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20">
+        <div className="mb-7 flex items-end justify-between border-b border-zinc-200 pb-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">Explora</p><h2 className="mt-1 font-display text-3xl font-bold tracking-tight">Compra por categoría</h2></div><Link href="/catalog" className="hidden text-sm font-semibold underline underline-offset-4 sm:block">Ver todo</Link></div>
+        <div className="grid gap-7 sm:grid-cols-3">
+          {categories.map((category, index) => (
+            <Link key={category.key} href={`/catalog?type=${encodeURIComponent(category.key)}`} className="group block">
+              <div className="relative aspect-[4/5] overflow-hidden bg-zinc-100"><Image src={categoryImage(category, index)} alt={category.label} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-[1.03]" /></div>
+              <div className="flex items-start justify-between gap-3 pt-3"><div><h3 className="text-lg font-bold">{category.label}</h3><p className="mt-0.5 text-sm text-zinc-500">{category.subtitle}</p></div><span aria-hidden className="pt-1 text-lg transition-transform group-hover:translate-x-1">→</span></div>
             </Link>
-            <Link
-              href="/track"
-              className="inline-flex h-11 items-center rounded-xl border border-white/20 bg-white/8 px-5 text-[14px] font-medium text-white/90 hover:bg-white/15 hover:border-white/30 transition-all duration-200 ease-out"
-            >
-              Seguir pedido
-            </Link>
-          </div>
-
-        </div>
-      </div>
-
-      {/* ══ 3. CATEGORÍAS ══════════════════════════════════════════════ */}
-      <div className="mx-auto max-w-5xl px-3 sm:px-5 pt-5 pb-3">
-
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[15px] font-display font-bold text-slate-800 tracking-tight">
-            ¿Qué buscas hoy?
-          </h2>
-          <Link href="/catalog" className="text-[12px] font-semibold text-emerald-600 hover:text-emerald-700 hover:underline transition-colors">
-            Ver todo →
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          {cards.map((card, i) => {
-            const acc = ACCENTS[i % ACCENTS.length]!;
-            return (
-              <Link
-                key={card.key}
-                href={`/catalog?type=${encodeURIComponent(card.key)}`}
-                className="group relative overflow-hidden rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.15)] transition-all duration-300 ease-out hover:-translate-y-1"
-              >
-                <div className="relative aspect-[2/1] sm:aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={img(card.key, i, card.imageUrl)}
-                    alt={card.label}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 33vw"
-                    className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-[1.06]"
-                  />
-                  {/* Gradiente más suave — muestra mejor la imagen */}
-                  <div className={`absolute inset-0 bg-gradient-to-t ${acc.grad}`} />
-                  {/* Viñeta extra en esquinas para profundidad */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-transparent" />
-
-                  <div className="absolute inset-0 flex flex-col justify-between p-3.5">
-                    {/* Badges arriba */}
-                    <div className="flex items-start justify-between gap-1">
-                      {card.urgency && (
-                        <span className="inline-flex items-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 px-2.5 py-1 text-[10px] font-semibold text-white leading-none">
-                          {card.urgency}
-                        </span>
-                      )}
-                      <span className={`ml-auto rounded-full ${acc.pill} shadow-sm px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-white leading-snug`}>
-                        {card.label}
-                      </span>
-                    </div>
-
-                    {/* Info abajo */}
-                    <div className="flex items-end justify-between gap-2">
-                      <div>
-                        <p className="text-[15px] sm:text-[16px] font-display font-extrabold leading-tight text-white drop-shadow-sm">
-                          {card.label}
-                        </p>
-                        <p className="text-[11px] text-white/65 mt-0.5">{card.subtitle}</p>
-                      </div>
-                      <div className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-white/95 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-slate-900 shadow-sm group-hover:gap-2 group-hover:bg-white transition-all duration-200">
-                        {card.cta}
-                        <svg className="h-2.5 w-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ══ 4. TRUST BADGES ════════════════════════════════════════════ */}
-      <div className="mx-auto max-w-5xl px-3 sm:px-5 pb-3">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {[
-            { e: "✅", t: "Productos originales", c: "emerald" },
-            { e: "🚚", t: `Envío gratis +S/${promo.freeShippingFrom}`, c: "blue" },
-            { e: "💬", t: "Soporte por WhatsApp", c: "emerald" },
-            { e: "📦", t: "Seguimiento en vivo", c: "violet" },
-          ].map(g => (
-            <div
-              key={g.t}
-              className="flex items-center gap-2 rounded-xl bg-white border border-slate-100 px-3 py-2.5 text-[11.5px] font-medium text-slate-700 shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:border-slate-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)] transition-all duration-200"
-            >
-              <span className="text-[15px] shrink-0">{g.e}</span>
-              <span className="leading-tight">{g.t}</span>
-            </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* ══ 5. REDES SOCIALES ══════════════════════════════════════════ */}
-      <div className="mx-auto max-w-5xl px-3 sm:px-5 pb-3">
-        <HomeSocialLinks />
-      </div>
-
-      {/* ══ 6. CÓMO FUNCIONA ═══════════════════════════════════════════ */}
-      <div className="mx-auto max-w-5xl px-3 sm:px-5 pb-8">
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-          <div className="flex items-center justify-between bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-3.5">
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-400">Proceso de compra</p>
-              <p className="text-sm font-display font-extrabold text-white mt-0.5">Compra en 3 pasos</p>
-            </div>
-            <Link
-              href="/catalog"
-              className="rounded-xl bg-emerald-500 px-4 py-1.5 text-[12px] font-bold text-white hover:bg-emerald-400 hover:shadow-[0_4px_12px_rgba(16,185,129,0.4)] transition-all duration-200"
-            >
-              Comprar ahora
-            </Link>
-          </div>
-          <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-            {[
-              { n: "01", t: "Elige tu producto", d: "Selecciona talla y cantidad.", e: "🛒" },
-              { n: "02", t: "Paga con Yape/Plin", d: "Sube tu comprobante de pago.", e: "💳" },
-              { n: "03", t: "Sigue tu pedido", d: "Revisa el estado con tu código.", e: "📦" },
-            ].map(s => (
-              <div key={s.n} className="flex items-start gap-3 px-5 py-4 hover:bg-slate-50 transition-colors duration-150">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl">
-                  {s.e}
-                </div>
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{s.n}</p>
-                  <p className="text-[13px] font-bold text-slate-900 mt-0.5">{s.t}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{s.d}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+      <section className="bg-zinc-50 py-14 sm:py-20">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="mb-7 flex items-end justify-between border-b border-zinc-200 pb-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">Recién llegado</p><h2 className="mt-1 font-display text-3xl font-bold tracking-tight">Novedades</h2></div><Link href="/catalog" className="text-sm font-semibold underline underline-offset-4">Ver catálogo</Link></div>
+          <FeaturedProducts />
         </div>
-      </div>
+      </section>
 
+      <section className="mx-auto grid max-w-7xl gap-8 px-5 py-14 sm:grid-cols-[0.8fr_1.2fr] sm:px-8 sm:py-20">
+        <div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">Compra simple</p><h2 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight">Sin pasos confusos.</h2></div>
+        <ol className="grid gap-5 sm:grid-cols-3">{["Elige talla y agrega al carrito.", "Registra tu pago con Yape o Plin.", "Revisa el estado de tu pedido."].map((item, index) => <li key={item} className="border-t border-zinc-300 pt-3"><span className="font-mono text-xs text-zinc-500">0{index + 1}</span><p className="mt-2 text-sm font-medium leading-6">{item}</p></li>)}</ol>
+      </section>
     </div>
   );
 }

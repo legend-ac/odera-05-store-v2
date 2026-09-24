@@ -60,9 +60,9 @@ export default async function FeaturedProducts() {
       );
     }
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-        {items.map((p) => (
-          <ProductCard key={p.id} p={p} />
+      <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-5 md:grid-cols-3 xl:grid-cols-4">
+        {items.map((p, index) => (
+          <ProductCard key={p.id} p={p} priority={index < 4} />
         ))}
       </div>
     );

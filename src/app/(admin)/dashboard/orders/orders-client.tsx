@@ -25,6 +25,15 @@ type OrderRow = {
   deletedAtMs?: number | null;
 };
 
+type AuditLogRow = {
+  id: string;
+  action: string;
+  actor: string;
+  createdAt: string;
+  beforeStatus?: string;
+  afterStatus?: string;
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_LABEL: Record<string, string> = {
@@ -137,8 +146,11 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
   const [exportStatus, setExportStatus] = useState("ALL");
   const [exportTemplate, setExportTemplate] = useState<"detalle" | "resumen">("detalle");
   const [viewMode, setViewMode] = useState<"active" | "trash">("active");
+  const [layoutMode, setLayoutMode] = useState<"list" | "flow">("flow");
   const [busyMass, setBusyMass] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [auditLogs, setAuditLogs] = useState<Record<string, AuditLogRow[]>>({});
+  const [busyAuditId, setBusyAuditId] = useState<string | null>(null);
 
   const activeOrders = useMemo(() => orders.filter((o) => !o.deletedAtMs), [orders]);
   const trashedOrders = useMemo(() => orders.filter((o) => !!o.deletedAtMs), [orders]);
@@ -167,6 +179,30 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
     sp.set("template", exportTemplate);
     return `/api/admin/orders/export?${sp.toString()}`;
   }, [exportFrom, exportTo, exportStatus, exportTemplate]);
+
+  const flowColumns = useMemo(
+    () => [
+      { key: "PENDING_VALIDATION", title: "Validar pago", hint: "Revisar comprobante" },
+      { key: "PAYMENT_SENT", title: "Pago enviado", hint: "Confirmar pago" },
+      { key: "PAID", title: "Por despachar", hint: "Preparar envio" },
+      { key: "SHIPPED", title: "En camino", hint: "Dar seguimiento" },
+      { key: "DELIVERED", title: "Entregado", hint: "Cerrado" },
+      { key: "CANCELLED", title: "Cancelado", hint: "No operar" },
+    ],
+    []
+  );
+
+  const todayHref = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return `/api/admin/orders/export?from=${today}&to=${today}&template=${exportTemplate}`;
+  }, [exportTemplate]);
+
+  const weekHref = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now);
+    start.setDate(now.getDate() - 6);
+    return `/api/admin/orders/export?from=${start.toISOString().slice(0, 10)}&to=${now.toISOString().slice(0, 10)}&template=${exportTemplate}`;
+  }, [exportTemplate]);
 
   // ── Acciones ──────────────────────────────────────────────────────────────
 
@@ -259,6 +295,19 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
     }
   }
 
+  async function loadAudit(orderId: string) {
+    if (auditLogs[orderId]) return;
+    setBusyAuditId(orderId);
+    try {
+      const res = (await apiPost("/api/admin/orders/audit", { orderId }, { csrfCookieName: CSRF_COOKIE_NAME })) as { logs?: AuditLogRow[] };
+      setAuditLogs((prev) => ({ ...prev, [orderId]: res.logs ?? [] }));
+    } catch (e) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "No se pudo cargar auditoria"}`);
+    } finally {
+      setBusyAuditId(null);
+    }
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -270,6 +319,20 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           <p className="text-sm text-slate-500 mt-0.5">Valida pagos, actualiza estados y gestiona el flujo de entrega.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLayoutMode("flow")}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-150 ${layoutMode === "flow" ? "border-slate-900 bg-slate-900 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:bg-[var(--surface-hover)]"}`}
+          >
+            Flujo
+          </button>
+          <button
+            type="button"
+            onClick={() => setLayoutMode("list")}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-150 ${layoutMode === "list" ? "border-slate-900 bg-slate-900 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:bg-[var(--surface-hover)]"}`}
+          >
+            Lista
+          </button>
           <button
             type="button"
             onClick={() => setViewMode("active")}
@@ -379,6 +442,18 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
           <a
+            href={todayHref}
+            className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors duration-150"
+          >
+            Exportar hoy
+          </a>
+          <a
+            href={weekHref}
+            className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors duration-150"
+          >
+            Exportar semana
+          </a>
+          <a
             href={exportHref}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--brand-700)] to-[var(--brand-500)] px-4 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-brand)] hover:shadow-[0_10px_28px_rgba(31,77,31,0.35)] hover:-translate-y-0.5 transition-all duration-150"
           >
@@ -400,8 +475,46 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
         </div>
       </div>
 
+      {layoutMode === "flow" && viewMode === "active" && (
+        <div className="grid gap-3 xl:grid-cols-3 2xl:grid-cols-6">
+          {flowColumns.map((col) => {
+            const items = visibleOrders.filter((o) => o.status === col.key);
+            return (
+              <section key={col.key} className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)]">
+                <div className="border-b border-slate-100 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-black text-slate-950">{col.title}</p>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-600">{items.length}</span>
+                  </div>
+                  <p className="mt-0.5 text-xs font-semibold text-slate-500">{col.hint}</p>
+                </div>
+                <div className="grid gap-2 p-2">
+                  {items.slice(0, 4).map((o) => (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => { setExpandedId(o.id); setLayoutMode("list"); }}
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-slate-300 hover:bg-white"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs font-black text-slate-900">{o.publicCode}</span>
+                        <span className="text-xs font-black text-slate-950">{formatPEN(o.totalToPay)}</span>
+                      </div>
+                      <p className="mt-1 truncate text-xs font-semibold text-slate-500">{o.customerName || o.email || o.phone}</p>
+                      {urgencyLabel(o) && <p className="mt-1 text-[11px] font-black text-rose-600">{urgencyLabel(o)}</p>}
+                    </button>
+                  ))}
+                  {items.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs font-semibold text-slate-400">Nada pendiente</p>}
+                  {items.length > 4 && <button type="button" onClick={() => { setStatusFilter(col.key); setLayoutMode("list"); }} className="text-xs font-black text-[var(--brand-700)]">Ver {items.length - 4} mas</button>}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
       {/* Lista de pedidos */}
-      <div className="grid gap-3">
+      <div className={`grid gap-3 ${layoutMode === "flow" ? "hidden" : ""}`}>
         {visibleOrders.length === 0 && (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center">
             <svg className="h-10 w-10 mx-auto text-slate-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
@@ -528,6 +641,10 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                       <span className="text-xs text-slate-400 italic">Sin comprobante</span>
                     )}
 
+                    <Button type="button" variant="ghost" onClick={() => void loadAudit(o.id)} disabled={busyAuditId === o.id}>
+                      {busyAuditId === o.id ? "Cargando historial..." : "Ver historial"}
+                    </Button>
+
                     {viewMode === "active" ? (
                       <Button type="button" variant="ghost" onClick={() => void deleteOrder(o)} disabled={busyDeleteId === o.id}>
                         {busyDeleteId === o.id ? "Procesando..." : "Enviar a papelera"}
@@ -543,6 +660,30 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
                       </>
                     )}
                   </div>
+
+                  {auditLogs[o.id] && (
+                    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">Historial del pedido</p>
+                      {(auditLogs[o.id] ?? []).length === 0 ? (
+                        <p className="text-sm font-semibold text-slate-500">No hay eventos registrados para este pedido.</p>
+                      ) : (
+                        <div className="grid gap-2">
+                          {(auditLogs[o.id] ?? []).map((log) => (
+                            <div key={log.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-sm font-black text-slate-900">{log.action}</p>
+                                <p className="text-xs font-semibold text-slate-500">{log.createdAt}</p>
+                              </div>
+                              <p className="mt-0.5 text-xs font-semibold text-slate-500">
+                                {log.actor || "Sistema"}
+                                {log.beforeStatus || log.afterStatus ? ` / ${log.beforeStatus || "-"} -> ${log.afterStatus || "-"}` : ""}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

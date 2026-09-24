@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
-import { Input, Select } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { Input, Select } from "@/components/ui/fields";
+import { optimizedProductImage } from "@/lib/image";
 
 type Product = {
   id: string;
@@ -25,16 +25,18 @@ type Product = {
   deletedAtMs?: number | null;
 };
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+type SortMode = "name" | "price-desc" | "price-asc" | "stock-asc" | "status";
+type EditorTab = "basic" | "media" | "inventory";
+type IssueFilter = "all" | "needs-work" | "no-image" | "no-stock" | "low-stock" | "on-sale" | "archived";
+
+const PAGE_SIZE = 12;
 
 const AUDIENCE_OPTIONS: Array<{ key: Product["audience"]; label: string }> = [
   { key: "hombre", label: "Hombre" },
   { key: "mujer", label: "Mujer" },
-  { key: "ninos", label: "Niños" },
+  { key: "ninos", label: "Ninos" },
   { key: "todos", label: "Todos" },
 ];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function needsAudienceByType(productType: string): boolean {
   const t = String(productType ?? "").toLowerCase();
@@ -64,6 +66,75 @@ function emptyProduct(defaultType: string): Product {
   };
 }
 
+function normalizeProduct(product: Product): Product {
+  return {
+    ...product,
+    salePrice: product.salePrice ?? null,
+    images: Array.isArray(product.images) ? product.images : [],
+    variants: Array.isArray(product.variants) && product.variants.length ? product.variants : [{ id: "default", stock: 0 }],
+  };
+}
+
+function safeSlug(input: string): string {
+  const s = input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return s || "product";
+}
+
+function totalStock(product: Product): number {
+  return (product.variants ?? []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
+}
+
+function mainImage(product: Product): string {
+  return product.images?.find((image) => image.isMain)?.url ?? product.images?.[0]?.url ?? "";
+}
+
+function money(value: number | null | undefined): string {
+  return `S/ ${Number(value ?? 0).toFixed(2)}`;
+}
+
+function productIssues(product: Product): string[] {
+  const issues: string[] = [];
+  const stock = totalStock(product);
+  if (!product.name.trim()) issues.push("Sin nombre");
+  if (!product.brand.trim()) issues.push("Sin marca");
+  if (!product.images.length) issues.push("Sin imagen");
+  if (!product.variants.length) issues.push("Sin variantes");
+  if (stock <= 0) issues.push("Sin stock");
+  else if (stock <= 3) issues.push("Bajo stock");
+  if (Number(product.price || 0) <= 0) issues.push("Sin precio");
+  if (product.onSale && (!product.salePrice || Number(product.salePrice) <= 0)) issues.push("Oferta incompleta");
+  return issues;
+}
+
+function isIncomplete(product: Product): boolean {
+  return productIssues(product).some((issue) => !["Bajo stock"].includes(issue));
+}
+
+function issueTone(issue: string): string {
+  if (issue.includes("Sin stock") || issue.includes("Sin precio") || issue.includes("Sin imagen")) return "border-rose-200 bg-rose-50 text-rose-700";
+  if (issue.includes("Bajo") || issue.includes("Oferta")) return "border-amber-200 bg-amber-50 text-amber-700";
+  return "border-slate-200 bg-slate-50 text-slate-600";
+}
+
+function validateDraft(draft: Product): string[] {
+  const errors: string[] = [];
+  const slug = draft.slug.trim();
+  if (slug.length < 2) errors.push("El slug es obligatorio.");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) errors.push("El slug debe estar en kebab-case.");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test((draft.productType ?? "").trim())) errors.push("El tipo debe estar en kebab-case.");
+  if (needsAudienceByType(draft.productType) && !draft.audience) errors.push("Elige publico objetivo.");
+  if ((draft.name ?? "").trim().length < 2) errors.push("El nombre es obligatorio.");
+  if (!Number.isFinite(Number(draft.price)) || Number(draft.price) < 0) errors.push("El precio debe ser valido.");
+  if (draft.onSale && (draft.salePrice === null || Number(draft.salePrice) <= 0)) errors.push("Agrega un precio de oferta valido.");
+  if (!Array.isArray(draft.variants) || draft.variants.length === 0) errors.push("Agrega al menos una variante.");
+  return errors;
+}
+
 async function fileToWebp(file: File, maxSize = 1000, quality = 0.82): Promise<{ blob: Blob; width: number; height: number }> {
   const img = document.createElement("img");
   const url = URL.createObjectURL(file);
@@ -89,24 +160,6 @@ async function fileToWebp(file: File, maxSize = 1000, quality = 0.82): Promise<{
   return { blob, width: w, height: h };
 }
 
-function safeSlug(input: string): string {
-  const s = input.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-  return s || "product";
-}
-
-function validateDraft(draft: Product): string[] {
-  const errors: string[] = [];
-  const slug = draft.slug.trim();
-  if (slug.length < 2) errors.push("El slug es obligatorio (mínimo 2 caracteres).");
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) errors.push("El slug debe estar en formato kebab-case (ejemplo: nike-air-max).");
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test((draft.productType ?? "").trim())) errors.push("El tipo de producto debe estar en kebab-case.");
-  if (needsAudienceByType(draft.productType) && !draft.audience) errors.push("Debes elegir público objetivo para ropa/zapatillas.");
-  if ((draft.name ?? "").trim().length < 2) errors.push("El nombre es obligatorio.");
-  if (!Number.isFinite(Number(draft.price)) || Number(draft.price) < 0) errors.push("El precio debe ser un número válido.");
-  if (!Array.isArray(draft.variants) || draft.variants.length === 0) errors.push("Agrega al menos una variante.");
-  return errors;
-}
-
 async function uploadToCloudinary(blob: Blob, slug: string, filename: string): Promise<string> {
   const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "").trim();
   const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
@@ -118,165 +171,255 @@ async function uploadToCloudinary(blob: Blob, slug: string, filename: string): P
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: form });
   const text = await res.text();
   let json: any = null;
-  try { json = text ? JSON.parse(text) : null; } catch { }
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {}
   if (!res.ok) throw new Error(`CLOUDINARY_UPLOAD_FAILED: ${json?.error?.message ?? `HTTP_${res.status}`}`);
   const secureUrl = typeof json?.secure_url === "string" ? json.secure_url : "";
   if (!secureUrl) throw new Error("CLOUDINARY_NO_URL");
   return secureUrl;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 function Toast({ msg, onClose }: { msg: string; onClose: () => void }) {
   const isError = msg.toLowerCase().startsWith("error") || msg.toLowerCase().includes("revisa");
   return (
-    <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-medium shadow-[var(--shadow-elevated)] fade-in ${isError ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
-      <span className="mt-0.5 shrink-0">
-        {isError ? (
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        ) : (
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        )}
-      </span>
-      <span className="flex-1">{msg}</span>
-      <button type="button" onClick={onClose} className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-      </button>
+    <div className={`whitespace-pre-line rounded-lg border px-4 py-3 text-sm font-semibold shadow-sm ${isError ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
+      <div className="flex gap-3">
+        <span className="flex-1">{msg}</span>
+        <button type="button" onClick={onClose} className="opacity-60 hover:opacity-100" aria-label="Cerrar aviso">
+          x
+        </button>
+      </div>
     </div>
   );
 }
 
-function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle?: string }) {
+function Metric({ label, value, tone = "slate" }: { label: string; value: string | number; tone?: "slate" | "green" | "rose" | "blue" }) {
+  const accent = {
+    slate: "before:bg-slate-400",
+    green: "before:bg-emerald-500",
+    rose: "before:bg-rose-500",
+    blue: "before:bg-blue-500",
+  }[tone];
+
   return (
-    <div className="flex items-center gap-3 pb-3 border-b border-slate-100 mb-4">
-      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--brand-50)] text-[var(--brand-600)]">
-        {icon}
-      </div>
-      <div>
-        <p className="text-sm font-bold text-slate-900">{title}</p>
-        {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
-      </div>
+    <div className={`relative overflow-hidden rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm before:absolute before:left-0 before:top-0 before:h-full before:w-1 ${accent}`}>
+      <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-black tabular-nums text-slate-950">{value}</p>
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-4 border-b border-slate-100 pb-3">
+        <h3 className="text-sm font-black text-slate-950">{title}</h3>
+        {subtitle && <p className="mt-1 text-xs font-semibold text-slate-500">{subtitle}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default function ProductsClient({
   initialProducts,
   initialProductTypes,
+  initialSelectedId,
 }: {
   initialProducts: Product[];
   initialProductTypes: { key: string; label: string }[];
+  initialSelectedId?: string;
 }) {
   const fallbackTypes = useMemo(
     () =>
       initialProductTypes.length
         ? initialProductTypes
         : [
-          { key: "zapatillas", label: "Zapatillas" },
-          { key: "ropa", label: "Ropa" },
-          { key: "accesorios", label: "Accesorios" },
-        ],
+            { key: "zapatillas", label: "Zapatillas" },
+            { key: "ropa", label: "Ropa" },
+            { key: "accesorios", label: "Accesorios" },
+          ],
     [initialProductTypes]
   );
 
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [selectedId, setSelectedId] = useState<string>("");
+  const [products, setProducts] = useState<Product[]>(initialProducts.map(normalizeProduct));
+  const [selectedId, setSelectedId] = useState(initialSelectedId ?? "");
   const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("");
-  const [draft, setDraft] = useState<Product>(() => emptyProduct(fallbackTypes[0]?.key ?? "zapatillas"));
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | Product["status"]>("");
+  const [issueFilter, setIssueFilter] = useState<IssueFilter>("all");
+  const [sortMode, setSortMode] = useState<SortMode>("name");
+  const [viewMode, setViewMode] = useState<"active" | "trash">("active");
+  const [editorTab, setEditorTab] = useState<EditorTab>("basic");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [draft, setDraft] = useState<Product>(() => {
+    const selected = initialProducts.find((product) => product.id === initialSelectedId);
+    return selected ? normalizeProduct(selected) : emptyProduct(fallbackTypes[0]?.key ?? "zapatillas");
+  });
   const [busy, setBusy] = useState(false);
   const [busyDelete, setBusyDelete] = useState(false);
   const [busyBulkTrash, setBusyBulkTrash] = useState(false);
-  const [viewMode, setViewMode] = useState<"active" | "trash">("active");
   const [msg, setMsg] = useState<string | null>(null);
 
   const selected = useMemo(() => products.find((p) => p.id === selectedId) ?? null, [products, selectedId]);
   const activeProducts = useMemo(() => products.filter((p) => !p.deletedAtMs), [products]);
   const trashedProducts = useMemo(() => products.filter((p) => !!p.deletedAtMs), [products]);
   const baseProducts = viewMode === "active" ? activeProducts : trashedProducts;
+  const activeVisibleCount = useMemo(() => activeProducts.filter((p) => p.status === "active").length, [activeProducts]);
+  const archivedCount = useMemo(() => activeProducts.filter((p) => p.status === "archived").length, [activeProducts]);
+  const noImageCount = useMemo(() => activeProducts.filter((p) => p.images.length === 0).length, [activeProducts]);
+  const noStockCount = useMemo(() => activeProducts.filter((p) => totalStock(p) <= 0).length, [activeProducts]);
+  const lowStockCount = useMemo(() => activeProducts.filter((p) => totalStock(p) > 0 && totalStock(p) <= 3).length, [activeProducts]);
+  const incompleteCount = useMemo(() => activeProducts.filter(isIncomplete).length, [activeProducts]);
+  const onSaleCount = useMemo(() => activeProducts.filter((p) => p.onSale).length, [activeProducts]);
+  const draftStock = totalStock(draft);
+  const draftIssues = productIssues(draft);
+
   const typeCounts = useMemo(() => {
     const map = new Map<string, number>();
     for (const p of baseProducts) map.set(p.productType, (map.get(p.productType) ?? 0) + 1);
     return map;
   }, [baseProducts]);
-  const activeCount = useMemo(() => activeProducts.filter((p) => p.status === "active").length, [activeProducts]);
-
-  const filteredProducts = useMemo(() => {
-    const token = query.trim().toLowerCase();
-    return baseProducts.filter((p) => {
-      if (typeFilter && p.productType !== typeFilter) return false;
-      if (!token) return true;
-      return [p.slug, p.name, p.brand, p.category, p.productType, p.audience].some((x) => (x ?? "").toLowerCase().includes(token));
-    });
-  }, [baseProducts, query, typeFilter]);
 
   const typeOptions = useMemo(() => {
     const fromSettings = fallbackTypes.map((t) => ({ key: t.key, label: t.label }));
     const existingKeys = new Set(fromSettings.map((x) => x.key));
-    const dynamic = Array.from(typeCounts.keys()).filter((k) => !existingKeys.has(k)).map((k) => ({ key: k, label: k }));
+    const dynamic = Array.from(typeCounts.keys())
+      .filter((key) => !existingKeys.has(key))
+      .map((key) => ({ key, label: key }));
     return [...fromSettings, ...dynamic];
   }, [fallbackTypes, typeCounts]);
 
-  function loadSelected() {
-    if (!selected) return;
-    setDraft({
-      ...selected,
-      salePrice: selected.salePrice ?? null,
-      images: Array.isArray(selected.images) ? selected.images : [],
-      variants: Array.isArray(selected.variants) ? selected.variants : [{ id: "default", stock: 0 }],
+  const filteredProducts = useMemo(() => {
+    const token = query.trim().toLowerCase();
+    const filtered = baseProducts.filter((p) => {
+      if (typeFilter && p.productType !== typeFilter) return false;
+      if (statusFilter && p.status !== statusFilter) return false;
+      if (issueFilter === "needs-work" && !isIncomplete(p)) return false;
+      if (issueFilter === "no-image" && p.images.length > 0) return false;
+      if (issueFilter === "no-stock" && totalStock(p) > 0) return false;
+      if (issueFilter === "low-stock") {
+        const stock = totalStock(p);
+        if (stock <= 0 || stock > 3) return false;
+      }
+      if (issueFilter === "on-sale" && !p.onSale) return false;
+      if (issueFilter === "archived" && p.status !== "archived") return false;
+      if (!token) return true;
+      return [p.slug, p.name, p.brand, p.category, p.productType, p.audience, String(p.price)].some((x) =>
+        (x ?? "").toLowerCase().includes(token)
+      );
     });
+
+    return filtered.sort((a, b) => {
+      if (sortMode === "price-desc") return Number(b.price || 0) - Number(a.price || 0);
+      if (sortMode === "price-asc") return Number(a.price || 0) - Number(b.price || 0);
+      if (sortMode === "stock-asc") return totalStock(a) - totalStock(b);
+      if (sortMode === "status") return a.status.localeCompare(b.status) || (a.name || a.slug).localeCompare(b.name || b.slug);
+      return (a.name || a.slug).localeCompare(b.name || b.slug);
+    });
+  }, [baseProducts, issueFilter, query, sortMode, statusFilter, typeFilter]);
+
+  const visibleProducts = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
+  const criticalProducts = useMemo(() => activeProducts.filter(isIncomplete).slice(0, 5), [activeProducts]);
+
+  function resetFilters() {
+    setQuery("");
+    setTypeFilter("");
+    setStatusFilter("");
+    setIssueFilter("all");
+    setVisibleCount(PAGE_SIZE);
+  }
+
+  function applyIssueFilter(next: IssueFilter) {
+    setIssueFilter(next);
+    setVisibleCount(PAGE_SIZE);
+  }
+
+  function selectProduct(product: Product) {
+    setSelectedId(product.id);
+    setDraft(normalizeProduct(product));
+    setEditorTab("basic");
+    setMsg(null);
+  }
+
+  function startNew() {
+    setSelectedId("");
+    setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas"));
+    setEditorTab("basic");
     setMsg(null);
   }
 
   async function save() {
     const errs = validateDraft(draft);
-    if (errs.length) { setMsg(`Revisa estos campos:\n${errs.join("\n")}`); return; }
+    if (errs.length) {
+      setMsg(`Revisa estos campos:\n${errs.join("\n")}`);
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {
       const payload = {
-        productType: draft.productType, audience: draft.audience, slug: draft.slug, status: draft.status,
-        name: draft.name, description: draft.description, brand: draft.brand, category: draft.category,
-        price: Number(draft.price), onSale: Boolean(draft.onSale),
+        productType: draft.productType,
+        audience: draft.audience,
+        slug: draft.slug,
+        status: draft.status,
+        name: draft.name,
+        description: draft.description,
+        brand: draft.brand,
+        category: draft.category,
+        price: Number(draft.price),
+        onSale: Boolean(draft.onSale),
         salePrice: draft.salePrice === null ? undefined : Number(draft.salePrice),
         images: draft.images.map((x, idx) => ({ ...x, order: idx })),
         variants: draft.variants.map((v) => ({ ...v, stock: Number(v.stock) })),
       };
       await apiPost("/api/admin/products/upsert", payload, { csrfCookieName: CSRF_COOKIE_NAME });
-      setMsg("Producto guardado correctamente.");
+      const nextItem = normalizeProduct({ ...draft, id: draft.slug });
       setProducts((prev) => {
-        const exists = prev.find((p) => p.id === draft.slug);
-        const nextItem: Product = { ...draft, id: draft.slug };
-        if (exists) return prev.map((p) => (p.id === draft.slug ? nextItem : p));
+        const previousId = selectedId || draft.slug;
+        const exists = prev.some((p) => p.id === previousId || p.id === draft.slug);
+        if (exists) return prev.map((p) => (p.id === previousId || p.id === draft.slug ? nextItem : p));
         return [nextItem, ...prev];
       });
       setSelectedId(draft.slug);
+      setDraft(nextItem);
+      setMsg("Producto guardado correctamente.");
     } catch (e) {
       const m = e instanceof Error ? e.message : "Error";
-      setMsg(m === "VALIDATION_ERROR" ? "Error de validación. Revisa tipo, slug, nombre, precio y variantes." : `Error: ${m}`);
-    } finally { setBusy(false); }
+      setMsg(m === "VALIDATION_ERROR" ? "Error de validacion. Revisa tipo, slug, nombre, precio y variantes." : `Error: ${m}`);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onPickImage(file: File) {
     setMsg(null);
     try {
-      const slug = safeSlug(draft.slug);
+      const slug = safeSlug(draft.slug || draft.name);
       const filename = `${slug}-${Date.now()}.webp`;
       setMsg("Subiendo imagen...");
       let blob: Blob = file;
-      let width = 0, height = 0;
+      let width = 0;
+      let height = 0;
       let sizeKB = Math.round(file.size / 1024);
       let converted = false;
       try {
         const conv = await fileToWebp(file);
-        blob = conv.blob; width = conv.width; height = conv.height;
-        sizeKB = Math.round(conv.blob.size / 1024); converted = true;
-      } catch (convErr) { console.warn("WebP conversion failed", convErr); }
+        blob = conv.blob;
+        width = conv.width;
+        height = conv.height;
+        sizeKB = Math.round(conv.blob.size / 1024);
+        converted = true;
+      } catch (convErr) {
+        console.warn("WebP conversion failed", convErr);
+      }
       const url = await uploadToCloudinary(blob, slug, filename);
-      setDraft((d) => ({ ...d, images: [...d.images, { url, isMain: d.images.length === 0, order: d.images.length, alt: d.name || d.slug }] }));
-      setMsg(`Imagen subida a Cloudinary (${width}x${height}, ~${sizeKB}KB).${converted ? " Convertida a WebP." : ""}`);
+      setDraft((d) => ({
+        ...d,
+        images: [...d.images, { url, isMain: d.images.length === 0, order: d.images.length, alt: d.name || d.slug }],
+      }));
+      setMsg(`Imagen subida (${width}x${height}, ${sizeKB}KB).${converted ? " Convertida a WebP." : ""}`);
     } catch (e) {
       setMsg(`Error de imagen: ${e instanceof Error ? e.message : "No se pudo subir"}`);
     }
@@ -284,402 +427,684 @@ export default function ProductsClient({
 
   async function deleteSelected() {
     if (!selected) return;
-    if (selected.status !== "archived") { setMsg("Para eliminar, primero cambia estado a Archivado y guarda."); return; }
+    if (selected.status !== "archived") {
+      setMsg("Para mover a papelera, primero cambia el estado a Archivado y guarda.");
+      return;
+    }
     if (!window.confirm(`Mover producto ${selected.slug} a papelera?`)) return;
-    setBusyDelete(true); setMsg(null);
+    setBusyDelete(true);
+    setMsg(null);
     try {
       await apiPost("/api/admin/products/delete", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
       setProducts((prev) => prev.map((p) => (p.id === selected.id ? { ...p, deletedAtMs: Date.now() } : p)));
-      setSelectedId(""); setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas"));
+      startNew();
       setMsg(`Producto ${selected.slug} enviado a papelera.`);
-    } catch (e) { setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`); } finally { setBusyDelete(false); }
+    } catch (e) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`);
+    } finally {
+      setBusyDelete(false);
+    }
   }
 
   async function restoreSelected() {
-    if (!selected || !selected.deletedAtMs) { setMsg("El producto no está en papelera."); return; }
+    if (!selected || !selected.deletedAtMs) {
+      setMsg("El producto no esta en papelera.");
+      return;
+    }
     if (!window.confirm(`Restaurar producto ${selected.slug}?`)) return;
-    setBusyDelete(true); setMsg(null);
+    setBusyDelete(true);
+    setMsg(null);
     try {
       await apiPost("/api/admin/products/restore", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
-      setProducts((prev) => prev.map((p) => (p.id === selected.id ? { ...p, deletedAtMs: null } : p)));
+      const restored = { ...selected, deletedAtMs: null };
+      setProducts((prev) => prev.map((p) => (p.id === selected.id ? restored : p)));
+      setDraft(restored);
       setMsg(`Producto ${selected.slug} restaurado.`);
-    } catch (e) { setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`); } finally { setBusyDelete(false); }
-  }
-
-  async function bulkTrashArchived() {
-    if (!window.confirm("Mover a papelera productos archivados del filtro actual?")) return;
-    setBusyBulkTrash(true); setMsg(null);
-    try {
-      const res = await apiPost("/api/admin/products/bulk-delete", { status: "archived", productType: typeFilter || undefined, limit: 500 }, { csrfCookieName: CSRF_COOKIE_NAME }) as { processed?: number };
-      setMsg(`Productos enviados a papelera: ${res?.processed ?? 0}.`);
-    } catch (e) { setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`); } finally { setBusyBulkTrash(false); }
+    } catch (e) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`);
+    } finally {
+      setBusyDelete(false);
+    }
   }
 
   async function purgeSelected() {
-    if (!selected || !selected.deletedAtMs) { setMsg("Solo puedes eliminar definitivo desde la papelera."); return; }
+    if (!selected || !selected.deletedAtMs) {
+      setMsg("Solo puedes eliminar definitivamente desde la papelera.");
+      return;
+    }
     if (!window.confirm(`Eliminar definitivamente producto ${selected.slug}?`)) return;
-    setBusyDelete(true); setMsg(null);
+    setBusyDelete(true);
+    setMsg(null);
     try {
       await apiPost("/api/admin/products/purge", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
       setProducts((prev) => prev.filter((p) => p.id !== selected.id));
-      setSelectedId(""); setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas"));
+      startNew();
       setMsg(`Producto ${selected.slug} eliminado definitivamente.`);
-    } catch (e) { setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`); } finally { setBusyDelete(false); }
+    } catch (e) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`);
+    } finally {
+      setBusyDelete(false);
+    }
+  }
+
+  async function bulkTrashArchived() {
+    if (!window.confirm("Mover a papelera los productos archivados del filtro actual?")) return;
+    setBusyBulkTrash(true);
+    setMsg(null);
+    try {
+      const targetIds = filteredProducts.filter((p) => p.status === "archived").map((p) => p.id);
+      const res = (await apiPost(
+        "/api/admin/products/bulk-delete",
+        { status: "archived", productType: typeFilter || undefined, limit: 500 },
+        { csrfCookieName: CSRF_COOKIE_NAME }
+      )) as { processed?: number };
+      setProducts((prev) => prev.map((p) => (targetIds.includes(p.id) ? { ...p, deletedAtMs: Date.now() } : p)));
+      if (selectedId && targetIds.includes(selectedId)) startNew();
+      setMsg(`Productos enviados a papelera: ${res?.processed ?? targetIds.length}.`);
+    } catch (e) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`);
+    } finally {
+      setBusyBulkTrash(false);
+    }
   }
 
   async function bulkPurgeTrash() {
-    if (!window.confirm("Eliminar definitivamente productos en papelera?")) return;
-    setBusyBulkTrash(true); setMsg(null);
+    if (!window.confirm("Eliminar definitivamente los productos en papelera?")) return;
+    setBusyBulkTrash(true);
+    setMsg(null);
     try {
-      const res = await apiPost("/api/admin/products/bulk-purge", { olderThanDays: 0, limit: 500 }, { csrfCookieName: CSRF_COOKIE_NAME }) as { processed?: number };
-      setMsg(`Productos eliminados definitivamente: ${res?.processed ?? 0}.`);
-    } catch (e) { setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`); } finally { setBusyBulkTrash(false); }
+      const targetIds = trashedProducts.map((p) => p.id);
+      const res = (await apiPost(
+        "/api/admin/products/bulk-purge",
+        { olderThanDays: 0, limit: 500 },
+        { csrfCookieName: CSRF_COOKIE_NAME }
+      )) as { processed?: number };
+      setProducts((prev) => prev.filter((p) => !targetIds.includes(p.id)));
+      if (selectedId && targetIds.includes(selectedId)) startNew();
+      setMsg(`Productos eliminados definitivamente: ${res?.processed ?? targetIds.length}.`);
+    } catch (e) {
+      setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`);
+    } finally {
+      setBusyBulkTrash(false);
+    }
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-  return (
-    <div className="grid xl:grid-cols-[300px_1fr] gap-5">
+  const currentImage = mainImage(draft);
 
-      {/* ── Sidebar: lista de productos ── */}
-      <aside className="flex flex-col gap-3 h-fit">
-        {/* KPIs compactos */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center">
-            <p className="text-xs font-semibold text-emerald-600 mb-1">Activos</p>
-            <p className="text-2xl font-black text-emerald-700">{activeCount}</p>
+  return (
+    <div className="grid gap-4">
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-emerald-700">Catalogo administrativo</p>
+            <h1 className="mt-1 text-2xl font-black text-slate-950">Productos</h1>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Gestiona visibilidad, precios, stock e imagenes desde una vista de operacion.
+            </p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
-            <p className="text-xs font-semibold text-slate-500 mb-1">Visibles</p>
-            <p className="text-2xl font-black text-slate-700">{baseProducts.length}</p>
+          <div className="grid gap-2 sm:grid-cols-2 xl:w-[380px]">
+            <Button type="button" onClick={startNew} variant="primary" size="md">
+              Nuevo producto
+            </Button>
+            {viewMode === "active" ? (
+              <Button type="button" variant="secondary" size="md" onClick={() => void bulkTrashArchived()} disabled={busyBulkTrash}>
+                {busyBulkTrash ? "Procesando..." : "Enviar archivados"}
+              </Button>
+            ) : (
+              <Button type="button" variant="destructive" size="md" onClick={() => void bulkPurgeTrash()} disabled={busyBulkTrash}>
+                {busyBulkTrash ? "Procesando..." : "Vaciar papelera"}
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Controles */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[var(--shadow-card)]">
-          <div className="grid gap-2 mb-3">
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por nombre o slug" className="pl-9" uiSize="sm" />
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          <Metric label="Publicados" value={activeVisibleCount} tone="green" />
+          <Metric label="Archivados" value={archivedCount} />
+          <Metric label="Sin imagen" value={noImageCount} tone={noImageCount ? "rose" : "slate"} />
+          <Metric label="Sin stock" value={noStockCount} tone={noStockCount ? "rose" : "slate"} />
+          <Metric label="Bajo stock" value={lowStockCount} tone={lowStockCount ? "rose" : "slate"} />
+          <Metric label="Papelera" value={trashedProducts.length} tone="blue" />
+        </div>
+      </section>
+
+      {msg && <Toast msg={msg} onClose={() => setMsg(null)} />}
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-slate-500">Control de catálogo</p>
+            <h2 className="mt-1 text-lg font-black text-slate-950">
+              {incompleteCount > 0 ? "Corrige primero lo que bloquea la venta" : "Catalogo sin bloqueos graves"}
+            </h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">
+              Los productos con solo bajo stock no se mezclan aqui; se revisan aparte para no confundir prioridades.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => applyIssueFilter("needs-work")} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black text-rose-700 hover:bg-rose-100">
+              Corregir graves ({incompleteCount})
+            </button>
+            <button type="button" onClick={() => applyIssueFilter("low-stock")} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 hover:bg-amber-100">
+              Reponer bajo stock ({lowStockCount})
+            </button>
+            <button type="button" onClick={() => applyIssueFilter("no-image")} className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100">
+              Subir imagenes ({noImageCount})
+            </button>
+          </div>
+        </div>
+
+        {criticalProducts.length > 0 ? (
+          <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+            <div className="grid grid-cols-[1fr_150px_130px] bg-slate-50 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-slate-500">
+              <span>Producto</span>
+              <span>Problema</span>
+              <span className="text-right">Accion</span>
             </div>
-            <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} uiSize="sm">
-              <option value="">Todos los tipos</option>
-              {typeOptions.map((t) => (
-                <option key={t.key} value={t.key}>{t.label} ({typeCounts.get(t.key) ?? 0})</option>
-              ))}
-            </Select>
+            <div className="divide-y divide-slate-100">
+              {criticalProducts.map((p) => {
+                const mainIssue = productIssues(p).find((issue) => issue !== "Bajo stock") ?? "Revisar";
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => selectProduct(p)}
+                    className={`grid w-full grid-cols-[1fr_150px_130px] items-center gap-3 px-3 py-3 text-left transition hover:bg-slate-50 ${selectedId === p.id ? "bg-emerald-50" : "bg-white"}`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-black text-slate-950">{p.name || p.slug}</span>
+                      <span className="block text-xs font-semibold text-slate-500">Stock {totalStock(p)} / {p.images.length} imagen(es)</span>
+                    </span>
+                    <span className={`w-fit rounded-full border px-2 py-0.5 text-[11px] font-black ${issueTone(mainIssue)}`}>{mainIssue}</span>
+                    <span className="text-right text-xs font-black text-[var(--brand-700)]">{selectedId === p.id ? "Editando" : "Abrir editor"}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+            No hay productos sin imagen, sin stock, sin precio o sin variantes. Solo queda mantenimiento normal de inventario.
+          </div>
+        )}
+      </section>
+
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 bg-slate-50/70 p-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <p className="text-sm font-black text-slate-950">Inventario del catalogo</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                {filteredProducts.length} de {baseProducts.length} productos visibles con los filtros actuales.
+              </p>
+            </div>
+            {(query || typeFilter || statusFilter || issueFilter !== "all") && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+              >
+                Limpiar filtros
+              </button>
+            )}
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-3">
-            <button type="button" onClick={() => setViewMode("active")} className={`flex-1 rounded-xl border py-2 text-xs font-bold transition-all duration-150 ${viewMode === "active" ? "border-[var(--brand-400)] bg-[var(--brand-50)] text-[var(--brand-700)]" : "border-slate-200 bg-white text-slate-600 hover:bg-[var(--surface-hover)]"}`}>
-              Activos ({activeProducts.length})
+          <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(280px,1fr)_180px_180px_180px]">
+            <label className="grid gap-1 text-xs font-black text-slate-600">
+              Buscar
+              <Input value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(PAGE_SIZE); }} placeholder="Nombre, marca, slug o precio" uiSize="md" />
+            </label>
+            <label className="grid gap-1 text-xs font-black text-slate-600">
+              Tipo
+              <Select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setVisibleCount(PAGE_SIZE); }} uiSize="md">
+                <option value="">Todos los tipos</option>
+                {typeOptions.map((t) => (
+                  <option key={t.key} value={t.key}>
+                    {t.label} ({typeCounts.get(t.key) ?? 0})
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className="grid gap-1 text-xs font-black text-slate-600">
+              Estado
+              <Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as "" | Product["status"]); setVisibleCount(PAGE_SIZE); }} uiSize="md">
+                <option value="">Todo estado</option>
+                <option value="active">Activo</option>
+                <option value="archived">Archivado</option>
+              </Select>
+            </label>
+            <label className="grid gap-1 text-xs font-black text-slate-600">
+              Orden
+              <Select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)} uiSize="md">
+                <option value="name">Nombre</option>
+                <option value="stock-asc">Menor stock</option>
+                <option value="price-desc">Precio mayor</option>
+                <option value="price-asc">Precio menor</option>
+                <option value="status">Estado</option>
+              </Select>
+            </label>
+          </div>
+
+          <div className="mt-4 inline-grid grid-cols-2 rounded-lg border border-slate-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("active")}
+              className={`rounded-md px-4 py-2 text-xs font-black transition ${viewMode === "active" ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:text-slate-950"}`}
+            >
+              Catalogo ({activeProducts.length})
             </button>
-            <button type="button" onClick={() => setViewMode("trash")} className={`flex-1 rounded-xl border py-2 text-xs font-bold transition-all duration-150 ${viewMode === "trash" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-slate-200 bg-white text-slate-600 hover:bg-[var(--surface-hover)]"}`}>
+            <button
+              type="button"
+              onClick={() => setViewMode("trash")}
+              className={`rounded-md px-4 py-2 text-xs font-black transition ${viewMode === "trash" ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:text-slate-950"}`}
+            >
               Papelera ({trashedProducts.length})
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" size="sm" onClick={() => { setSelectedId(""); setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas")); setMsg(null); }}>
-              + Nuevo
-            </Button>
-            <Button type="button" variant="secondary" size="sm" disabled={!selected} onClick={loadSelected}>
-              Cargar
-            </Button>
-            {viewMode === "active" ? (
-              <Button type="button" variant="ghost" size="sm" onClick={() => void bulkTrashArchived()} disabled={busyBulkTrash}>
-                {busyBulkTrash ? "..." : "Masivo papelera"}
-              </Button>
-            ) : (
-              <Button type="button" variant="ghost" size="sm" onClick={() => void bulkPurgeTrash()} disabled={busyBulkTrash}>
-                {busyBulkTrash ? "..." : "Vaciar papelera"}
-              </Button>
-            )}
+          <div className="mt-4 border-t border-slate-200 pt-4">
+            <p className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">Filtros utiles</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                ["all", `Todos (${baseProducts.length})`],
+                ["needs-work", `Por corregir (${incompleteCount})`],
+                ["no-image", `Sin imagen (${noImageCount})`],
+                ["no-stock", `Sin stock (${noStockCount})`],
+                ["low-stock", `Bajo stock (${lowStockCount})`],
+                ["on-sale", `En oferta (${onSaleCount})`],
+                ["archived", `Archivados (${archivedCount})`],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => applyIssueFilter(key as IssueFilter)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-black transition ${
+                    issueFilter === key
+                      ? "border-slate-950 bg-slate-950 text-white shadow-sm"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Lista visual de productos */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] overflow-hidden">
-          <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Lista ({filteredProducts.length})</p>
-          </div>
-          <div className="max-h-[55vh] overflow-y-auto divide-y divide-slate-50">
-            {filteredProducts.length === 0 && (
-              <div className="p-4 text-center text-xs text-slate-400">Sin productos con esos filtros</div>
-            )}
-            {filteredProducts.map((p) => {
-              const isSelected = p.id === selectedId;
-              const mainImg = p.images?.find((i) => i.isMain)?.url ?? p.images?.[0]?.url ?? "";
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setSelectedId(p.id)}
-                  className={`w-full text-left flex items-center gap-3 px-3 py-2.5 transition-all duration-100 ${isSelected ? "bg-[var(--brand-50)] border-l-2 border-[var(--brand-500)]" : "hover:bg-[var(--surface-muted)]"}`}
-                >
-                  {/* Miniatura */}
-                  <div className="h-10 w-10 rounded-lg overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                    {mainImg ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={mainImg} alt={p.name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                    ) : (
-                      <div className="h-full w-full grid place-items-center text-xs text-slate-300">?</div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{p.name || p.slug}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-bold border ${p.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
+        <div className="max-h-[520px] overflow-auto">
+          <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-sm">
+            <thead className="sticky top-0 z-10 bg-white text-left text-[11px] font-black uppercase tracking-wide text-slate-500 shadow-[inset_0_-1px_0_#e2e8f0]">
+              <tr>
+                <th className="px-4 py-3">Producto</th>
+                <th className="px-3 py-3">Categoria</th>
+                <th className="px-3 py-3">Estado</th>
+                <th className="px-3 py-3 text-right">Stock</th>
+                <th className="px-3 py-3">Revision</th>
+                <th className="px-3 py-3 text-right">Precio</th>
+                <th className="px-4 py-3 text-right">Edicion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProducts.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">
+                    No hay productos con esos filtros.
+                  </td>
+                </tr>
+              )}
+              {visibleProducts.map((p) => {
+                const isSelected = p.id === selectedId;
+                const stock = totalStock(p);
+                const issues = productIssues(p);
+                return (
+                  <tr key={p.id} onClick={() => selectProduct(p)} className={`cursor-pointer transition ${isSelected ? "bg-emerald-50" : "bg-white hover:bg-slate-50"}`}>
+                    <td className="border-b border-slate-100 px-4 py-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                          {mainImage(p) ? (
+                            <Image
+                              src={optimizedProductImage(mainImage(p), 160)}
+                              alt={p.name || p.slug}
+                              fill
+                              unoptimized
+                              sizes="48px"
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="grid h-full place-items-center text-[10px] font-black text-slate-300">IMG</div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-black text-slate-950">{p.name || p.slug}</p>
+                          <p className="mt-1 truncate text-xs font-semibold text-slate-500">{p.brand || "Sin marca"}</p>
+                          <p className="mt-0.5 truncate font-mono text-[11px] text-slate-400">{p.slug}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-3">
+                      <p className="text-xs font-black text-slate-700">{p.productType}</p>
+                      <p className="mt-1 text-[11px] font-semibold text-slate-400">{p.audience}</p>
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-3">
+                      <span className={`inline-flex min-w-[78px] justify-center rounded-full border px-2 py-1 text-[11px] font-black ${p.status === "active" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-100 text-slate-600"}`}>
                         {p.status === "active" ? "Activo" : "Archivado"}
                       </span>
-                      <span className="text-[10px] text-slate-400 truncate">{p.productType}</span>
-                      {p.deletedAtMs && <span className="text-[10px] text-rose-500 font-bold">Papelera</span>}
-                    </div>
-                  </div>
-                  <p className="text-xs font-bold text-slate-700 tabular-nums shrink-0">S/{p.price}</p>
-                </button>
-              );
-            })}
-          </div>
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-3 text-right">
+                      <span className={`inline-flex min-w-10 justify-center rounded-lg px-2.5 py-1.5 text-sm font-black tabular-nums ${stock <= 3 ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-800"}`}>
+                        {stock}
+                      </span>
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-3">
+                      {issues.length === 0 ? (
+                        <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-black text-emerald-700">
+                          Completo
+                        </span>
+                      ) : (
+                        <div className="flex max-w-[260px] flex-wrap gap-1.5">
+                          {issues.slice(0, 3).map((issue) => (
+                            <span key={issue} className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${issueTone(issue)}`}>
+                              {issue}
+                            </span>
+                          ))}
+                          {issues.length > 3 && (
+                            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-black text-slate-500">+{issues.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-3 text-right">
+                      <p className="font-black tabular-nums text-slate-950">{money(p.onSale ? p.salePrice : p.price)}</p>
+                      {p.onSale && <p className="text-[11px] font-black text-rose-600">Oferta</p>}
+                    </td>
+                    <td className="border-b border-slate-100 px-4 py-3 text-right">
+                      <span className={`inline-flex min-w-[76px] justify-center rounded-lg px-3 py-2 text-xs font-black ${isSelected ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-600"}`}>
+                        {isSelected ? "Editando" : "Editar"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      </aside>
-
-      {/* ── Editor de producto ── */}
-      <div className="flex flex-col gap-4">
-        {/* Header del editor */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">
-              {selectedId ? "Editar producto" : "Nuevo producto"}
-            </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
-              {selectedId ? `Editando: ${selected?.name || selected?.slug || "—"}` : "Crea un nuevo producto con variantes e imágenes."}
+        {filteredProducts.length > PAGE_SIZE && (
+          <div className="flex flex-col gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs font-semibold text-slate-500">
+              Mostrando {Math.min(visibleCount, filteredProducts.length)} de {filteredProducts.length}. Carga por bloques para mantener el admin rapido.
             </p>
+            <div className="flex gap-2">
+              {visibleCount > PAGE_SIZE && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount(PAGE_SIZE)}
+                  className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 hover:bg-slate-50"
+                >
+                  Ver menos
+                </button>
+              )}
+              {visibleCount < filteredProducts.length && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+                  className="h-9 rounded-lg border border-slate-950 bg-slate-950 px-3 text-xs font-black text-white hover:bg-slate-800"
+                >
+                  Cargar 12 mas
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button type="button" onClick={save} disabled={busy} variant="primary" size="md">
-              {busy ? "Guardando..." : "Guardar producto"}
-            </Button>
-            {viewMode === "active" ? (
-              <Button type="button" onClick={() => void deleteSelected()} disabled={busyDelete || !selected} variant="secondary" size="md">
-                {busyDelete ? "..." : "Mover a papelera"}
-              </Button>
-            ) : (
-              <>
-                <Button type="button" onClick={() => void restoreSelected()} disabled={busyDelete || !selected} variant="secondary" size="md">
-                  {busyDelete ? "..." : "Restaurar"}
+        )}
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-500">{selectedId ? "Editor del producto seleccionado" : "Nuevo producto"}</p>
+              <h2 className="mt-1 truncate text-2xl font-black text-slate-950">{draft.name || draft.slug || "Producto sin nombre"}</h2>
+              <p className="mt-1 text-sm font-medium text-slate-500">
+                {draft.productType} / {draft.status === "active" ? "visible en tienda" : "oculto o archivado"} / stock {draftStock}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" onClick={save} disabled={busy} variant="primary" size="md">{busy ? "Guardando..." : "Guardar"}</Button>
+              {viewMode === "active" ? (
+                <Button type="button" onClick={() => void deleteSelected()} disabled={busyDelete || !selected} variant="secondary" size="md">
+                  {busyDelete ? "Procesando..." : "Mover a papelera"}
                 </Button>
-                <Button type="button" onClick={() => void purgeSelected()} disabled={busyDelete || !selected} variant="ghost" size="md">
-                  {busyDelete ? "..." : "Eliminar definitivo"}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {msg && <Toast msg={msg} onClose={() => setMsg(null)} />}
-
-        {/* Sección: Clasificación */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]">
-          <SectionHeader
-            title="Clasificación del producto"
-            subtitle="Tipo, público, slug y estado de visibilidad"
-            icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>}
-          />
-          <div className="grid md:grid-cols-4 gap-3">
-            <label className="grid gap-1 text-xs font-medium text-slate-600">
-              Tipo de producto
-              <Select value={draft.productType} onChange={(e) => setDraft((d) => { const nextType = e.target.value; return { ...d, productType: nextType, audience: needsAudienceByType(nextType) ? d.audience : "todos" }; })}>
-                {typeOptions.map((t) => (<option key={t.key} value={t.key}>{t.label}</option>))}
-              </Select>
-            </label>
-            <label className="grid gap-1 text-xs font-medium text-slate-600">
-              Público objetivo
-              <Select value={draft.audience} onChange={(e) => setDraft((d) => ({ ...d, audience: e.target.value as Product["audience"] }))} disabled={!needsAudienceByType(draft.productType)}>
-                {AUDIENCE_OPTIONS.map((x) => (<option key={x.key} value={x.key}>{x.label}</option>))}
-              </Select>
-              {!needsAudienceByType(draft.productType) && <span className="text-[11px] text-slate-400">Accesorios → Todos</span>}
-            </label>
-            <label className="grid gap-1 text-xs font-medium text-slate-600">
-              Slug (kebab-case)
-              <Input value={draft.slug} onChange={(e) => setDraft((d) => ({ ...d, slug: e.target.value }))} placeholder="nike-air-max-270" />
-            </label>
-            <label className="grid gap-1 text-xs font-medium text-slate-600">
-              Estado
-              <Select value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as Product["status"] }))}>
-                <option value="active">Activo (visible)</option>
-                <option value="archived">Archivado (oculto)</option>
-              </Select>
-            </label>
-          </div>
-        </div>
-
-        {/* Sección: Información */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]">
-          <SectionHeader
-            title="Información del producto"
-            subtitle="Nombre, marca, categoría y descripción"
-            icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-          />
-          <div className="grid gap-3">
-            <label className="grid gap-1 text-xs font-medium text-slate-600">
-              Nombre del producto
-              <Input
-                value={draft.name}
-                onChange={(e) => setDraft((d) => {
-                  const name = e.target.value;
-                  const canAutofillSlug = !d.slug || d.slug === safeSlug(d.name || "");
-                  return { ...d, name, slug: canAutofillSlug ? safeSlug(name) : d.slug };
-                })}
-                placeholder="Ej: Nike Air Max 270 Blancas"
-              />
-            </label>
-            <div className="grid md:grid-cols-2 gap-3">
-              <label className="grid gap-1 text-xs font-medium text-slate-600">
-                Marca
-                <Input value={draft.brand} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} placeholder="Nike, Adidas, Puma..." />
-              </label>
-              <label className="grid gap-1 text-xs font-medium text-slate-600">
-                Categoría (interno)
-                <Input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} placeholder="Running, Casual, Lifestyle..." />
-              </label>
+              ) : (
+                <>
+                  <Button type="button" onClick={() => void restoreSelected()} disabled={busyDelete || !selected} variant="secondary" size="md">Restaurar</Button>
+                  <Button type="button" onClick={() => void purgeSelected()} disabled={busyDelete || !selected} variant="destructive" size="md">Eliminar</Button>
+                </>
+              )}
             </div>
-            <label className="grid gap-1 text-xs font-medium text-slate-600">
-              Descripción
-              <textarea
-                value={draft.description}
-                onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-                className="min-h-[90px] w-full rounded-xl border border-slate-200 bg-[var(--surface-muted)] px-3 py-2.5 text-sm text-slate-900 transition-all duration-150 focus:border-[var(--brand-400)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-400)]/25 resize-none"
-                placeholder="Describe las características del producto..."
-              />
-            </label>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2 rounded-lg bg-slate-100 p-1">
+            {[
+              ["basic", "Datos"],
+              ["media", "Imagenes"],
+              ["inventory", "Inventario"],
+            ].map(([key, label]) => (
+              <button key={key} type="button" onClick={() => setEditorTab(key as EditorTab)} className={`rounded-md px-3 py-2 text-sm font-black transition ${editorTab === key ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-900"}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_260px]">
+            <div className={`rounded-xl border p-3 ${draftIssues.length ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>
+              <p className={`text-xs font-black uppercase tracking-wide ${draftIssues.length ? "text-amber-700" : "text-emerald-700"}`}>
+                {draftIssues.length ? "Falta corregir" : "Producto listo"}
+              </p>
+              {draftIssues.length ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {draftIssues.map((issue) => (
+                    <span key={issue} className={`rounded-full border px-2 py-0.5 text-[11px] font-black ${issueTone(issue)}`}>
+                      {issue}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-sm font-semibold text-emerald-800">Tiene datos, imagen, precio y stock suficiente para vender.</p>
+              )}
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-500">Ruta recomendada</p>
+              <ol className="mt-2 grid gap-1 text-xs font-semibold text-slate-600">
+                <li className={editorTab === "basic" ? "text-slate-950" : ""}>1. Datos y precio</li>
+                <li className={editorTab === "media" ? "text-slate-950" : ""}>2. Imagen principal</li>
+                <li className={editorTab === "inventory" ? "text-slate-950" : ""}>3. Stock por variante</li>
+              </ol>
+            </div>
           </div>
         </div>
 
-        {/* Sección: Precios */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]">
-          <SectionHeader
-            title="Precios"
-            subtitle="Precio base y configuración de oferta"
-            icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-          />
-          <div className="grid md:grid-cols-3 gap-3">
-            <label className="grid gap-1 text-xs font-medium text-slate-600">
-              Precio base (S/)
-              <Input type="number" value={draft.price} onChange={(e) => setDraft((d) => ({ ...d, price: Number(e.target.value) }))} placeholder="0.00" />
-            </label>
-            <label className="grid gap-1 text-xs font-medium text-slate-600">
-              ¿En oferta?
-              <Select value={draft.onSale ? "yes" : "no"} onChange={(e) => setDraft((d) => ({ ...d, onSale: e.target.value === "yes" }))}>
-                <option value="no">No está en oferta</option>
-                <option value="yes">Sí, en oferta</option>
-              </Select>
-            </label>
-            <label className="grid gap-1 text-xs font-medium text-slate-600">
-              Precio de oferta (S/)
-              <Input
-                type="number"
-                value={draft.salePrice ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, salePrice: e.target.value === "" ? null : Number(e.target.value) }))}
-                placeholder="Solo si está en oferta"
-                disabled={!draft.onSale}
-              />
-            </label>
-          </div>
-          {draft.onSale && draft.salePrice !== null && draft.price > 0 && (
-            <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              Descuento aplicado: {Math.round(((draft.price - draft.salePrice) / draft.price) * 100)}% de ahorro
-            </div>
-          )}
-        </div>
-
-        {/* Sección: Imágenes */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]">
-          <SectionHeader
-            title="Imágenes del producto"
-            subtitle="Sube imágenes directamente a Cloudinary como WebP"
-            icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-          />
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-slate-400">{draft.images.length} imagen(es) cargada(s)</p>
-            <label className="inline-flex items-center gap-2 rounded-xl border border-[var(--brand-200,#a7d7ac)] bg-[var(--brand-50)] px-3 py-2 text-xs font-semibold text-[var(--brand-700)] cursor-pointer hover:bg-[var(--brand-100,#d8eedc)] transition-colors duration-150">
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-              Subir y convertir a WebP
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickImage(f); e.currentTarget.value = ""; }} />
-            </label>
-          </div>
-
-          {!draft.images.length ? (
-            <div className="rounded-xl border-2 border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
-              Sin imágenes. Sube una imagen con el botón de arriba.
-            </div>
-          ) : (
-            <div className="grid gap-3">
-              {draft.images.map((img, idx) => (
-                <div key={idx} className="grid md:grid-cols-[80px_1fr_120px_130px_90px] gap-2 items-center rounded-xl border border-slate-200 bg-[var(--surface-muted)] p-2">
-                  {/* Preview miniatura */}
-                  <div className="h-14 w-14 mx-auto rounded-lg overflow-hidden bg-slate-200 border border-slate-200 shrink-0">
-                    {img.url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={img.url} alt={img.alt ?? ""} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = ""; }} />
-                    ) : (
-                      <div className="h-full w-full grid place-items-center text-xs text-slate-300">?</div>
-                    )}
-                  </div>
-                  <Input value={img.url} onChange={(e) => setDraft((d) => { const copy = [...d.images]; if (!copy[idx]) return d; copy[idx] = { ...copy[idx], url: e.target.value }; return { ...d, images: copy }; })} placeholder="https://... (URL de Cloudinary)" uiSize="sm" />
-                  <label className="inline-flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer justify-center">
-                    <input type="checkbox" checked={img.isMain} onChange={(e) => setDraft((d) => { const copy = d.images.map((x, i) => ({ ...x, isMain: i === idx ? e.target.checked : false })); return { ...d, images: copy }; })} className="h-4 w-4 rounded border-slate-300 text-[var(--brand-600)]" />
-                    Principal
+        <div className="p-4">
+          {editorTab === "basic" && (
+            <div className="grid gap-4">
+              <Panel title="Datos comerciales" subtitle="Define como aparece y se vende el producto.">
+                <div className="grid gap-3 lg:grid-cols-4">
+                  <label className="grid gap-1 text-xs font-bold text-slate-600 lg:col-span-2">
+                    Nombre
+                    <Input
+                      value={draft.name}
+                      onChange={(e) =>
+                        setDraft((d) => {
+                          const name = e.target.value;
+                          const canAutofillSlug = !d.slug || d.slug === safeSlug(d.name || "");
+                          return { ...d, name, slug: canAutofillSlug ? safeSlug(name) : d.slug };
+                        })
+                      }
+                      placeholder="Ej: Nike Air Max 270"
+                    />
                   </label>
-                  <Input value={img.alt ?? ""} onChange={(e) => setDraft((d) => { const copy = [...d.images]; if (!copy[idx]) return d; copy[idx] = { ...copy[idx], alt: e.target.value }; return { ...d, images: copy }; })} placeholder="Alt (SEO)" uiSize="sm" />
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setDraft((d) => ({ ...d, images: d.images.filter((_, i) => i !== idx) }))}>
-                    Quitar
-                  </Button>
+                  <label className="grid gap-1 text-xs font-bold text-slate-600">
+                    Tipo
+                    <Select value={draft.productType} onChange={(e) => setDraft((d) => { const nextType = e.target.value; return { ...d, productType: nextType, audience: needsAudienceByType(nextType) ? d.audience : "todos" }; })}>
+                      {typeOptions.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+                    </Select>
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold text-slate-600">
+                    Estado
+                    <Select value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value as Product["status"] }))}>
+                      <option value="active">Activo visible</option>
+                      <option value="archived">Archivado oculto</option>
+                    </Select>
+                  </label>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Sección: Variantes */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]">
-          <SectionHeader
-            title="Variantes e inventario"
-            subtitle="El stock se controla exclusivamente en backend (transacciones)"
-            icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>}
-          />
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-slate-400">{draft.variants.length} variante(s)</p>
-            <Button type="button" variant="secondary" size="sm" onClick={() => setDraft((d) => ({ ...d, variants: [...d.variants, { id: `v${d.variants.length + 1}`, stock: 0 }] }))}>
-              + Agregar variante
-            </Button>
-          </div>
+                <div className="mt-3 grid gap-3 lg:grid-cols-4">
+                  <label className="grid gap-1 text-xs font-bold text-slate-600">
+                    Marca
+                    <Input value={draft.brand} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} placeholder="Nike, Adidas..." />
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold text-slate-600">
+                    Categoria interna
+                    <Input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} placeholder="Running, Casual..." />
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold text-slate-600">
+                    Publico
+                    <Select value={draft.audience} onChange={(e) => setDraft((d) => ({ ...d, audience: e.target.value as Product["audience"] }))} disabled={!needsAudienceByType(draft.productType)}>
+                      {AUDIENCE_OPTIONS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+                    </Select>
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold text-slate-600">
+                    Slug
+                    <Input value={draft.slug} onChange={(e) => setDraft((d) => ({ ...d, slug: safeSlug(e.target.value) }))} placeholder="nike-air-max" />
+                  </label>
+                </div>
 
-          {draft.variants.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
-              Sin variantes. Agrega al menos una.
-            </div>
-          ) : (
-            <div className="grid gap-2">
-              {draft.variants.map((v, idx) => (
-                <div key={idx} className={`grid md:grid-cols-[1fr_100px_100px_1fr_110px_90px] gap-2 items-center rounded-xl border p-2.5 ${v.stock === 0 ? "border-rose-200 bg-rose-50/40" : "border-slate-200 bg-[var(--surface-muted)]"}`}>
-                  <Input value={v.id} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, id: e.target.value } : x)) }))} placeholder="ID variante" uiSize="sm" />
-                  <Input value={v.size ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, size: e.target.value || undefined } : x)) }))} placeholder="Talla" uiSize="sm" />
-                  <Input value={v.color ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, color: e.target.value || undefined } : x)) }))} placeholder="Color" uiSize="sm" />
-                  <Input value={v.sku ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, sku: e.target.value || undefined } : x)) }))} placeholder="SKU (opcional)" uiSize="sm" />
-                  <div className="relative">
-                    <Input type="number" value={v.stock} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, stock: Number(e.target.value) } : x)) }))} placeholder="Stock" uiSize="sm" className={v.stock === 0 ? "border-rose-300 bg-rose-50 text-rose-700" : ""} />
-                    {v.stock === 0 && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-rose-500">AGOTADO</span>}
+                <label className="mt-3 grid gap-1 text-xs font-bold text-slate-600">
+                  Descripcion
+                  <textarea
+                    value={draft.description}
+                    onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+                    className="min-h-[96px] w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] focus:border-[var(--brand-400)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-400)]/25"
+                    placeholder="Material, uso recomendado, detalles de talla, etc."
+                  />
+                </label>
+              </Panel>
+
+              <Panel title="Precios" subtitle="Precio regular, oferta y calculo de descuento.">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="grid gap-1 text-xs font-bold text-slate-600">
+                    Precio base
+                    <Input type="number" min="0" step="0.01" value={draft.price} onChange={(e) => setDraft((d) => ({ ...d, price: Number(e.target.value) }))} />
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold text-slate-600">
+                    Oferta
+                    <Select value={draft.onSale ? "yes" : "no"} onChange={(e) => setDraft((d) => ({ ...d, onSale: e.target.value === "yes", salePrice: e.target.value === "yes" ? d.salePrice : null }))}>
+                      <option value="no">Sin oferta</option>
+                      <option value="yes">En oferta</option>
+                    </Select>
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold text-slate-600">
+                    Precio oferta
+                    <Input type="number" min="0" step="0.01" value={draft.salePrice ?? ""} disabled={!draft.onSale} onChange={(e) => setDraft((d) => ({ ...d, salePrice: e.target.value === "" ? null : Number(e.target.value) }))} />
+                  </label>
+                </div>
+                {draft.onSale && draft.salePrice !== null && draft.price > 0 && (
+                  <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800">
+                    Oferta visible: {money(draft.salePrice)} / ahorro {Math.max(0, Math.round(((draft.price - draft.salePrice) / draft.price) * 100))}%
                   </div>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setDraft((d) => ({ ...d, variants: d.variants.filter((_, i) => i !== idx) }))}>
-                    Quitar
-                  </Button>
-                </div>
-              ))}
+                )}
+              </Panel>
             </div>
           )}
+
+          {editorTab === "media" && (
+            <Panel title="Imagenes" subtitle="Miniaturas, principal y texto alternativo.">
+              <div className="mb-4 grid gap-3 lg:grid-cols-[180px_1fr_auto] lg:items-center">
+                <div className="relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                  {currentImage ? (
+                    <Image
+                      src={optimizedProductImage(currentImage, 900)}
+                      alt={draft.name || draft.slug}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-full place-items-center text-sm font-black text-slate-300">SIN IMAGEN</div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-black text-slate-950">{draft.images.length} imagen(es)</p>
+                  <p className="mt-1 text-sm text-slate-500">La principal aparece en catalogo y tarjetas.</p>
+                </div>
+                <label className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-[var(--brand-200,#a7d7ac)] bg-[var(--brand-50)] px-4 text-sm font-black text-[var(--brand-700)] hover:bg-[var(--brand-100,#d8eedc)]">
+                  Subir WebP
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickImage(f); e.currentTarget.value = ""; }} />
+                </label>
+              </div>
+
+              <div className="grid gap-2">
+                {draft.images.length === 0 && <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Agrega al menos una imagen para mejorar el catalogo.</div>}
+                {draft.images.map((img, idx) => (
+                  <div key={`${img.url}-${idx}`} className="grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 lg:grid-cols-[64px_minmax(0,1fr)_120px_160px_90px] lg:items-center">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-md border border-slate-200 bg-white">
+                      {img.url ? (
+                        <Image
+                          src={optimizedProductImage(img.url, 180)}
+                          alt={img.alt ?? ""}
+                          fill
+                          unoptimized
+                          sizes="96px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-full place-items-center text-xs font-bold text-slate-300">IMG</div>
+                      )}
+                    </div>
+                    <Input value={img.url} onChange={(e) => setDraft((d) => { const copy = [...d.images]; const current = copy[idx]; if (!current) return d; copy[idx] = { ...current, url: e.target.value }; return { ...d, images: copy }; })} placeholder="URL de imagen" uiSize="sm" />
+                    <label className="inline-flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
+                      <input type="checkbox" checked={img.isMain} onChange={() => setDraft((d) => ({ ...d, images: d.images.map((x, i) => ({ ...x, isMain: i === idx })) }))} className="h-4 w-4 rounded border-slate-300" />
+                      Principal
+                    </label>
+                    <Input value={img.alt ?? ""} onChange={(e) => setDraft((d) => { const copy = [...d.images]; const current = copy[idx]; if (!current) return d; copy[idx] = { ...current, alt: e.target.value }; return { ...d, images: copy }; })} placeholder="Alt SEO" uiSize="sm" />
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setDraft((d) => ({ ...d, images: d.images.filter((_, i) => i !== idx).map((x, order) => ({ ...x, order, isMain: order === 0 ? true : x.isMain })) }))}>
+                      Quitar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
+
+          {editorTab === "inventory" && (
+            <Panel title="Variantes e inventario" subtitle="Tallas, colores, SKU y stock.">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="grid grid-cols-2 gap-2 sm:w-80">
+                  <Metric label="Variantes" value={draft.variants.length} />
+                  <Metric label="Stock total" value={draftStock} tone={draftStock <= 3 ? "rose" : "green"} />
+                </div>
+                <Button type="button" variant="secondary" size="sm" onClick={() => setDraft((d) => ({ ...d, variants: [...d.variants, { id: `v${d.variants.length + 1}`, stock: 0 }] }))}>
+                  Agregar variante
+                </Button>
+              </div>
+
+              <div className="grid gap-2">
+                {draft.variants.map((v, idx) => (
+                  <div key={`${v.id}-${idx}`} className={`grid gap-2 rounded-lg border p-2 lg:grid-cols-[1fr_90px_110px_1fr_110px_90px] lg:items-center ${Number(v.stock) <= 0 ? "border-rose-200 bg-rose-50/60" : "border-slate-200 bg-slate-50"}`}>
+                    <Input value={v.id} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, id: e.target.value } : x)) }))} placeholder="ID" uiSize="sm" />
+                    <Input value={v.size ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, size: e.target.value || undefined } : x)) }))} placeholder="Talla" uiSize="sm" />
+                    <Input value={v.color ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, color: e.target.value || undefined } : x)) }))} placeholder="Color" uiSize="sm" />
+                    <Input value={v.sku ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, sku: e.target.value || undefined } : x)) }))} placeholder="SKU" uiSize="sm" />
+                    <Input type="number" min="0" value={v.stock} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, stock: Number(e.target.value) } : x)) }))} placeholder="Stock" uiSize="sm" />
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setDraft((d) => ({ ...d, variants: d.variants.filter((_, i) => i !== idx) }))}>
+                      Quitar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { SESSION_COOKIE_NAME, verifyAdminSessionCookie } from "@/lib/server/admi
 import { getRequestIp, getUserAgent } from "@/lib/server/ip";
 import { makeProductSearchTokens } from "@/lib/searchTokens";
 import { assertImageUrlAllowed } from "@/lib/server/storageAdapter";
-import { deriveStockDrivenStatus } from "@/lib/productStock";
+import { deriveStockDrivenStatus, getInventorySummary } from "@/lib/productStock";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -64,11 +64,14 @@ export async function POST(req: Request) {
         input.variants,
         shouldRespectManualArchive ? false : Boolean(before?.autoArchivedByStock)
       );
+      const inventory = getInventorySummary(input.variants);
 
       const doc = {
         ...input,
         status: shouldRespectManualArchive ? "archived" : stockDriven.status,
         autoArchivedByStock: shouldRespectManualArchive ? false : stockDriven.autoArchivedByStock,
+        ...inventory,
+        inventoryUpdatedAt: now,
         searchTokens,
         slug: input.slug,
         updatedAt: now,

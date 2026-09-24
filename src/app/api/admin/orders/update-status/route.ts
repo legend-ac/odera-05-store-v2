@@ -10,10 +10,16 @@ import { sendTransactionalEmail } from "@/lib/server/email";
 import { ALLOWED_NEXT, isOrderStatus } from "@/lib/orderStatus";
 import { renderOrderEmail } from "@/lib/server/emailTemplates";
 import { formatPEN } from "@/lib/money";
-import { deriveStockDrivenStatus } from "@/lib/productStock";
+import { deriveStockDrivenStatus, getInventorySummary } from "@/lib/productStock";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+type StockRelease = {
+  productId: string;
+  variantId: string;
+  qty: number;
+};
 
 function shippingToText(shipping: any): string {
   if (!shipping) return "-";
@@ -109,23 +115,46 @@ export async function POST(req: Request) {
         }
 
         const items = Array.isArray(before.itemsSnapshots) ? before.itemsSnapshots : [];
-        for (const it of items) {
-          const productId = it.productId as string;
-          const variantId = it.variantSnapshot?.id as string;
-          const qty = it.qty as number;
+        const releases: StockRelease[] = items
+          .map((it: any) => ({
+            productId: it.productId as string,
+            variantId: it.variantSnapshot?.id as string,
+            qty: it.qty as number,
+          }))
+          .filter((it: { productId: string; variantId: string; qty: number }) =>
+            Boolean(it.productId && it.variantId && Number.isFinite(it.qty))
+          );
 
-          if (!productId || !variantId || !Number.isFinite(qty)) continue;
+        const productRefs = new Map<string, FirebaseFirestore.DocumentReference>();
+        for (const it of releases) {
+          if (!productRefs.has(it.productId)) {
+            productRefs.set(it.productId, adminDb.collection("products").doc(it.productId));
+          }
+        }
 
-          const productRef = adminDb.collection("products").doc(productId);
-          const pSnap = await tx.get(productRef);
-          if (!pSnap.exists) continue;
+        const productSnaps = new Map<string, FirebaseFirestore.DocumentSnapshot>();
+        for (const [productId, productRef] of productRefs) {
+          productSnaps.set(productId, await tx.get(productRef));
+        }
+
+        for (const [productId, productRef] of productRefs) {
+          const pSnap = productSnaps.get(productId);
+          if (!pSnap?.exists) continue;
 
           const p = pSnap.data() as any;
           const variants = Array.isArray(p.variants) ? [...p.variants] : [];
-          const idx = variants.findIndex((v) => v.id === variantId);
-          if (idx >= 0) {
+          let changed = false;
+
+          for (const it of releases.filter((release: StockRelease) => release.productId === productId)) {
+            const idx = variants.findIndex((v) => v.id === it.variantId);
+            if (idx < 0) continue;
+
             const v = variants[idx]!;
-            variants[idx] = { ...v, stock: (v.stock as number) + qty };
+            variants[idx] = { ...v, stock: (v.stock as number) + it.qty };
+            changed = true;
+          }
+
+          if (changed) {
             const statusAfterStock = deriveStockDrivenStatus(
               (p?.status as "active" | "archived") ?? "active",
               variants,
@@ -135,9 +164,17 @@ export async function POST(req: Request) {
               variants,
               status: statusAfterStock.status,
               autoArchivedByStock: statusAfterStock.autoArchivedByStock,
+              ...getInventorySummary(variants),
+              inventoryUpdatedAt: now,
               updatedAt: now,
             });
           }
+        }
+
+        for (const it of releases) {
+          const productId = it.productId as string;
+          const variantId = it.variantId as string;
+          const qty = it.qty as number;
 
           const stockLogRef = adminDb.collection("stockLogs").doc();
           tx.set(stockLogRef, {

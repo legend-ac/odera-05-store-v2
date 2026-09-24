@@ -4,12 +4,14 @@ export const maxDuration = 60;
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import ProductsClient from "./products-client";
 
-export default async function ProductsPage() {
+export default async function ProductsPage({ searchParams }: { searchParams?: { edit?: string | string[] } }) {
   let snap: any = null;
   let settingsSnap: any = null;
   try {
-    snap = await adminDb.collection("products").orderBy("updatedAt", "desc").limit(300).get();
-    settingsSnap = await adminDb.doc("settings/store").get();
+    [snap, settingsSnap] = await Promise.all([
+      adminDb.collection("products").orderBy("updatedAt", "desc").limit(90).get(),
+      adminDb.doc("settings/store").get(),
+    ]);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (!msg.includes("NOT_FOUND")) throw e;
@@ -37,6 +39,24 @@ export default async function ProductsPage() {
     };
   });
 
+  // The normal editor stays deliberately compact. Inventory can link directly
+  // to any product, including one outside the recent-products working set.
+  const requestedId = typeof searchParams?.edit === "string" && !searchParams.edit.includes("/") ? searchParams.edit : "";
+  if (requestedId && !products.some((product: any) => product.id === requestedId)) {
+    const selectedSnap = await adminDb.collection("products").doc(requestedId).get();
+    if (selectedSnap.exists) {
+      const data = selectedSnap.data() as any;
+      const toMs = (ts: any) => (ts && typeof ts.toMillis === "function" ? ts.toMillis() : null);
+      products.unshift({
+        id: selectedSnap.id, productType: data.productType || "zapatillas", audience: data.audience || "todos",
+        slug: data.slug || selectedSnap.id, status: data.status || "archived", name: data.name || "", price: Number(data.price ?? 0),
+        onSale: Boolean(data.onSale), salePrice: typeof data.salePrice === "number" ? data.salePrice : null,
+        brand: data.brand || "", category: data.category || "", description: data.description || "",
+        images: Array.isArray(data.images) ? data.images : [], variants: Array.isArray(data.variants) ? data.variants : [], deletedAtMs: toMs(data.deletedAt),
+      });
+    }
+  }
+
   const rawTypes = settingsSnap?.exists ? (settingsSnap.data() as any)?.productTypes : null;
   const initialProductTypes =
     Array.isArray(rawTypes) && rawTypes.length
@@ -50,5 +70,5 @@ export default async function ProductsPage() {
           { key: "accesorios", label: "Accesorios" },
         ];
 
-  return <ProductsClient initialProducts={products} initialProductTypes={initialProductTypes} />;
+  return <ProductsClient initialProducts={products} initialProductTypes={initialProductTypes} initialSelectedId={requestedId || undefined} />;
 }

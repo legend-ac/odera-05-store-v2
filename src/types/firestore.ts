@@ -30,6 +30,10 @@ export type ProductDoc = {
   onSale: boolean;
   images: ProductImage[];
   variants: ProductVariant[];
+  /** Materialized inventory fields used by the admin operational views. */
+  inventoryTotal?: number;
+  inventoryState?: "OUT" | "LOW" | "HEALTHY";
+  inventoryUpdatedAt?: unknown;
   searchTokens: string[];
   createdAt: unknown;
   updatedAt: unknown;

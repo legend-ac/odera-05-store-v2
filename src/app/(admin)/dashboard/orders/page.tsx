@@ -13,7 +13,7 @@ function toMs(ts: any): number | null {
 export default async function OrdersPage() {
   let snap: any = null;
   try {
-    snap = await adminDb.collection("orders").orderBy("createdAt", "desc").limit(300).get();
+    snap = await adminDb.collection("orders").orderBy("createdAt", "desc").limit(180).get();
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (!msg.includes("NOT_FOUND")) throw e;

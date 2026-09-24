@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { adminDb } from "@/lib/server/firebaseAdmin";
-import type { ProductCardData } from "@/components/ProductCard";
 import ProductClient from "./product-client";
 import { hasStock } from "@/lib/productStock";
 
@@ -49,69 +48,17 @@ async function loadInitialProduct(slug: string): Promise<ProductInitial | null> 
   };
 }
 
-async function loadInitialRecommended(slug: string): Promise<ProductCardData[]> {
-  const snap = await adminDb.collection("products").where("status", "==", "active").limit(20).get();
-  return snap.docs
-    .filter((d) => d.id !== slug)
-    .map((d) => {
-      const product = d.data() as any;
-      const variants = Array.isArray(product?.variants) ? product.variants : [];
-      if (!hasStock(variants)) return null;
-      const imgs = Array.isArray(product.images) ? [...product.images] : [];
-      const sorted = imgs.sort((a: any, b: any) => Number(a?.order ?? 0) - Number(b?.order ?? 0));
-      const imageUrls = sorted.map((x: any) => String(x?.url ?? "")).filter(Boolean);
-      const mainUrl = sorted.find((x: any) => x?.isMain)?.url ?? imageUrls[0];
-      return {
-        id: d.id,
-        name: String(product.name ?? ""),
-        price: Number(product.price ?? 0),
-        salePrice: typeof product.salePrice === "number" ? product.salePrice : undefined,
-        onSale: Boolean(product.onSale),
-        imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
-        imageUrls,
-      } satisfies ProductCardData;
-    })
-    .filter(Boolean)
-    .slice(0, 3) as ProductCardData[];
-}
-
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const product = await loadInitialProduct(params.slug);
-
-  if (!product) {
-    return {
-      title: "Producto no disponible | ODERA 05 STORE",
-      description: "El producto solicitado no esta disponible.",
-      robots: { index: true, follow: true },
-    };
-  }
-
-  const finalPrice = product.onSale && typeof product.salePrice === "number" ? product.salePrice : product.price;
-  const image = pickMainImage(product.images);
-  const description = String(product.description ?? product.name).slice(0, 160);
-
+  const readableSlug = params.slug.replace(/-/g, " ");
   return {
-    title: `${product.name} | ODERA 05 STORE`,
-    description,
+    title: `${readableSlug} | ODERA 05 STORE`,
+    description: "Producto original disponible en ODERA 05 STORE. Compra con Yape o Plin y sigue tu pedido en tiempo real.",
     alternates: { canonical: `/p/${params.slug}` },
-    openGraph: {
-      title: `${product.name} | ODERA 05 STORE`,
-      description,
-      type: "website",
-      images: image ? [image] : [],
-    },
-    other: {
-      "product:price:amount": String(finalPrice),
-      "product:price:currency": "PEN",
-    },
   };
 }
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const [initialProduct, initialRecommended] = await Promise.all([
-    loadInitialProduct(params.slug),
-    loadInitialRecommended(params.slug),
-  ]);
+  const initialProduct = await loadInitialProduct(params.slug);
 
   if (!initialProduct) {
     return (
@@ -154,7 +101,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
       <ProductClient
         slug={params.slug}
         initialProduct={initialProduct}
-        initialRecommended={initialRecommended}
+        initialRecommended={[]}
       />
     </>
   );

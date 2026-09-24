@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import CatalogClient from "./catalog-client";
 import type { ProductCardData } from "@/components/ProductCard";
@@ -70,17 +71,15 @@ async function loadInitialCatalog(): Promise<CatalogItem[]> {
   return list;
 }
 
-export default async function CatalogPage({
-  searchParams,
-}: {
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
+export default async function CatalogPage() {
   let productTypes: ProductTypeOption[] = DEFAULT_PRODUCT_TYPES;
-  const initialItems = await loadInitialCatalog();
+  const [initialItems, settingsSnap] = await Promise.all([
+    loadInitialCatalog(),
+    adminDb.doc("settings/store").get().catch(() => null),
+  ]);
 
-  try {
-    const settingsSnap = await adminDb.doc("settings/store").get();
-    if (settingsSnap.exists) {
+  if (settingsSnap?.exists) {
+    try {
       const data = settingsSnap.data() as any;
       const raw = Array.isArray(data?.productTypes) ? data.productTypes : [];
       const parsed = raw
@@ -88,22 +87,15 @@ export default async function CatalogPage({
         .map((x: any) => ({ key: String(x?.key ?? "").trim(), label: String(x?.label ?? "").trim() }))
         .filter((x: ProductTypeOption) => x.key.length > 0 && x.label.length > 0);
       if (parsed.length) productTypes = parsed;
-    }
-  } catch {}
+    } catch {}
+  }
 
-  const q = searchParams?.q;
-  const initialQuery = Array.isArray(q) ? q[0] ?? "" : q ?? "";
-  const type = searchParams?.type;
-  const initialType = Array.isArray(type) ? type[0] ?? "" : type ?? "";
-  const audience = searchParams?.audience;
-  const initialAudience = Array.isArray(audience) ? audience[0] ?? "" : audience ?? "";
   return (
-    <CatalogClient
-      initialItems={initialItems}
-      initialQuery={initialQuery}
-      initialType={initialType}
-      initialAudience={initialAudience}
-      productTypes={productTypes}
-    />
+    <Suspense fallback={null}>
+      <CatalogClient
+        initialItems={initialItems}
+        productTypes={productTypes}
+      />
+    </Suspense>
   );
 }

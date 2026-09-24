@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
@@ -9,6 +10,7 @@ import { formatPEN } from "@/lib/money";
 import { Card, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/fields";
+import { optimizedProductImage } from "@/lib/image";
 
 type ProductData = {
   id: string;
@@ -33,9 +35,10 @@ export default function CartPage() {
       try {
         setLoading(true);
         const map: Record<string, ProductData> = {};
-        for (const id of uniqueProductIds) {
-          const snap = await getDoc(doc(db, "products", id));
+        const snaps = await Promise.all(uniqueProductIds.map((id) => getDoc(doc(db, "products", id))));
+        for (const snap of snaps) {
           if (!snap.exists()) continue;
+          const id = snap.id;
           const d = snap.data() as any;
           map[id] = {
             id,
@@ -133,10 +136,16 @@ export default function CartPage() {
 
               return (
                 <div key={`${it.productId}:${it.variantId}`} className={`rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] p-4 flex flex-col sm:flex-row gap-4 fade-in-up`} style={{ animationDelay: `${i * 60}ms` }}>
-                  <div className="h-24 w-24 rounded-xl border border-slate-200 overflow-hidden bg-[var(--surface-muted)] shrink-0">
+                  <div className="relative h-24 w-24 rounded-xl border border-slate-200 overflow-hidden bg-[var(--surface-muted)] shrink-0">
                     {imageSrc ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={imageSrc} alt={p?.name ?? "Producto"} className="h-full w-full object-cover" />
+                      <Image
+                        src={optimizedProductImage(imageSrc, 220)}
+                        alt={p?.name ?? "Producto"}
+                        fill
+                        unoptimized
+                        sizes="96px"
+                        className="object-cover"
+                      />
                     ) : (
                       <div className="h-full w-full grid place-items-center text-[11px] text-slate-400">Sin imagen</div>
                     )}
