@@ -94,7 +94,7 @@ export default async function HomePage() {
 
       {/* ── HERO ── */}
       <section
-        className="relative overflow-hidden"
+        className="home-hero relative overflow-hidden"
         style={{ display: "flex", flexDirection: "column", background: "var(--ink)" }}
       >
         {/* Speed lines background */}
@@ -111,10 +111,10 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="relative z-10 grid w-full lg:grid-cols-2" style={{ minHeight: "clamp(480px, 88vh, 860px)" }}>
+        <div className="home-hero__shell relative z-10 mx-auto grid w-full lg:grid-cols-2">
 
           {/* Left — Text panel */}
-          <div className="flex flex-col justify-center px-6 py-12 sm:px-10 lg:px-16">
+          <div className="home-hero__copy flex flex-col justify-center px-6 py-12 sm:px-10 lg:px-16">
             {/* Eyebrow */}
             <div className="flex items-center gap-3 mb-5">
               <span className="h-px w-14" style={{ background: "var(--vermeil)" }} />
@@ -228,18 +228,15 @@ export default async function HomePage() {
           </div>
 
           {/* Right — Image: usa object-cover para llenar toda la columna */}
-          <div
-            className="relative overflow-hidden"
-            style={{ minHeight: "clamp(300px, 50vw, 860px)" }}
-          >
+          <div className="home-hero__media relative overflow-hidden">
             <Image
-              src="/brand/category-zapatillas.jpg"
+              src="/brand/hero-mascot-v2.png"
               alt="Colección ODERA 05"
               fill
               priority
-              sizes="(max-width: 1024px) 100vw, 55vw"
-              className="object-cover"
-              style={{ objectPosition: "center center" }}
+              sizes="(max-width: 767px) 100vw, 50vw"
+              className="object-contain"
+              style={{ objectPosition: "center bottom" }}
             />
             {/* En desktop: fade izquierdo suave (20%) para fundir con panel de texto */}
             <div
@@ -456,6 +453,71 @@ export default async function HomePage() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* ── Tienda física ── */}
+      <section
+        id="ubicacion"
+        hidden
+        className="relative overflow-hidden"
+        style={{ background: "var(--ink-2)", borderTop: "1px solid var(--ash-2)", borderBottom: "1px solid var(--ash-2)" }}
+      >
+        <div className="mx-auto grid max-w-7xl gap-8 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">
+          <div className="relative overflow-hidden" style={{ border: "1px solid var(--ash-2)", minHeight: "320px" }}>
+            <Image
+              src="/brand/storefront-odera-05.png"
+              alt="Frontis de ODERA 05 STORE en Independencia, Lima"
+              fill
+              sizes="(max-width: 1024px) 100vw, 55vw"
+              className="object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 p-5" style={{ background: "linear-gradient(0deg, rgba(14,14,18,.96), transparent)" }}>
+              <p className="font-black uppercase" style={{ fontSize: "10px", letterSpacing: ".2em", color: "var(--paper)" }}>Tienda física · Lima Norte</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-5 lg:pl-4">
+            <div>
+              <p className="font-black uppercase mb-2" style={{ fontSize: "10px", letterSpacing: ".28em", color: "var(--vermeil)" }}>Encuéntranos</p>
+              <h2 className="font-black leading-none" style={{ fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif", fontSize: "clamp(34px, 5vw, 52px)", letterSpacing: ".06em", color: "var(--paper)" }}>
+                VISITA LA<br />TIENDA
+              </h2>
+            </div>
+            <p className="max-w-md" style={{ fontSize: "14px", color: "var(--ash)", lineHeight: "1.7" }}>
+              Conoce zapatillas, ropa y accesorios en persona. Nuestro equipo te ayuda a encontrar la talla y el estilo que buscas.
+            </p>
+            <div className="grid gap-3" style={{ borderTop: "1px solid var(--ash-2)", paddingTop: "16px" }}>
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,.12)", color: "var(--vermeil)" }}>⌖</span>
+                <div><p className="font-bold" style={{ fontSize: "13px", color: "var(--paper)" }}>Ollantaytambo 608</p><p style={{ fontSize: "12px", color: "var(--ash)", marginTop: "2px" }}>Tahuantinsuyo, Independencia · Lima, Perú</p></div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,.12)", color: "var(--vermeil)" }}>◷</span>
+                <div><p className="font-bold" style={{ fontSize: "13px", color: "var(--paper)" }}>Atención directa</p><p style={{ fontSize: "12px", color: "var(--ash)", marginTop: "2px" }}>Consulta horarios y disponibilidad por WhatsApp.</p></div>
+              </div>
+            </div>
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-brand w-fit"
+              style={{ fontSize: "12px", padding: "11px 20px" }}
+            >
+              Abrir en Google Maps →
+            </a>
+          </div>
+        </div>
+        <div className="mx-auto max-w-7xl px-5 pb-14 sm:px-8 sm:pb-20">
+          <div className="overflow-hidden" style={{ height: "280px", border: "1px solid var(--ash-2)" }}>
+            <iframe
+              title="Ubicación de ODERA 05 STORE"
+              src="https://www.google.com/maps?q=Ollantaytambo%20608%2C%20Tahuantinsuyo%2C%20Independencia%2C%20Lima%2C%20Per%C3%BA&output=embed"
+              className="h-full w-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
         </div>
       </section>
 

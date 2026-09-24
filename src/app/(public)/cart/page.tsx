@@ -3,8 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
 import { useCart } from "@/components/cart/CartProvider";
 import { formatPEN } from "@/lib/money";
 import { optimizedProductImage } from "@/lib/image";
@@ -42,6 +40,7 @@ export default function CartPage() {
   const { items, removeItem, setQty, clear } = useCart();
   const [products, setProducts] = useState<Record<string, ProductData>>({});
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const uniqueProductIds = useMemo(
     () => Array.from(new Set(items.map((x) => x.productId))),
@@ -49,33 +48,26 @@ export default function CartPage() {
   );
 
   useEffect(() => {
-    if (!uniqueProductIds.length) { setProducts({}); return; }
+    if (!uniqueProductIds.length) { setProducts({}); setLoadError(null); return; }
     let mounted = true;
+    const controller = new AbortController();
     (async () => {
       try {
         setLoading(true);
-        const map: Record<string, ProductData> = {};
-        const snaps = await Promise.all(uniqueProductIds.map((id) => getDoc(doc(db, "products", id))));
-        for (const snap of snaps) {
-          if (!snap.exists()) continue;
-          const d = snap.data() as any;
-          map[snap.id] = {
-            id: snap.id,
-            name: String(d.name ?? ""),
-            price: Number(d.price ?? 0),
-            salePrice: typeof d.salePrice === "number" ? d.salePrice : undefined,
-            onSale: Boolean(d.onSale),
-            images: Array.isArray(d.images) ? d.images : [],
-            variants: Array.isArray(d.variants) ? d.variants : [],
-          };
-        }
-        if (mounted) setProducts(map);
+        setLoadError(null);
+        const response = await fetch(`/api/products/cart?ids=${encodeURIComponent(uniqueProductIds.join(","))}`, { signal: controller.signal });
+        const payload = await response.json().catch(() => null) as { products?: ProductData[] } | null;
+        if (!response.ok || !payload?.products) throw new Error("CART_PRODUCTS_UNAVAILABLE");
+        if (mounted) setProducts(Object.fromEntries(payload.products.map((product) => [product.id, product])));
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return;
+        if (mounted) setLoadError("No pudimos actualizar los detalles del carrito. Recarga la página para intentarlo otra vez.");
       } finally {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { mounted = false; };
-  }, [JSON.stringify(uniqueProductIds)]);
+    return () => { mounted = false; controller.abort(); };
+  }, [uniqueProductIds]);
 
   const lines = useMemo(() => {
     return items.map((it) => {
@@ -184,6 +176,12 @@ export default function CartPage() {
               style={{ border: "2px solid var(--ash-2)", borderTopColor: "var(--vermeil)", borderRadius: "50%" }}
             />
             <span style={{ fontSize: "13px", color: S.ash }}>Actualizando carrito...</span>
+          </div>
+        )}
+
+        {loadError && (
+          <div className="px-4 py-3" role="alert" style={{ background: "rgba(232,69,44,.08)", border: "1px solid rgba(232,69,44,.45)", borderRadius: "2px", color: "#ff9a86", fontSize: "13px" }}>
+            {loadError}
           </div>
         )}
 

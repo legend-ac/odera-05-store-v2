@@ -4,179 +4,73 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Container } from "@/components/ui/layout";
 
+const mapsUrl =
+  "https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA";
+
+const footerHeading: React.CSSProperties = {
+  fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
+  fontSize: "15px",
+  letterSpacing: ".14em",
+  color: "var(--paper)",
+};
+
+const footerLink: React.CSSProperties = {
+  color: "var(--ash)",
+  fontSize: "13px",
+  lineHeight: "1.5",
+};
+
 export default function Footer() {
   const pathname = usePathname();
-  if (pathname === "/login" || pathname.startsWith("/dashboard")) {
-    return null;
-  }
+  if (pathname === "/login" || pathname.startsWith("/dashboard")) return null;
 
   return (
-    <footer
-      className="mt-16 relative"
-      style={{
-        background: "var(--ink-2)",
-        borderTop: "1px solid var(--ash-2)",
-      }}
-    >
-      {/* Vermeil accent line */}
-      <div
-        className="absolute top-0 inset-x-0 h-[2px]"
-        style={{
-          background: "linear-gradient(90deg, transparent 0%, var(--vermeil) 30%, var(--gold) 60%, transparent 100%)",
-        }}
-      />
-
-      <Container className="py-12 grid md:grid-cols-4 gap-8 text-sm">
-        {/* Brand column */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <span
-              className="grid place-items-center text-white text-[11px] font-black"
-              style={{
-                width: 36,
-                height: 36,
-                background: "var(--vermeil)",
-                clipPath: "polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px))",
-                letterSpacing: "0.06em",
-              }}
-            >
-              O5
+    <footer className="mt-16" style={{ background: "#111116", borderTop: "2px solid var(--vermeil)" }}>
+      <Container className="grid gap-x-10 gap-y-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr_1.15fr] lg:py-14">
+        <section aria-label="ODERA 05 Store" className="flex flex-col gap-4">
+          <Link href="/" className="flex w-fit items-center gap-3" aria-label="Ir al inicio de ODERA 05 Store">
+            <span className="grid place-items-center font-black text-white" style={{ width: 42, height: 42, background: "var(--vermeil)", fontSize: "12px", clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>05</span>
+            <span>
+              <span className="block font-black" style={{ fontFamily: "'Bebas Neue', var(--font-display), sans-serif", fontSize: "20px", letterSpacing: ".1em", color: "var(--paper)" }}>ODERA 05 STORE</span>
+              <span className="block uppercase" style={{ fontSize: "9px", letterSpacing: ".18em", color: "var(--ash)" }}>Zapatillas · Ropa · Accesorios</span>
             </span>
-            <div>
-              <p
-                className="font-black tracking-tight"
-                style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: "15px",
-                  letterSpacing: "0.12em",
-                  color: "var(--paper)",
-                }}
-              >
-                ODERA 05 STORE
-              </p>
-              <p
-                className="font-medium"
-                style={{
-                  fontSize: "9px",
-                  letterSpacing: "0.22em",
-                  color: "var(--ash)",
-                  textTransform: "uppercase",
-                }}
-              >
-                オデラ · Perú
-              </p>
-            </div>
-          </div>
-          <p style={{ color: "var(--ash)", fontSize: "11px", lineHeight: "1.7" }}>
-            Tienda peruana de zapatillas y ropa con atención por canales oficiales.
-          </p>
-          <div
-            className="inline-flex items-center gap-2 w-fit"
-            style={{
-              background: "var(--ink-3)",
-              border: "1px solid var(--ash-2)",
-              borderRadius: "2px",
-              padding: "6px 12px",
-              fontSize: "11px",
-              color: "var(--ash)",
-            }}
-          >
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{
-                background: "#3CB878",
-                boxShadow: "0 0 6px rgba(60,184,120,0.8)",
-              }}
-            />
-            Compra protegida · Seguimiento claro
-          </div>
-        </div>
+          </Link>
+          <p style={{ maxWidth: "27ch", fontSize: "13px", lineHeight: "1.65", color: "var(--ash)" }}>Compra online con información clara, seguimiento de pedido y atención por canales oficiales.</p>
+          <Link href="/nosotros" className="w-fit font-bold uppercase hover:text-[var(--vermeil)]" style={{ fontSize: "11px", letterSpacing: ".12em", color: "var(--paper)" }}>Conoce nuestra tienda →</Link>
+        </section>
 
-        {/* Navegación */}
-        <div className="flex flex-col gap-3">
-          <p
-            className="font-black mb-1"
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: "13px",
-              letterSpacing: "0.2em",
-              color: "var(--paper)",
-            }}
-          >
-            NAVEGACIÓN
-          </p>
-          {[
-            { href: "/catalog", label: "Catálogo" },
-            { href: "/track", label: "Seguimiento" },
-            { href: "/cart", label: "Carrito" },
-          ].map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="transition-colors duration-150 hover:text-[var(--vermeil)]"
-              style={{ color: "var(--ash)", fontSize: "13px" }}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
+        <nav aria-label="Información de compra" className="flex flex-col gap-3">
+          <p style={footerHeading}>INFORMACIÓN</p>
+          <Link href="/informacion/terminos" className="hover:text-[var(--vermeil)]" style={footerLink}>Términos y condiciones</Link>
+          <Link href="/informacion/privacidad" className="hover:text-[var(--vermeil)]" style={footerLink}>Política de privacidad</Link>
+          <Link href="/informacion/envios" className="hover:text-[var(--vermeil)]" style={footerLink}>Envíos y entregas</Link>
+          <Link href="/informacion/cambios-devoluciones" className="hover:text-[var(--vermeil)]" style={footerLink}>Cambios y devoluciones</Link>
+        </nav>
 
-        {/* Compra Segura */}
-        <div className="flex flex-col gap-3">
-          <p
-            className="font-black mb-1"
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: "13px",
-              letterSpacing: "0.2em",
-              color: "var(--paper)",
-            }}
-          >
-            COMPRA SEGURA
-          </p>
-          {[
-            "Validación de pagos con confirmación manual.",
-            "Stock y estado de pedido en tiempo real.",
-            "Despachos a Lima y provincias.",
-          ].map((text) => (
-            <p key={text} style={{ color: "var(--ash)", fontSize: "12px", lineHeight: "1.6" }}>
-              {text}
-            </p>
-          ))}
-        </div>
+        <nav aria-label="Atención al cliente" className="flex flex-col gap-3">
+          <p style={footerHeading}>ATENCIÓN</p>
+          <Link href="/track" className="hover:text-[var(--vermeil)]" style={footerLink}>Seguimiento de pedido</Link>
+          <Link href="/cart" className="hover:text-[var(--vermeil)]" style={footerLink}>Mi carrito</Link>
+          <Link href="/libro-reclamaciones" className="font-semibold hover:text-[var(--vermeil)]" style={{ ...footerLink, color: "var(--paper)" }}>Libro de Reclamaciones</Link>
+          <p style={{ ...footerLink, paddingTop: "4px" }}>Respuesta a reclamos en hasta 15 días hábiles.</p>
+        </nav>
 
-        {/* Soporte */}
-        <div className="flex flex-col gap-3">
-          <p
-            className="font-black mb-1"
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: "13px",
-              letterSpacing: "0.2em",
-              color: "var(--paper)",
-            }}
-          >
-            SOPORTE
-          </p>
-          {[
-            "Respuesta rápida por WhatsApp y redes oficiales.",
-            "Seguimiento simple con número de pedido.",
-          ].map((text) => (
-            <p key={text} style={{ color: "var(--ash)", fontSize: "12px", lineHeight: "1.6" }}>
-              {text}
-            </p>
-          ))}
-        </div>
+        <section aria-label="Ubicación de la tienda" className="flex flex-col gap-3">
+          <p style={footerHeading}>VISÍTANOS</p>
+          <address className="not-italic" style={{ ...footerLink, lineHeight: "1.65" }}>
+            <strong style={{ color: "var(--paper)" }}>Ollantaytambo 608</strong><br />
+            Tahuantinsuyo, Independencia<br />
+            Lima, Perú
+          </address>
+          <a href={mapsUrl} target="_blank" rel="noreferrer" className="w-fit font-bold uppercase hover:text-[var(--vermeil)]" style={{ fontSize: "11px", letterSpacing: ".12em", color: "var(--paper)" }}>Ver cómo llegar ↗</a>
+          <Link href="/nosotros" className="w-fit hover:text-[var(--vermeil)]" style={footerLink}>Frontis y ubicación de la tienda</Link>
+        </section>
       </Container>
 
-      {/* Bottom bar */}
       <div style={{ borderTop: "1px solid var(--ash-2)" }}>
-        <Container
-          className="py-5 text-xs flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-          style={{ color: "var(--ash-2)" }}
-        >
+        <Container className="flex flex-col gap-2 py-5 text-xs md:flex-row md:items-center md:justify-between" style={{ color: "var(--ash)" }}>
           <p>© {new Date().getFullYear()} ODERA 05 STORE. Todos los derechos reservados.</p>
-          <p style={{ color: "var(--ash)" }}>Marca peruana · ペルーブランド</p>
+          <p>Información de compra y canales de atención visibles para el consumidor.</p>
         </Container>
       </div>
     </footer>

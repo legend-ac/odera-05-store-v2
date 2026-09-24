@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Allows the presentation quality gate to build independently while the
+  // developer preview keeps using `.next`.
+  distDir: process.env.ODERA_BUILD_DIR || ".next",
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
