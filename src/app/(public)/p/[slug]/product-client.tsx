@@ -14,6 +14,20 @@ import { optimizedProductImage } from "@/lib/image";
 type Variant = { id: string; size?: string; color?: string; sku?: string; stock: number };
 type Img = { url: string; alt?: string; isMain: boolean; order: number };
 
+/* ── Inline style tokens ── */
+const S = {
+  ink:    "var(--ink)",
+  ink2:   "var(--ink-2)",
+  ink3:   "var(--ink-3)",
+  paper:  "var(--paper)",
+  ash:    "var(--ash)",
+  ash2:   "var(--ash-2)",
+  red:    "var(--vermeil)",
+  red2:   "var(--vermeil-2)",
+  gold:   "var(--gold)",
+  border: "1px solid var(--ash-2)",
+};
+
 export default function ProductClient({
   slug,
   initialProduct = null,
@@ -120,51 +134,44 @@ export default function ProductClient({
   const modalSubtotal = useMemo(() => unitPrice * addedQty, [unitPrice, addedQty]);
   const variantLabel = variants[0]?.size ? "Talla" : variants[0]?.color ? "Color" : "Opción";
 
-  function showPreviousImage() {
-    setImgIndex((i) => (i - 1 + galleryUrls.length) % galleryUrls.length);
-  }
-
-  function showNextImage() {
-    setImgIndex((i) => (i + 1) % galleryUrls.length);
-  }
+  function showPreviousImage() { setImgIndex((i) => (i - 1 + galleryUrls.length) % galleryUrls.length); }
+  function showNextImage() { setImgIndex((i) => (i + 1) % galleryUrls.length); }
 
   function onGalleryPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (galleryUrls.length <= 1) return;
     dragStart.current = { x: e.clientX, y: e.clientY };
     e.currentTarget.setPointerCapture(e.pointerId);
   }
-
   function onGalleryPointerUp(e: React.PointerEvent<HTMLDivElement>) {
     const start = dragStart.current;
     dragStart.current = null;
     if (!start || galleryUrls.length <= 1) return;
-
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
     if (Math.abs(dx) < 42 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-    if (dx < 0) showNextImage();
-    else showPreviousImage();
+    if (dx < 0) showNextImage(); else showPreviousImage();
   }
 
+  /* ── Loading / Error states ── */
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4">
-        <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-emerald-500 animate-spin" />
-        <p className="text-sm text-slate-500">Cargando producto...</p>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4" style={{ background: S.ink }}>
+        <div className="h-8 w-8 border-2 border-t-[var(--vermeil)] animate-spin" style={{ borderColor: "var(--ash-2)", borderTopColor: "var(--vermeil)", borderRadius: "50%" }} />
+        <p style={{ fontSize: "13px", color: S.ash }}>Cargando producto...</p>
       </div>
     );
   }
   if (error) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-50">
-          <svg className="h-6 w-6 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4 text-center" style={{ background: S.ink }}>
+        <div className="flex items-center justify-center" style={{ width: 56, height: 56, background: "rgba(232,69,44,0.1)", border: S.border, borderRadius: "2px" }}>
+          <svg className="h-6 w-6" style={{ color: S.red }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
         <div>
-          <p className="text-base font-bold text-slate-900">{error}</p>
-          <Link href="/catalog" className="mt-2 inline-block text-sm text-emerald-600 font-semibold hover:underline">
+          <p className="font-bold" style={{ color: S.paper, fontSize: "15px" }}>{error}</p>
+          <Link href="/catalog" className="mt-2 inline-block font-semibold hover:underline" style={{ fontSize: "13px", color: S.red }}>
             ← Volver al catálogo
           </Link>
         </div>
@@ -175,43 +182,52 @@ export default function ProductClient({
 
   return (
     <>
-      <div className="bg-[#f4f6f9] min-h-screen">
+      <div className="product-page" style={{ background: S.ink, minHeight: "100vh" }}>
 
-        {/* Breadcrumb */}
-        <div className="mx-auto max-w-6xl px-4 pt-4 pb-2 sm:px-6">
-          <nav className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500" aria-label="Navegación">
-            <Link href="/" className="hover:text-slate-800 transition-colors">Inicio</Link>
-            <span className="text-slate-300">›</span>
-            <Link href="/catalog" className="hover:text-slate-800 transition-colors">Catálogo</Link>
-            <span className="text-slate-300">›</span>
-            <span className="text-slate-800 font-semibold truncate max-w-[180px] sm:max-w-none">
-              {String(data.name ?? "")}
-            </span>
-          </nav>
+        {/* ── Breadcrumb ── */}
+        <div style={{ background: S.ink2, borderBottom: S.border }}>
+          <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
+            <nav className="flex items-center gap-2" style={{ fontSize: "12px", color: S.ash }}>
+              <Link href="/" className="hover:text-[var(--vermeil)] transition-colors">Inicio</Link>
+              <span style={{ color: S.ash2 }}>›</span>
+              <Link href="/catalog" className="hover:text-[var(--vermeil)] transition-colors">Catálogo</Link>
+              <span style={{ color: S.ash2 }}>›</span>
+              <span style={{ color: S.paper, fontWeight: 600 }} className="truncate max-w-[160px] sm:max-w-none">
+                {String(data.name ?? "")}
+              </span>
+            </nav>
+          </div>
         </div>
 
-        {/* Layout principal */}
-        <div className="mx-auto max-w-6xl px-4 pb-10 sm:px-6 lg:grid lg:grid-cols-[1fr_1fr] lg:gap-12 lg:items-start">
+        {/* ── Layout principal ── */}
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:grid lg:grid-cols-[1fr_1fr] lg:gap-10 lg:items-start">
 
-          {/* ══ GALERÍA ══════════════════════════════════════ */}
+          {/* ══ GALERÍA ══ */}
           <div className="flex flex-col gap-3 lg:sticky lg:top-20">
 
             {/* Imagen principal */}
-            <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm">
+            <div
+              className="relative overflow-hidden"
+              style={{ background: S.ink3, border: S.border, borderRadius: "2px" }}
+            >
               {/* Badges */}
               {hasDiscount && (
-                <div className="absolute left-3 top-3 z-10 flex gap-1.5">
-                  <span className="rounded-full bg-[var(--sale)] px-2.5 py-0.5 text-[11px] font-bold text-white shadow">
+                <div className="absolute left-0 top-0 z-10 flex gap-1.5 p-3">
+                  <span className="font-black text-white" style={{ background: S.red, fontSize: "11px", padding: "3px 8px", letterSpacing: "0.06em" }}>
                     Oferta
                   </span>
-                  <span className="rounded-full bg-black/65 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-bold text-white">
+                  <span className="font-black text-white" style={{ background: "rgba(14,14,18,0.85)", fontSize: "11px", padding: "3px 8px", letterSpacing: "0.06em" }}>
                     -{discountPct}%
                   </span>
                 </div>
               )}
 
+              {/* Vermeil corner */}
+              <div className="absolute top-0 right-0 z-10" style={{ width: 48, height: 48, background: S.red, clipPath: "polygon(100% 0, 100% 100%, 0 0)" }} />
+
               <div
-                className="relative flex touch-pan-y cursor-grab select-none items-center justify-center overflow-hidden w-full h-[300px] sm:h-[420px] lg:h-[460px] active:cursor-grabbing"
+                className="relative flex touch-pan-y cursor-grab select-none items-center justify-center overflow-hidden w-full active:cursor-grabbing"
+                style={{ aspectRatio: "1 / 1", minHeight: "300px", background: "radial-gradient(circle at 50% 45%, #292934 0%, var(--ink-3) 68%)" }}
                 onPointerDown={onGalleryPointerDown}
                 onPointerUp={onGalleryPointerUp}
                 onPointerCancel={() => { dragStart.current = null; }}
@@ -225,51 +241,41 @@ export default function ProductClient({
                     unoptimized
                     draggable={false}
                     sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-contain p-4 sm:p-8 transition-transform duration-700 ease-out hover:scale-[1.04]"
+                    className="object-contain transition-transform duration-700 ease-out hover:scale-[1.025]"
+                    style={{ padding: "clamp(8px, 2.25%, 22px)" }}
                     onError={() => setImgIndex((i) => (i + 1 < galleryUrls.length ? i + 1 : i))}
                   />
                 ) : (
-                  <div className="flex flex-col items-center gap-2 text-slate-300">
-                    <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                  <div className="flex flex-col items-center gap-2" style={{ color: S.ash2 }}>
+                    <svg className="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <p className="text-sm">Sin imagen</p>
+                    <p style={{ fontSize: "12px" }}>Sin imagen</p>
                   </div>
                 )}
               </div>
 
-              {/* Flechas de navegación */}
+              {/* Flechas */}
               {galleryUrls.length > 1 && (
                 <>
-                  <button
-                    type="button"
-                    aria-label="Imagen anterior"
-                    onClick={showPreviousImage}
-                    className="absolute left-3 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/35 text-slate-700 opacity-25 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-white/80 hover:opacity-90 hover:shadow-md sm:flex"
+                  <button type="button" aria-label="Imagen anterior" onClick={showPreviousImage}
+                    className="absolute left-3 top-1/2 hidden -translate-y-1/2 items-center justify-center sm:flex transition-all duration-200"
+                    style={{ width: 36, height: 36, background: "rgba(14,14,18,0.7)", border: "1px solid var(--ash-2)", borderRadius: "2px", color: S.paper }}
                   >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                   </button>
-                  <button
-                    type="button"
-                    aria-label="Siguiente imagen"
-                    onClick={showNextImage}
-                    className="absolute right-3 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/35 text-slate-700 opacity-25 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-white/80 hover:opacity-90 hover:shadow-md sm:flex"
+                  <button type="button" aria-label="Siguiente imagen" onClick={showNextImage}
+                    className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center justify-center sm:flex transition-all duration-200"
+                    style={{ width: 36, height: 36, background: "rgba(14,14,18,0.7)", border: "1px solid var(--ash-2)", borderRadius: "2px", color: S.paper }}
                   >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </button>
-
-                  {/* Dots — mobile */}
+                  {/* Dots mobile */}
                   <div className="absolute bottom-3 left-0 right-0 lg:hidden flex justify-center gap-1.5 z-10">
                     {galleryUrls.map((_, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setImgIndex(i)}
-                        className={`block rounded-full transition-all duration-300 ${i === imgIndex ? "w-5 h-1.5 bg-slate-900" : "w-1.5 h-1.5 bg-slate-400/50"}`}
+                      <button key={i} type="button" onClick={() => setImgIndex(i)}
+                        className="block transition-all duration-300"
+                        style={{ width: i === imgIndex ? 20 : 6, height: 4, background: i === imgIndex ? S.red : S.ash2, borderRadius: "1px" }}
                       />
                     ))}
                   </div>
@@ -277,26 +283,29 @@ export default function ProductClient({
               )}
             </div>
 
-            {/* Thumbnails — visible en todas las pantallas si hay más de 1 imagen */}
+            {/* Thumbnails */}
             {galleryUrls.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 justify-start">
+              <div className="flex gap-2 overflow-x-auto pb-1">
                 {galleryUrls.slice(0, 8).map((url, i) => (
                   <button
                     key={`${url}-${i}`}
                     type="button"
                     onClick={() => setImgIndex(i)}
-                    className={`relative shrink-0 h-[64px] w-[64px] sm:h-[72px] sm:w-[72px] overflow-hidden rounded-xl border-2 transition-all duration-200 bg-white ${i === imgIndex
-                      ? "border-slate-800 opacity-100 ring-2 ring-slate-800/10 ring-offset-1"
-                      : "border-slate-200 opacity-55 hover:opacity-90 hover:border-slate-400"
-                      }`}
+                    className="relative shrink-0 overflow-hidden transition-all duration-200"
+                    style={{
+                      width: 64, height: 64,
+                      background: S.ink3,
+                      border: i === imgIndex ? `2px solid var(--vermeil)` : `1px solid var(--ash-2)`,
+                      borderRadius: "2px",
+                      opacity: i === imgIndex ? 1 : 0.55,
+                      boxShadow: i === imgIndex ? "0 0 8px rgba(232,69,44,0.3)" : "none",
+                    }}
                   >
                     <Image
                       src={optimizedProductImage(url, 180)}
                       alt={`${data.name ?? ""} vista ${i + 1}`}
-                      fill
-                      unoptimized
-                      draggable={false}
-                      sizes="72px"
+                      fill unoptimized draggable={false}
+                      sizes="64px"
                       className="object-contain p-1"
                     />
                   </button>
@@ -305,32 +314,48 @@ export default function ProductClient({
             )}
           </div>
 
-          {/* ══ PANEL DE INFO ════════════════════════════════ */}
+          {/* ══ PANEL INFO ══ */}
           <div className="mt-6 flex flex-col gap-5 lg:mt-0 lg:py-2">
 
             {/* Marca + Nombre */}
             <div>
               {data.brand && (
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--brand-600)] mb-2">
+                <p className="font-bold uppercase mb-2" style={{ fontSize: "10px", letterSpacing: "0.28em", color: S.red }}>
                   {String(data.brand)}
                 </p>
               )}
-              <h1 className="text-[26px] sm:text-[32px] font-display font-bold leading-[1.1] text-slate-900 tracking-tight">
+              <h1
+                className="font-black leading-tight"
+                style={{
+                  fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                  fontSize: "clamp(28px, 5vw, 42px)",
+                  letterSpacing: "0.04em",
+                  color: S.paper,
+                }}
+              >
                 {String(data.name ?? "")}
               </h1>
             </div>
 
             {/* Precio */}
-            <div className="flex items-end gap-3 pb-4 border-b border-slate-200">
-              <span className={`text-[30px] sm:text-[36px] font-black leading-none tabular-nums ${hasDiscount ? "text-[var(--brand-600)]" : "text-slate-900"}`}>
+            <div className="flex items-end gap-4 pb-5" style={{ borderBottom: S.border }}>
+              <span
+                className="font-black leading-none tabular-nums"
+                style={{
+                  fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                  fontSize: "clamp(32px, 6vw, 48px)",
+                  letterSpacing: "0.04em",
+                  color: hasDiscount ? S.red : S.paper,
+                }}
+              >
                 {formatPEN(unitPrice)}
               </span>
               {hasDiscount && (
                 <div className="flex flex-col mb-1 gap-0.5">
-                  <span className="text-sm font-medium text-slate-400 line-through leading-none tabular-nums">
+                  <span className="line-through tabular-nums leading-none" style={{ fontSize: "14px", color: S.ash }}>
                     {formatPEN(data.price)}
                   </span>
-                  <span className="text-[11px] font-bold text-[var(--sale)] leading-none">
+                  <span className="font-bold leading-none" style={{ fontSize: "11px", color: S.red }}>
                     Ahorras {discountPct}%
                   </span>
                 </div>
@@ -339,39 +364,43 @@ export default function ProductClient({
 
             {/* Especificaciones */}
             {specsText && (
-              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div style={{ border: S.border, borderRadius: "2px", overflow: "hidden" }}>
                 <button
                   type="button"
                   onClick={() => setShowSpecs((v) => !v)}
-                  className="flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors"
+                  className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors"
+                  style={{ background: showSpecs ? S.ink3 : "transparent" }}
                 >
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-slate-700">Especificaciones</span>
+                  <span className="font-bold uppercase" style={{ fontSize: "10px", letterSpacing: "0.2em", color: S.paper }}>
+                    Especificaciones
+                  </span>
                   <svg
-                    className={`h-4 w-4 text-slate-500 transition-transform duration-300 ${showSpecs ? "rotate-180" : ""}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                    className={`h-4 w-4 transition-transform duration-300 ${showSpecs ? "rotate-180" : ""}`}
+                    style={{ color: S.ash }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 {showSpecs && (
-                  <div className="border-t border-slate-200 px-4 pb-4 pt-3 bg-slate-50">
-                    <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-600">{specsText}</p>
+                  <div className="px-4 pb-4 pt-3" style={{ background: S.ink3, borderTop: S.border }}>
+                    <p className="whitespace-pre-wrap leading-relaxed" style={{ fontSize: "13px", color: S.ash }}>
+                      {specsText}
+                    </p>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Variantes */}
+            {/* Variantes / Tallas */}
             {variants.length > 0 && (
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-700">{variantLabel}</p>
+                  <p className="font-bold uppercase" style={{ fontSize: "10px", letterSpacing: "0.2em", color: S.ash }}>
+                    {variantLabel}
+                  </p>
                   {selectedVariant && (
-                    <p className="text-[12px] font-semibold">
-                      {selectedVariant.stock > 0
-                        ? <span className="text-emerald-700">Stock disponible: {selectedVariant.stock}</span>
-                        : <span className="text-rose-500">Sin stock</span>
-                      }
+                    <p style={{ fontSize: "12px", fontWeight: 600, color: selectedVariant.stock > 0 ? "#3CB878" : S.red }}>
+                      {selectedVariant.stock > 0 ? `Stock: ${selectedVariant.stock}` : "Sin stock"}
                     </p>
                   )}
                 </div>
@@ -386,19 +415,22 @@ export default function ProductClient({
                         type="button"
                         disabled={outOfStock}
                         onClick={() => setVariantId(v.id)}
-                        className={`relative rounded-xl px-4 py-2.5 text-[13px] font-bold border-2 transition-all duration-200 min-w-[3.5rem] text-center ${outOfStock
-                          ? "bg-slate-50 border-slate-150 text-slate-300 line-through cursor-not-allowed"
-                          : active
-                            ? "bg-slate-900 border-slate-900 text-white shadow-md scale-[1.03]"
-                            : "bg-white border-slate-200 text-slate-700 hover:border-slate-400 hover:text-slate-900 hover:scale-[1.02]"
-                          }`}
+                        className="relative font-bold transition-all duration-150 text-center"
+                        style={{
+                          minWidth: "3.5rem",
+                          padding: "8px 16px",
+                          fontSize: "13px",
+                          letterSpacing: "0.06em",
+                          border: active ? `2px solid var(--vermeil)` : `1px solid var(--ash-2)`,
+                          borderRadius: "2px",
+                          background: active ? "var(--vermeil)" : outOfStock ? S.ink3 : "transparent",
+                          color: active ? "#fff" : outOfStock ? S.ash2 : S.paper,
+                          opacity: outOfStock ? 0.45 : 1,
+                          cursor: outOfStock ? "not-allowed" : "pointer",
+                          textDecoration: outOfStock ? "line-through" : "none",
+                        }}
                       >
                         {label}
-                        {outOfStock && (
-                          <span className="absolute inset-0 flex items-center justify-center">
-                            <span className="block h-px w-4/5 bg-slate-300 rotate-12" />
-                          </span>
-                        )}
                       </button>
                     );
                   })}
@@ -407,28 +439,28 @@ export default function ProductClient({
             )}
 
             {/* Cantidad + CTA */}
-            <div className="flex flex-col gap-3 pt-1">
+            <div className="flex flex-col gap-3">
               {/* Cantidad */}
               <div className="flex items-center gap-4">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-700 flex-1">Cantidad</p>
-                <div className="inline-flex items-center rounded-xl border-2 border-slate-200 bg-white overflow-hidden h-11 w-28">
-                  <button
-                    type="button"
-                    onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    className="flex-1 h-full flex items-center justify-center text-lg font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-                  >
-                    −
-                  </button>
-                  <span className="h-7 min-w-[32px] flex items-center justify-center border-x-2 border-slate-200 text-sm font-bold text-slate-900 tabular-nums">
+                <p className="font-bold uppercase flex-1" style={{ fontSize: "10px", letterSpacing: "0.2em", color: S.ash }}>
+                  Cantidad
+                </p>
+                <div className="inline-flex items-center overflow-hidden" style={{ border: S.border, borderRadius: "2px", height: 40, width: 112 }}>
+                  <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="flex-1 h-full flex items-center justify-center text-lg transition-colors"
+                    style={{ color: S.ash, background: "transparent" }}
+                    onMouseEnter={(e) => { (e.target as HTMLElement).style.background = S.ink3; }}
+                    onMouseLeave={(e) => { (e.target as HTMLElement).style.background = "transparent"; }}
+                  >−</button>
+                  <span className="h-7 min-w-[32px] flex items-center justify-center tabular-nums font-bold" style={{ borderLeft: S.border, borderRight: S.border, color: S.paper, fontSize: "14px" }}>
                     {Math.min(50, Math.max(1, Math.floor(qty || 1)))}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setQty((q) => Math.min(Math.min(50, Math.max(1, available)), q + 1))}
-                    className="flex-1 h-full flex items-center justify-center text-lg font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-                  >
-                    +
-                  </button>
+                  <button type="button" onClick={() => setQty((q) => Math.min(Math.min(50, Math.max(1, available)), q + 1))}
+                    className="flex-1 h-full flex items-center justify-center text-lg transition-colors"
+                    style={{ color: S.ash, background: "transparent" }}
+                    onMouseEnter={(e) => { (e.target as HTMLElement).style.background = S.ink3; }}
+                    onMouseLeave={(e) => { (e.target as HTMLElement).style.background = "transparent"; }}
+                  >+</button>
                 </div>
               </div>
 
@@ -442,13 +474,16 @@ export default function ProductClient({
                   setAddedQty(safeQty);
                   setShowCartModal(true);
                 }}
-                className="w-full h-13 rounded-xl flex items-center justify-center gap-2.5 text-[14px] font-bold uppercase tracking-wider text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2.5 font-black uppercase tracking-widest text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
-                  background: "linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 100%)",
-                  boxShadow: "0 6px 24px rgba(22,78,32,0.30)",
+                  height: 52,
+                  fontSize: "14px",
+                  letterSpacing: "0.1em",
+                  background: "linear-gradient(135deg, var(--vermeil-2) 0%, var(--vermeil) 100%)",
+                  boxShadow: "0 6px 24px rgba(232,69,44,0.35)",
+                  borderRadius: "2px",
+                  clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
                 }}
-                onMouseEnter={(e) => { if (available > 0) e.currentTarget.style.boxShadow = "0 10px 32px rgba(22,78,32,0.45)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(22,78,32,0.30)"; }}
               >
                 {available <= 0 ? (
                   <>
@@ -467,10 +502,9 @@ export default function ProductClient({
                 )}
               </button>
 
-              {/* Nota de seguridad */}
               {available > 0 && (
-                <p className="text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5">
-                  <svg className="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <p className="text-center flex items-center justify-center gap-1.5" style={{ fontSize: "11px", color: S.ash }}>
+                  <svg className="h-3 w-3" style={{ color: "#3CB878" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                   Compra 100% segura · Producto original
@@ -479,22 +513,24 @@ export default function ProductClient({
             </div>
 
             {/* Trust badges */}
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+            <div className="grid grid-cols-2 gap-2 pt-2" style={{ borderTop: S.border }}>
               {[
-                { icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z", t: "Pago seguro", d: "Comprobante verificado", color: "text-blue-600 bg-blue-50" },
-                { icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", t: "Envío directo", d: "Seguimiento en tiempo real", color: "text-violet-600 bg-violet-50" },
-                { icon: "M5 13l4 4L19 7", t: "100% Original", d: "Garantía de autenticidad", color: "text-emerald-600 bg-emerald-50" },
-                { icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", t: "Atención directa", d: "Soporte por WhatsApp", color: "text-emerald-600 bg-emerald-50" },
+                { icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z", t: "Pago seguro", d: "Comprobante verificado" },
+                { icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", t: "Envío directo", d: "Seguimiento en tiempo real" },
+                { icon: "M5 13l4 4L19 7", t: "100% Original", d: "Garantía de autenticidad" },
+                { icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", t: "Atención directa", d: "Soporte por WhatsApp" },
               ].map(b => (
-                <div key={b.t} className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 hover:border-slate-300 hover:shadow-sm transition-all duration-200">
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${b.color}`}>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div key={b.t} className="flex items-center gap-2.5 px-3 py-2.5 transition-all duration-200"
+                  style={{ background: S.ink3, border: S.border, borderRadius: "2px" }}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,0.12)", borderRadius: "1px" }}>
+                    <svg className="h-3.5 w-3.5" style={{ color: S.red }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d={b.icon} />
                     </svg>
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold text-slate-900 leading-tight">{b.t}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{b.d}</p>
+                    <p className="font-bold leading-tight" style={{ fontSize: "11px", color: S.paper }}>{b.t}</p>
+                    <p className="leading-tight mt-0.5" style={{ fontSize: "10px", color: S.ash }}>{b.d}</p>
                   </div>
                 </div>
               ))}
@@ -502,75 +538,59 @@ export default function ProductClient({
           </div>
         </div>
 
-        {/* Productos recomendados */}
+        {/* ── Productos recomendados ── */}
         {recommended.length > 0 && (
-          <div className="mx-auto max-w-6xl px-4 pb-14 sm:px-6">
-
-            {/* Header de sección */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-5 py-4 mb-4 flex items-center justify-between gap-4">
-              {/* Orb decorativo */}
-              <div className="pointer-events-none absolute right-0 top-0 h-20 w-40 rounded-full bg-emerald-500/8 blur-3xl" aria-hidden />
+          <div className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+            <div className="flex items-center justify-between pb-4 mb-6" style={{ borderBottom: S.border }}>
               <div>
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-400 mb-0.5">Descubre más</p>
-                <h2 className="text-[16px] sm:text-[18px] font-display font-extrabold text-white leading-tight">También te puede gustar</h2>
-                <p className="text-[11px] text-slate-400 mt-0.5">{recommended.length} productos seleccionados para ti</p>
+                <p className="font-black uppercase mb-1" style={{ fontSize: "10px", letterSpacing: "0.28em", color: S.red }}>
+                  Descubre más
+                </p>
+                <h2 className="font-black" style={{ fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif", fontSize: "clamp(22px, 4vw, 32px)", letterSpacing: "0.06em", color: S.paper }}>
+                  TAMBIÉN TE PUEDE GUSTAR
+                </h2>
               </div>
-              <Link
-                href="/catalog"
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/8 px-3.5 py-2 text-[12px] font-semibold text-white hover:bg-white/15 transition-all duration-200"
-              >
-                Ver todo
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+              <Link href="/catalog" className="font-bold uppercase transition-colors hover:text-[var(--vermeil)]"
+                style={{ fontSize: "11px", letterSpacing: "0.1em", color: S.ash }}>
+                Ver todo →
               </Link>
             </div>
-
-            {/* Grid de productos */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {recommended.map((it) => (
                 <ProductCard key={it.id} p={it} />
               ))}
             </div>
-
-            {/* CTA final */}
             <div className="mt-6 flex justify-center">
-              <Link
-                href="/catalog"
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-8 py-3 text-[13px] font-semibold text-slate-700 shadow-sm hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                Ver catálogo completo
+              <Link href="/catalog" className="btn-soft" style={{ fontSize: "12px", padding: "10px 28px" }}>
+                Ver catálogo completo →
               </Link>
             </div>
-
           </div>
         )}
       </div>
 
-      {/* ══ MODAL CARRITO ════════════════════════════════════════════ */}
+      {/* ══ MODAL CARRITO ══ */}
       {showCartModal && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 backdrop-blur-sm p-3 sm:items-center sm:p-6">
-          <div className="w-full max-w-[440px] fade-in-up">
-            <div className="max-h-[85dvh] overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-[var(--shadow-elevated)] flex flex-col">
+        <div className="fixed inset-0 z-[80] flex items-end justify-center p-3 sm:items-center sm:p-6" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}>
+          <div className="w-full max-w-[540px] fade-in-up">
+            <div className="max-h-[85dvh] overflow-hidden flex flex-col" style={{ background: S.ink2, border: "1px solid var(--ash-2)", borderRadius: "2px", boxShadow: "var(--shadow-elevated)" }}>
 
               {/* Modal Header */}
-              <div className="flex-shrink-0 flex items-start justify-between gap-4 p-5 pb-4 border-b border-slate-100">
+              <div className="flex-shrink-0 flex items-start justify-between gap-4 p-5 pb-4" style={{ borderBottom: S.border }}>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-700 mb-1 flex items-center gap-1.5">
+                  <p className="font-bold uppercase mb-1 flex items-center gap-1.5" style={{ fontSize: "10px", letterSpacing: "0.2em", color: "#3CB878" }}>
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     Añadido al carrito
                   </p>
-                  <h2 className="text-[18px] font-bold text-slate-900">¿Continúas comprando?</h2>
+                  <h2 className="font-black" style={{ fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif", fontSize: "22px", letterSpacing: "0.06em", color: S.paper }}>
+                    ¿Continúas comprando?
+                  </h2>
                 </div>
-                <button
-                  type="button"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors"
-                  onClick={() => setShowCartModal(false)}
+                <button type="button" onClick={() => setShowCartModal(false)}
+                  className="flex items-center justify-center transition-colors"
+                  style={{ width: 32, height: 32, background: S.ink3, border: S.border, borderRadius: "2px", color: S.ash }}
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -579,62 +599,50 @@ export default function ProductClient({
               </div>
 
               {/* Modal Body */}
-              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-slate-50">
-                <div className="flex gap-3 rounded-xl bg-white border border-slate-200 p-3 shadow-sm">
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-100 border border-slate-200">
+              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" style={{ background: S.ink3 }}>
+                <div className="flex gap-3 p-3" style={{ background: S.ink2, border: S.border, borderRadius: "2px" }}>
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden" style={{ background: S.ink3, border: S.border, borderRadius: "2px" }}>
                     {mainImg && (
-                      <Image
-                        src={optimizedProductImage(mainImg, 180)}
-                        alt={String(data.name ?? "")}
-                        fill
-                        unoptimized
-                        sizes="64px"
-                        className="object-contain p-1"
-                      />
+                      <Image src={optimizedProductImage(mainImg, 180)} alt={String(data.name ?? "")} fill unoptimized sizes="64px" className="object-contain p-1" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
-                    <p className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">{String(data.name ?? "")}</p>
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                    <p className="font-bold line-clamp-2 leading-snug" style={{ fontSize: "13px", color: S.paper }}>{String(data.name ?? "")}</p>
+                    <div className="flex items-center gap-2" style={{ fontSize: "11px", color: S.ash }}>
                       {selectedVariant?.size && (
-                        <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">{variantLabel}: {selectedVariant.size}</span>
+                        <span style={{ background: S.ink3, padding: "1px 6px", fontSize: "10px", color: S.paper, borderRadius: "1px" }}>
+                          {variantLabel}: {selectedVariant.size}
+                        </span>
                       )}
                       <span>{addedQty} unidad{addedQty !== 1 ? "es" : ""}</span>
                     </div>
                   </div>
                   <div className="flex items-center pl-2 shrink-0">
-                    <p className="text-[15px] font-black text-slate-900 tabular-nums">{formatPEN(modalSubtotal)}</p>
+                    <p className="font-black tabular-nums" style={{ fontSize: "16px", color: S.paper }}>{formatPEN(modalSubtotal)}</p>
                   </div>
                 </div>
 
                 {recommended.length > 0 && (
-                  <div>
-                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5 text-center">Productos relacionados</h3>
-                    <div className="flex gap-2.5 overflow-x-auto pb-1 justify-center">
+                  <div className="rounded-sm p-3" style={{ background: "rgba(14,14,18,.26)", border: S.border }}>
+                    <h3 className="font-bold uppercase mb-3" style={{ fontSize: "10px", letterSpacing: "0.18em", color: S.ash }}>
+                      Relacionados
+                    </h3>
+                    <div className="grid grid-cols-3 gap-2.5">
                       {recommended.slice(0, 3).map((it) => {
                         const price = it.onSale && typeof it.salePrice === "number" ? it.salePrice : it.price;
                         const imgUrl = it.imageUrl || it.imageUrls?.[0] || "";
                         return (
-                          <Link
-                            key={it.id}
-                            href={`/p/${it.id}`}
-                            className="w-[110px] shrink-0 rounded-xl bg-white border border-slate-200 p-2 hover:border-slate-300 hover:shadow-sm transition-all duration-200 group"
-                            onClick={() => setShowCartModal(false)}
+                          <Link key={it.id} href={`/p/${it.id}`} onClick={() => setShowCartModal(false)}
+                            className="group flex min-w-0 flex-col p-2.5 transition-all duration-200 hover:-translate-y-0.5"
+                            style={{ background: S.ink2, border: S.border, borderRadius: "2px" }}
                           >
-                            <div className="relative aspect-square overflow-hidden rounded-lg bg-slate-50 mb-1.5">
+                            <div className="relative aspect-[4/3] overflow-hidden mb-2" style={{ background: S.ink3 }}>
                               {imgUrl && (
-                                <Image
-                                  src={optimizedProductImage(imgUrl, 180)}
-                                  alt={it.name}
-                                  fill
-                                  unoptimized
-                                  sizes="110px"
-                                  className="object-contain p-1 transition-transform duration-300 group-hover:scale-105"
-                                />
+                                <Image src={optimizedProductImage(imgUrl, 240)} alt={it.name} fill unoptimized sizes="(max-width: 640px) 30vw, 150px" className="object-contain p-1 transition-transform duration-300 group-hover:scale-105" />
                               )}
                             </div>
-                            <p className="line-clamp-2 text-[10px] font-semibold text-slate-600 leading-tight mb-1">{it.name}</p>
-                            <p className="text-[12px] font-black text-slate-900 tabular-nums">{formatPEN(price)}</p>
+                            <p className="line-clamp-2 min-h-[2.5em] leading-tight mb-2" style={{ fontSize: "11px", color: S.paper }}>{it.name}</p>
+                            <p className="mt-auto font-black tabular-nums" style={{ fontSize: "14px", color: S.paper }}>{formatPEN(price)}</p>
                           </Link>
                         );
                       })}
@@ -644,22 +652,14 @@ export default function ProductClient({
               </div>
 
               {/* Modal Footer */}
-              <div className="flex-shrink-0 flex flex-col gap-2 p-4 border-t border-slate-100 bg-white">
-                <Link
-                  href="/cart"
-                  className="w-full h-11 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-white transition-all duration-200"
-                  style={{ background: "linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 100%)" }}
-                >
+              <div className="flex-shrink-0 flex flex-col gap-2 p-4" style={{ borderTop: S.border, background: S.ink2 }}>
+                <Link href="/cart" className="btn-brand justify-center w-full" style={{ fontSize: "13px", padding: "14px" }}>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
                   Ver mi carrito
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => setShowCartModal(false)}
-                  className="w-full h-11 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all"
-                >
+                <button type="button" onClick={() => setShowCartModal(false)} className="btn-soft w-full justify-center" style={{ fontSize: "13px", padding: "12px" }}>
                   Seguir comprando
                 </button>
               </div>

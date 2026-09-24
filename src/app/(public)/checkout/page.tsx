@@ -284,7 +284,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
+    <div className="shopping-flow checkout-page mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
       <nav className="flex items-center gap-2 text-xs font-medium text-slate-500">
         <a href="/" className="hover:text-slate-900 transition-colors">Inicio</a>
         <span className="text-slate-300">/</span>

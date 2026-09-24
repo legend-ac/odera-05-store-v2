@@ -54,10 +54,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={`${sans.variable} ${display.variable}`}>
       <head>
+        {/* Bebas Neue — fuente display manga/anime */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
+          rel="stylesheet"
+        />
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
       </head>
-      <body className="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased selection:bg-blue-100 selection:text-blue-900">
+      <body
+        className="min-h-screen antialiased"
+        style={{
+          background: "var(--ink)",
+          color: "var(--paper)",
+          fontFamily: "var(--font-sans), Roboto, 'Segoe UI', sans-serif",
+        }}
+      >
         <Providers>
           <div className="min-h-dvh flex flex-col">
             <Header />

@@ -54,13 +54,21 @@ export default async function FeaturedProducts() {
     const items = await loadFeatured();
     if (!items.length) {
       return (
-        <div className="panel rounded-2xl border-slate-200 p-6 text-center text-sm text-slate-600">
+        <div
+          className="px-4 py-8 text-center text-sm"
+          style={{
+            background: "var(--ink-2)",
+            border: "1px solid var(--ash-2)",
+            borderRadius: "2px",
+            color: "var(--ash)",
+          }}
+        >
           Pronto publicaremos nuevos productos destacados.
         </div>
       );
     }
     return (
-      <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-5 md:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {items.map((p, index) => (
           <ProductCard key={p.id} p={p} priority={index < 4} />
         ))}

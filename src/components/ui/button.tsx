@@ -6,18 +6,18 @@ type Variant = "primary" | "secondary" | "ghost" | "destructive";
 type Size = "sm" | "md" | "lg" | "icon";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-xl font-semibold select-none transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 active:scale-[0.97]",
+  "inline-flex items-center justify-center font-semibold select-none transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vermeil)] focus-visible:ring-offset-1 active:scale-[0.97] uppercase tracking-widest",
   {
     variants: {
       variant: {
         primary:
-          "border border-primary bg-primary text-primary-foreground shadow-sm hover:opacity-90 hover:shadow-md",
+          "bg-[var(--vermeil)] text-white hover:bg-[var(--vermeil-2)] shadow-[var(--shadow-brand)]",
         secondary:
-          "border border-border bg-card text-foreground hover:bg-[var(--surface-hover)] hover:border-slate-300 hover:shadow-sm",
+          "border border-[var(--ash-2)] bg-[var(--ink-3)] text-[var(--paper)] hover:border-[var(--vermeil)] hover:text-[var(--paper)]",
         ghost:
-          "border border-transparent bg-transparent text-foreground hover:bg-[var(--surface-hover)]",
+          "border border-transparent bg-transparent text-[var(--paper)] hover:bg-[var(--ink-3)]",
         destructive:
-          "border border-destructive bg-destructive text-destructive-foreground shadow-sm hover:opacity-90",
+          "border border-[var(--vermeil)] bg-[var(--vermeil)] text-white hover:opacity-90",
       },
       size: {
         sm: "min-h-10 px-3 text-sm",

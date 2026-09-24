@@ -5,7 +5,7 @@ import { cva } from "@/lib/cva";
 type FieldSize = "sm" | "md" | "lg";
 
 const fieldBase = cva(
-  "w-full rounded-xl border border-border bg-card text-foreground placeholder:text-muted shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 focus-visible:border-ring focus-visible:shadow-none disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[var(--surface-muted)]",
+  "w-full border bg-[var(--ink-3)] text-[var(--paper)] placeholder:text-[var(--ash)] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vermeil)] focus-visible:ring-offset-0 focus-visible:border-[var(--vermeil)] disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       size: {

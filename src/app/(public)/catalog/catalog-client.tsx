@@ -21,9 +21,9 @@ const AUDIENCE_LABEL: Record<Audience, string> = {
 
 const SORT_OPTIONS: { value: SortType; label: string }[] = [
   { value: "latest", label: "Más recientes" },
-  { value: "price-asc", label: "Precio: menor a mayor" },
-  { value: "price-desc", label: "Precio: mayor a menor" },
-  { value: "name", label: "Nombre A–Z" },
+  { value: "price-asc", label: "Precio ↑" },
+  { value: "price-desc", label: "Precio ↓" },
+  { value: "name", label: "A–Z" },
 ];
 
 function supportsAudienceFilter(productType: string): boolean {
@@ -85,7 +85,6 @@ export default function CatalogClient({
   const [items, setItems] = useState<CatalogItem[] | null>(initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
 
-  // Cierra el dropdown al hacer click fuera
   useEffect(() => {
     if (!sortOpen) return;
     const handler = (e: MouseEvent) => {
@@ -185,147 +184,181 @@ export default function CatalogClient({
   )?.label ?? null;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ minHeight: "100vh", background: "var(--ink)" }}>
 
-      {/* ── Banner del catálogo ── */}
-      <div className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      {/* ── Header del catálogo ── */}
+      <div style={{ background: "var(--ink-2)", borderBottom: "1px solid var(--ash-2)" }}>
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <div className="flex items-center justify-between gap-4">
-
-            {/* Izquierda: título */}
             <div>
               {/* Breadcrumb */}
-              <div className="flex items-center gap-1.5 mb-2">
-                <a href="/" className="text-[11px] text-zinc-500 hover:text-zinc-950 transition-colors">Inicio</a>
-                <svg className="h-2.5 w-2.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                <span className="text-[11px] font-semibold text-zinc-700">
+              <div className="flex items-center gap-2 mb-2">
+                <a
+                  href="/"
+                  className="transition-colors duration-150 hover:text-[var(--vermeil)]"
+                  style={{ fontSize: "11px", color: "var(--ash)", letterSpacing: "0.06em" }}
+                >
+                  Inicio
+                </a>
+                <span style={{ color: "var(--ash-2)", fontSize: "11px" }}>›</span>
+                <span style={{ fontSize: "11px", color: "var(--paper)", fontWeight: 600 }}>
                   {hasLockedType ? activeCategoryLabel : "Catálogo"}
                 </span>
               </div>
-
-              <h1 className="text-3xl font-display font-bold text-zinc-950 leading-tight tracking-tight sm:text-4xl">
+              <h1
+                className="font-black leading-none"
+                style={{
+                  fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                  fontSize: "clamp(28px, 5vw, 40px)",
+                  letterSpacing: "0.06em",
+                  color: "var(--paper)",
+                }}
+              >
                 {hasLockedType ? activeCategoryLabel : "Catálogo"}
               </h1>
-              <p className="mt-2 text-[13px] text-zinc-500 max-w-sm">
+              <p style={{ fontSize: "12px", color: "var(--ash)", marginTop: "4px" }}>
                 {hasLockedType
-                  ? `Explora todos los ${activeCategoryLabel?.toLowerCase() ?? "productos"} disponibles · Stock actualizado`
-                  : "Zapatillas, ropa y accesorios originales · Stock actualizado"}
+                  ? `${activeCategoryLabel?.toLowerCase() ?? "productos"} · stock actualizado`
+                  : "Zapatillas, ropa y accesorios · stock actualizado"}
               </p>
             </div>
 
-            {/* Derecha: contador */}
+            {/* Contador */}
             {items && (
-              <div className="shrink-0 border-l border-zinc-200 pl-5 text-right">
-                <span className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+              <div
+                className="shrink-0 text-right pl-5"
+                style={{ borderLeft: "1px solid var(--ash-2)" }}
+              >
+                <span
+                  className="block font-bold uppercase"
+                  style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--ash)" }}
+                >
                   Disponibles
                 </span>
-                <p className="mt-1 text-3xl font-bold leading-none tabular-nums text-zinc-950">{sortedItems.length}</p>
-                <p className="mt-1 text-[10px] text-zinc-500">productos</p>
+                <p
+                  className="font-black tabular-nums mt-1"
+                  style={{
+                    fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                    fontSize: "36px",
+                    color: "var(--vermeil)",
+                    lineHeight: 1,
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  {sortedItems.length}
+                </p>
+                <p style={{ fontSize: "10px", color: "var(--ash)", marginTop: "2px" }}>productos</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Contenido principal ── */}
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      {/* ── Contenido ── */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
 
-        {/* Barra de filtros pegada al banner */}
-        <div className="border-b border-zinc-200 py-5">
-
+        {/* Barra de filtros */}
+        <div className="py-4" style={{ borderBottom: "1px solid var(--ash-2)" }}>
           <div className="flex flex-col gap-3">
+
             {/* Categorías */}
             {!hasLockedType && productTypes.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Categoría</p>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setTypeFilter("")}
-                    className={`border-b-2 px-1 py-1.5 text-[12px] font-medium transition-colors duration-150 cursor-pointer ${!typeFilter
-                      ? "border-zinc-950 text-zinc-950 font-semibold"
-                      : "border-transparent bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-950"
-                      }`}
-                  >
-                    Todos
-                  </button>
-                  {productTypes.map((t) => (
-                    <button
-                      key={t.key}
-                      type="button"
-                      onClick={() => setTypeFilter(t.key)}
-                      className={`border-b-2 px-1 py-1.5 text-[12px] font-medium transition-colors duration-150 cursor-pointer ${typeFilter === t.key
-                        ? "border-zinc-950 text-zinc-950 font-semibold"
-                        : "border-transparent bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-950"
-                        }`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Público (si aplica) */}
-            {typeFilter && supportsAudienceFilter(typeFilter) && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Para</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
-                    <button
-                      key={a}
-                      type="button"
-                      onClick={() => setAudienceFilter(a)}
-                      className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all duration-150 cursor-pointer ${audienceFilter === a
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
-                        }`}
-                    >
-                      {AUDIENCE_LABEL[a]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Limpiar filtros */}
-            {(!hasLockedType && typeFilter) && (
-              <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                <span className="text-[11px] text-slate-400">
-                  Filtrando: <strong className="text-slate-700">{activeCategoryLabel}</strong>
-                  {audienceFilter && audienceFilter !== "todos" && (
-                    <> · <strong className="text-slate-700">{AUDIENCE_LABEL[audienceFilter as Audience]}</strong></>
-                  )}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => { setTypeFilter(""); setAudienceFilter(""); setSortBy("latest"); }}
-                  className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-100 transition-colors"
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="font-bold uppercase shrink-0"
+                  style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--ash)" }}
                 >
-                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Limpiar
-                </button>
+                  Cat:
+                </span>
+                {[{ key: "", label: "Todos" }, ...productTypes].map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTypeFilter(t.key)}
+                    className="font-semibold transition-all duration-150 cursor-pointer"
+                    style={{
+                      fontSize: "12px",
+                      letterSpacing: "0.06em",
+                      padding: "4px 10px",
+                      border: "1px solid",
+                      borderRadius: "2px",
+                      borderColor: typeFilter === t.key ? "var(--vermeil)" : "var(--ash-2)",
+                      background: typeFilter === t.key ? "var(--vermeil)" : "transparent",
+                      color: typeFilter === t.key ? "#fff" : "var(--ash)",
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Público */}
+            {typeFilter && supportsAudienceFilter(typeFilter) && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="font-bold uppercase shrink-0"
+                  style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--ash)" }}
+                >
+                  Para:
+                </span>
+                {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => setAudienceFilter(a)}
+                    className="font-semibold transition-all duration-150 cursor-pointer"
+                    style={{
+                      fontSize: "12px",
+                      letterSpacing: "0.06em",
+                      padding: "4px 10px",
+                      border: "1px solid",
+                      borderRadius: "2px",
+                      borderColor: audienceFilter === a ? "var(--vermeil)" : "var(--ash-2)",
+                      background: audienceFilter === a ? "var(--vermeil)" : "transparent",
+                      color: audienceFilter === a ? "#fff" : "var(--ash)",
+                    }}
+                  >
+                    {AUDIENCE_LABEL[a]}
+                  </button>
+                ))}
               </div>
             )}
           </div>
         </div>
 
         {/* Fila: conteo + ordenar */}
-        <div className="flex items-center justify-between gap-3 mt-3 mb-3">
+        <div className="flex items-center justify-between gap-3 py-3">
           {items ? (
-            <p className="text-[13px] text-slate-500">
-              <span className="font-bold text-slate-900">{sortedItems.length}</span>{" "}
+            <p style={{ fontSize: "12px", color: "var(--ash)" }}>
+              <span style={{ fontWeight: 700, color: "var(--paper)" }}>{sortedItems.length}</span>{" "}
               {sortedItems.length === 1 ? "producto" : "productos"}
               {token && (
-                <span className="text-slate-400"> · &ldquo;{token}&rdquo;
-                  <button type="button" onClick={() => setQText("")} className="ml-1.5 text-[11px] text-rose-500 hover:underline font-medium">✕ borrar</button>
+                <span style={{ color: "var(--ash)" }}>
+                  {" "}· &ldquo;{token}&rdquo;
+                  <button
+                    type="button"
+                    onClick={() => setQText("")}
+                    className="ml-2 hover:underline"
+                    style={{ fontSize: "11px", color: "var(--vermeil)", fontWeight: 600 }}
+                  >
+                    ✕ borrar
+                  </button>
                 </span>
+              )}
+              {!hasLockedType && typeFilter && activeCategoryLabel && (
+                <button
+                  type="button"
+                  onClick={() => { setTypeFilter(""); setAudienceFilter(""); setSortBy("latest"); }}
+                  className="ml-3 hover:underline"
+                  style={{ fontSize: "11px", color: "var(--vermeil)", fontWeight: 600 }}
+                >
+                  ✕ {activeCategoryLabel}
+                </button>
               )}
             </p>
           ) : (
-            <p className="text-[13px] text-slate-400">Cargando...</p>
+            <p style={{ fontSize: "12px", color: "var(--ash)" }}>Cargando...</p>
           )}
 
           {/* Sort dropdown */}
@@ -333,18 +366,26 @@ export default function CatalogClient({
             <button
               type="button"
               onClick={() => setSortOpen((v) => !v)}
-              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[12px] font-medium shadow-sm transition-all duration-150 ${sortOpen
-                ? "border-emerald-400 bg-white text-slate-900 shadow-md"
-                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
-                }`}
+              className="inline-flex items-center gap-2 font-semibold transition-all duration-150"
+              style={{
+                fontSize: "11px",
+                letterSpacing: "0.06em",
+                padding: "6px 12px",
+                border: "1px solid",
+                borderRadius: "2px",
+                borderColor: sortOpen ? "var(--vermeil)" : "var(--ash-2)",
+                background: "var(--ink-2)",
+                color: "var(--paper)",
+              }}
             >
-              <svg className="h-3.5 w-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-3 w-3 shrink-0" style={{ color: "var(--ash)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M7 12h10M11 17h2" />
               </svg>
               <span className="hidden sm:inline">{SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? "Ordenar"}</span>
               <span className="sm:hidden">Ordenar</span>
               <svg
-                className={`h-3 w-3 text-slate-400 shrink-0 transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`}
+                className={`h-3 w-3 shrink-0 transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`}
+                style={{ color: "var(--ash)" }}
                 fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -352,23 +393,32 @@ export default function CatalogClient({
             </button>
 
             {sortOpen && (
-              <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[200px] rounded-2xl border border-slate-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.14)] overflow-hidden">
-                <p className="px-4 py-2.5 text-[9px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100">
-                  Ordenar por
-                </p>
+              <div
+                className="absolute right-0 top-full mt-1.5 z-50 min-w-[160px] overflow-hidden"
+                style={{
+                  background: "var(--ink-2)",
+                  border: "1px solid var(--ash-2)",
+                  borderRadius: "2px",
+                  boxShadow: "var(--shadow-elevated)",
+                }}
+              >
                 {SORT_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => { setSortBy(opt.value); setSortOpen(false); }}
-                    className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-[13px] transition-colors duration-100 ${sortBy === opt.value
-                      ? "bg-emerald-50 text-emerald-700 font-semibold"
-                      : "text-slate-700 hover:bg-slate-50"
-                      }`}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-2.5 transition-colors duration-100"
+                    style={{
+                      fontSize: "12px",
+                      background: sortBy === opt.value ? "rgba(232,69,44,0.12)" : "transparent",
+                      color: sortBy === opt.value ? "var(--vermeil)" : "var(--ash)",
+                      fontWeight: sortBy === opt.value ? 700 : 400,
+                      borderBottom: "1px solid var(--ash-2)",
+                    }}
                   >
                     {opt.label}
                     {sortBy === opt.value && (
-                      <svg className="h-4 w-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: "var(--vermeil)" }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -381,20 +431,36 @@ export default function CatalogClient({
 
         {/* Error */}
         {error && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 mb-4">
+          <div
+            className="px-4 py-3 text-sm mb-4"
+            style={{
+              background: "rgba(232,69,44,0.1)",
+              border: "1px solid var(--vermeil)",
+              borderRadius: "2px",
+              color: "var(--vermeil)",
+            }}
+          >
             {error}
           </div>
         )}
 
         {/* Skeleton cargando */}
         {!items && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pb-10">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <div className="aspect-square skeleton" />
+              <div
+                key={i}
+                style={{
+                  background: "var(--ink-2)",
+                  border: "1px solid var(--ash-2)",
+                  borderRadius: "2px",
+                  overflow: "hidden",
+                }}
+              >
+                <div className="aspect-[3/4] skeleton" />
                 <div className="p-3 space-y-2">
-                  <div className="h-3 w-4/5 rounded-full skeleton" />
-                  <div className="h-3 w-1/2 rounded-full skeleton" />
+                  <div className="h-3 w-4/5 skeleton" style={{ borderRadius: "2px" }} />
+                  <div className="h-3 w-1/2 skeleton" style={{ borderRadius: "2px" }} />
                 </div>
               </div>
             ))}
@@ -403,7 +469,7 @@ export default function CatalogClient({
 
         {/* Grid de productos */}
         {items && sortedItems.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 pb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pb-12">
             {sortedItems.map((p, index) => (
               <ProductCard key={p.id} p={p} priority={index < 8} />
             ))}
@@ -412,22 +478,49 @@ export default function CatalogClient({
 
         {/* Estado vacío */}
         {items && !sortedItems.length && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center mb-10">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
-              <svg className="h-7 w-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <div
+            className="flex flex-col items-center justify-center px-6 py-20 text-center mb-12"
+            style={{
+              background: "var(--ink-2)",
+              border: "1px solid var(--ash-2)",
+              borderRadius: "2px",
+            }}
+          >
+            <div
+              className="mb-5 flex items-center justify-center"
+              style={{
+                width: 64,
+                height: 64,
+                background: "var(--ink-3)",
+                border: "1px solid var(--ash-2)",
+                borderRadius: "2px",
+              }}
+            >
+              <svg className="h-7 w-7" style={{ color: "var(--ash)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <p className="text-base font-bold text-slate-900">Sin resultados</p>
-            <p className="text-sm text-slate-500 mt-1.5 max-w-xs">
-              No encontramos productos con ese filtro. Prueba cambiando la categoría o limpiando los filtros.
+            <p
+              className="font-black"
+              style={{
+                fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                fontSize: "22px",
+                letterSpacing: "0.08em",
+                color: "var(--paper)",
+              }}
+            >
+              SIN RESULTADOS
+            </p>
+            <p style={{ fontSize: "13px", color: "var(--ash)", marginTop: "6px", maxWidth: "280px", lineHeight: 1.6 }}>
+              No encontramos productos con ese filtro. Prueba cambiando la categoría.
             </p>
             <button
               type="button"
               onClick={() => { setQText(""); setTypeFilter(""); setAudienceFilter(""); setSortBy("latest"); }}
-              className="mt-5 inline-flex h-9 items-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+              className="btn-brand mt-6"
+              style={{ fontSize: "12px", padding: "10px 20px" }}
             >
-              Ver todo el catálogo
+              Ver todo
             </button>
           </div>
         )}
