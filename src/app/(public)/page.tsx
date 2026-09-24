@@ -111,13 +111,13 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="home-hero__shell relative z-10 mx-auto grid w-full lg:grid-cols-2">
+        <div className="home-hero__shell relative z-10 mx-auto grid w-full lg:grid-cols-12 items-center">
 
-          {/* Left — Text panel */}
-          <div className="home-hero__copy flex flex-col justify-center px-6 py-12 sm:px-10 lg:px-16">
+          {/* Left — Text panel (col-span-7 on desktop, full width on mobile) */}
+          <div className="home-hero__copy flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 lg:col-span-7">
             {/* Eyebrow */}
-            <div className="flex items-center gap-3 mb-5">
-              <span className="h-px w-14" style={{ background: "var(--vermeil)" }} />
+            <div className="flex items-center gap-3 mb-4">
+              <span className="h-px w-12" style={{ background: "var(--vermeil)" }} />
               <span
                 className="font-black"
                 style={{
@@ -136,7 +136,7 @@ export default async function HomePage() {
               className="leading-none"
               style={{
                 fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
-                fontSize: "clamp(58px, 7.4vw, 108px)",
+                fontSize: "clamp(52px, 6.2vw, 96px)",
                 letterSpacing: "0.04em",
                 color: "var(--paper)",
               }}
@@ -166,7 +166,7 @@ export default async function HomePage() {
 
             {/* Subtitle japonés */}
             <p
-              className="mt-4 mb-5"
+              className="mt-3 mb-4"
               style={{ fontSize: "11px", letterSpacing: "0.18em", color: "var(--ash)" }}
             >
               ザパティージャス・ロパ ——{" "}
@@ -174,15 +174,15 @@ export default async function HomePage() {
             </p>
 
             <p
-              className="max-w-sm mb-7"
-              style={{ fontSize: "14px", color: "var(--ash)", lineHeight: "1.7" }}
+              className="max-w-md mb-6"
+              style={{ fontSize: "14px", color: "var(--ash)", lineHeight: "1.6" }}
             >
               Zapatillas, ropa y accesorios seleccionados para todos los días.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap gap-3">
-              <Link href="/catalog" className="btn-brand" style={{ fontSize: "13px", padding: "12px 24px" }}>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/catalog" className="btn-brand" style={{ fontSize: "13px", padding: "12px 26px" }}>
                 Comprar ahora →
               </Link>
               <Link href="/track" className="btn-soft" style={{ fontSize: "13px", padding: "12px 24px" }}>
@@ -192,7 +192,7 @@ export default async function HomePage() {
 
             {/* Stats */}
             <div
-              className="mt-8 pt-5 grid grid-cols-3 gap-4"
+              className="mt-8 pt-5 grid grid-cols-3 gap-4 max-w-md"
               style={{ borderTop: "1px solid var(--ash-2)" }}
             >
               {[
@@ -205,7 +205,7 @@ export default async function HomePage() {
                     className="font-black"
                     style={{
                       fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
-                      fontSize: "28px",
+                      fontSize: "26px",
                       color: "var(--paper)",
                       letterSpacing: "0.04em",
                     }}
@@ -227,35 +227,63 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Right — Image: usa object-cover para llenar toda la columna */}
-          <div className="home-hero__media relative overflow-hidden">
-            <Image
-              src="/brand/hero-mascot-v2.png"
-              alt="Colección ODERA 05"
-              fill
-              priority
-              sizes="(max-width: 767px) 100vw, 50vw"
-              className="object-contain"
-              style={{ objectPosition: "center bottom" }}
-            />
-            {/* En desktop: fade izquierdo suave (20%) para fundir con panel de texto */}
+          {/* Right — Character card: Hidden on mobile (conversion-first UX), sleek compact card on desktop */}
+          <div className="hidden lg:flex lg:col-span-5 items-center justify-center p-6 lg:p-8">
             <div
-              className="absolute inset-0 pointer-events-none hidden lg:block"
-              style={{ background: "linear-gradient(to right, rgba(14,14,18,0.6) 0%, transparent 22%)" }}
-            />
-            {/* En móvil: fade inferior para transición al texto */}
-            <div
-              className="absolute inset-0 pointer-events-none lg:hidden"
-              style={{ background: "linear-gradient(to top, rgba(14,14,18,0.55) 0%, transparent 45%)" }}
-            />
-            {/* Badge discreto */}
-            <div
-              className="absolute bottom-4 right-4"
-              style={{ background: "rgba(14,14,18,0.65)", backdropFilter: "blur(6px)", border: "1px solid rgba(90,88,104,0.5)", borderRadius: "2px", padding: "4px 10px" }}
+              className="home-hero__media-card relative w-full max-w-[340px] xl:max-w-[380px] h-[440px] xl:h-[490px] rounded overflow-hidden"
+              style={{
+                border: "1px solid rgba(232, 69, 44, 0.22)",
+                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(232, 69, 44, 0.08)",
+                background: "radial-gradient(circle at 50% 30%, rgba(232, 69, 44, 0.12), transparent 60%), linear-gradient(180deg, #13131a 0%, #09090d 100%)",
+              }}
             >
-              <span style={{ fontSize: "9px", letterSpacing: "0.18em", color: "rgba(243,238,228,0.55)", fontWeight: 700, textTransform: "uppercase" }}>
-                Selección semanal
-              </span>
+              {/* Corner badge top-left */}
+              <div
+                className="absolute top-3 left-3 z-10"
+                style={{
+                  background: "rgba(14,14,18,0.75)",
+                  backdropFilter: "blur(6px)",
+                  border: "1px solid rgba(90,88,104,0.4)",
+                  borderRadius: "2px",
+                  padding: "3px 8px",
+                }}
+              >
+                <span style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--vermeil)", fontWeight: 800 }}>
+                  05 · EDITION
+                </span>
+              </div>
+
+              <Image
+                src="/brand/hero-mascot-v2.png"
+                alt="Colección ODERA 05"
+                fill
+                priority
+                sizes="400px"
+                className="object-contain"
+                style={{ objectPosition: "center bottom" }}
+              />
+
+              {/* Subtle bottom fade */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: "linear-gradient(to top, rgba(9,9,13,0.85) 0%, transparent 28%)" }}
+              />
+
+              {/* Badge bottom-right */}
+              <div
+                className="absolute bottom-3 right-3 z-10"
+                style={{
+                  background: "rgba(14,14,18,0.75)",
+                  backdropFilter: "blur(6px)",
+                  border: "1px solid rgba(90,88,104,0.4)",
+                  borderRadius: "2px",
+                  padding: "3px 8px",
+                }}
+              >
+                <span style={{ fontSize: "9px", letterSpacing: "0.18em", color: "rgba(243,238,228,0.7)", fontWeight: 700, textTransform: "uppercase" }}>
+                  Selección semanal
+                </span>
+              </div>
             </div>
           </div>
         </div>

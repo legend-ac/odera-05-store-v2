@@ -358,83 +358,55 @@ a:hover { text-decoration: none; }
   color: var(--paper);
 }
 
-/* Home hero: intentionally capped. The former 55vw media minimum made the
-   first screen taller as monitors became wider, leaving a large dead panel. */
+/* Home hero: clean, balanced layout between Desktop & Mobile */
 .home-hero {
-  min-height: clamp(580px, 68vh, 720px);
+  min-height: auto;
+}
+
+@media (min-width: 1024px) {
+  .home-hero {
+    min-height: clamp(480px, 58vh, 620px);
+  }
 }
 
 .home-hero__shell {
-  max-width: 1600px;
+  max-width: 1440px;
   min-height: inherit;
 }
 
-.home-hero__media {
-  min-height: 360px;
-  background:
-    radial-gradient(circle at 50% 36%, rgba(232, 69, 44, .16), transparent 34%),
-    linear-gradient(135deg, #101016, #08080c);
-  border-left: 1px solid rgba(90, 88, 104, .28);
-}
-
-.home-hero__media img {
+.home-hero__media-card {
   animation: float 7s ease-in-out infinite;
-}
-
-@media (min-width: 768px) {
-  .home-hero__media {
-    min-height: clamp(560px, 42vw, 680px);
-  }
 }
 
 @media (min-width: 1440px) {
   .home-hero__copy {
-    padding-left: 4.5rem;
+    padding-left: 3.5rem;
   }
 }
 
-/* On phones the product must lead the story. The copy is deliberately a
-   compact panel overlapping the visual instead of a long text column that
-   pushes the product to a second, disconnected screen. */
-@media (max-width: 767px) {
+/* Mobile: clean typography-first hero, immediate conversion CTAs */
+@media (max-width: 1023px) {
   .home-hero {
     min-height: 0;
-    padding-bottom: 1.5rem;
-  }
-
-  .home-hero__shell {
-    display: flex;
-    flex-direction: column;
-    padding: 0 1rem;
-  }
-
-  .home-hero__media {
-    order: -1;
-    min-height: min(104vw, 500px);
-    border: 1px solid var(--ash-2);
-    border-bottom: 1px solid var(--ash-2);
+    padding: 1.5rem 0 2rem;
   }
 
   .home-hero__copy {
-    margin-top: 0;
-    padding: 1.8rem 1.25rem 1.5rem !important;
-    background: var(--ink);
-    border: 1px solid var(--ash-2);
-    border-top: 0;
+    padding: 1rem 1.25rem !important;
   }
 
-  .home-hero__eyebrow { margin-bottom: .9rem !important; }
-  .home-hero__title { font-size: clamp(48px, 15vw, 66px) !important; }
+  .home-hero__eyebrow { margin-bottom: .75rem !important; }
+  .home-hero__title { font-size: clamp(44px, 14vw, 64px) !important; }
   .home-hero__microcopy { display: none; }
-  .home-hero__description { margin: .8rem 0 1.25rem !important; font-size: 13px !important; }
+  .home-hero__description { margin: .75rem 0 1.25rem !important; font-size: 13px !important; }
   .home-hero__actions { gap: .6rem !important; }
-  .home-hero__actions > a { flex: 1; padding: 11px 9px !important; font-size: 11px !important; }
-  .home-hero__stats { margin-top: 1.3rem !important; padding-top: 1rem !important; gap: .5rem !important; }
+  .home-hero__actions > a { flex: 1; padding: 12px 14px !important; font-size: 12px !important; text-align: center; }
+  .home-hero__stats { margin-top: 1.2rem !important; padding-top: 1rem !important; gap: .75rem !important; }
   .home-hero__stats span:first-child { font-size: 24px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-hero__media img { animation: none; }
+  .home-hero__media-card { animation: none; }
 }
 
 .shopping-flow .bg-white,
