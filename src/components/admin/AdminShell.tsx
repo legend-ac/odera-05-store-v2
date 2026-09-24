@@ -5,12 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Resumen", short: "01" },
-  { href: "/dashboard/orders", label: "Pedidos", short: "02" },
-  { href: "/dashboard/inventory", label: "Inventario", short: "03" },
-  { href: "/dashboard/products", label: "Catálogo", short: "04" },
-  { href: "/dashboard/settings", label: "Configuración", short: "05" },
+const NAV_GROUPS = [
+  { label: "Vista general", items: [{ href: "/dashboard", label: "Resumen", short: "01" }] },
+  { label: "Ventas", items: [{ href: "/dashboard/orders", label: "Pedidos", short: "02" }] },
+  { label: "Operación", items: [{ href: "/dashboard/products", label: "Catálogo", short: "03" }, { href: "/dashboard/inventory", label: "Inventario", short: "04" }] },
+  { label: "Tienda", items: [{ href: "/dashboard/settings", label: "Configuración", short: "05" }] },
 ];
 
 function NavItem({ href, label, short }: { href: string; label: string; short: string }) {
@@ -58,10 +57,12 @@ export default function AdminShell({ email, children }: { email: string; childre
             </div>
           </div>
 
-          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[.18em] text-slate-400">Operación</p>
-          <nav className="flex gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
-            {NAV_ITEMS.map((item) => (
-              <NavItem key={item.href} {...item} />
+          <nav className="admin-nav flex gap-3 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+            {NAV_GROUPS.map((group) => (
+              <div key={group.label} className="admin-nav-group flex gap-1.5 lg:flex-col">
+                <p>{group.label}</p>
+                {group.items.map((item) => <NavItem key={item.href} {...item} />)}
+              </div>
             ))}
           </nav>
           <div className="admin-sidebar-note mt-6 hidden lg:block">
