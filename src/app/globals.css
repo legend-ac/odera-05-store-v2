@@ -384,66 +384,25 @@ a:hover { text-decoration: none; }
   }
 }
 
-/* Mobile: one composed scene. The character is a narrow companion panel,
-   not a separate block pushed before or after the sales message. */
+/* Mobile: clean typography-first hero, immediate conversion CTAs */
 @media (max-width: 1023px) {
   .home-hero {
     min-height: 0;
-    padding: 1rem 0 1.5rem;
-  }
-
-  .home-hero__shell {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) clamp(116px, 34vw, 180px);
-    align-items: stretch;
-    padding: 0 1rem;
+    padding: 1.5rem 0 2rem;
   }
 
   .home-hero__copy {
-    grid-column: 1;
-    grid-row: 1;
-    padding: 1.25rem .6rem 1.25rem 1rem !important;
-    border: 1px solid var(--ash-2);
-    border-right: 0;
-    background: linear-gradient(135deg, rgba(21,21,28,.98), rgba(14,14,18,.98));
-  }
-
-  .home-hero__character {
-    grid-column: 2;
-    grid-row: 1;
-    display: flex !important;
-    align-items: stretch !important;
-    padding: 0 !important;
-  }
-
-  .home-hero__media-card {
-    width: 100% !important;
-    max-width: none !important;
-    height: auto !important;
-    min-height: 100%;
-    border-radius: 0 !important;
-    border-color: var(--ash-2) !important;
-    box-shadow: none !important;
-  }
-
-  .home-hero__media-card img {
-    object-fit: cover !important;
-    object-position: 50% 18% !important;
-  }
-
-  .home-hero__media-card > div:first-child,
-  .home-hero__media-card > div:last-child {
-    display: none;
+    padding: 1rem 1.25rem !important;
   }
 
   .home-hero__eyebrow { margin-bottom: .75rem !important; }
-  .home-hero__title { font-size: clamp(40px, 11.6vw, 50px) !important; }
+  .home-hero__title { font-size: clamp(44px, 14vw, 64px) !important; }
   .home-hero__microcopy { display: none; }
-  .home-hero__description { margin: .65rem 0 1rem !important; font-size: 12px !important; }
+  .home-hero__description { margin: .75rem 0 1.25rem !important; font-size: 13px !important; }
   .home-hero__actions { gap: .6rem !important; }
-  .home-hero__actions > a { flex: 1; padding: 10px 6px !important; font-size: 10px !important; text-align: center; }
-  .home-hero__stats { margin-top: 1rem !important; padding-top: .85rem !important; gap: .35rem !important; }
-  .home-hero__stats span:first-child { font-size: 21px !important; }
+  .home-hero__actions > a { flex: 1; padding: 12px 14px !important; font-size: 12px !important; text-align: center; }
+  .home-hero__stats { margin-top: 1.2rem !important; padding-top: 1rem !important; gap: .75rem !important; }
+  .home-hero__stats span:first-child { font-size: 24px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
