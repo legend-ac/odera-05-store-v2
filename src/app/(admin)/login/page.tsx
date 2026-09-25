@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { GoogleAuthProvider, getRedirectResult, signInWithRedirect, signOut, type User } from "firebase/auth";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { auth } from "@/lib/firebase/client";
 
@@ -32,6 +32,16 @@ function GoogleIcon() {
   );
 }
 
+function authErrorMessage(error: unknown): string {
+  const code = typeof error === "object" && error && "code" in error ? String((error as { code?: unknown }).code) : "";
+  if (code === "auth/unauthorized-domain") return "Este dominio no está autorizado en Firebase Authentication. Agrega localhost y el dominio de Vercel en Firebase Console > Authentication > Settings > Authorized domains.";
+  if (code === "auth/operation-not-allowed") return "El proveedor Google no está habilitado. Actívalo en Firebase Console > Authentication > Sign-in method.";
+  if (code === "auth/account-exists-with-different-credential") return "Esta cuenta usa otro método de inicio de sesión.";
+  if (code === "NOT_ADMIN") return "Tu cuenta de Google inició sesión, pero no tiene permisos de administrador.";
+  if (code === "CSRF_FAILED") return "No se pudo validar la sesión. Recarga la página e inténtalo nuevamente.";
+  return error instanceof Error ? error.message : "No se pudo iniciar sesión con Google.";
+}
+
 function LoginPageInner() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -44,23 +54,16 @@ function LoginPageInner() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  async function login() {
-    setErr(null);
-    setBusy(true);
+  const completeLogin = useCallback(async (user: User) => {
     try {
       setCsrfCookieIfMissing();
-
-      const provider = new GoogleAuthProvider();
-      const cred = await signInWithPopup(auth, provider);
-      const idToken = await cred.user.getIdToken(true);
+      const idToken = await user.getIdToken(true);
 
       await apiPost<{ ok: boolean }>("/api/admin/session-login", { idToken }, { csrfCookieName: CSRF_COOKIE_NAME });
-
       router.push(next);
     } catch (e) {
       console.error(e);
-      const msg = e instanceof Error ? e.message : "Error de inicio de sesion";
-      setErr(msg);
+      setErr(authErrorMessage(e));
       try {
         await signOut(auth);
       } catch {
@@ -69,19 +72,53 @@ function LoginPageInner() {
     } finally {
       setBusy(false);
     }
+  }, [next, router]);
+
+  useEffect(() => {
+    let active = true;
+    void getRedirectResult(auth)
+      .then((credential) => {
+        if (credential?.user && active) {
+          setBusy(true);
+          return completeLogin(credential.user);
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          console.error(error);
+          setErr(authErrorMessage(error));
+          setBusy(false);
+        }
+      });
+    return () => { active = false; };
+  }, [completeLogin]);
+
+  async function login() {
+    setErr(null);
+    setBusy(true);
+    try {
+      setCsrfCookieIfMissing();
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      await signInWithRedirect(auth, provider);
+    } catch (e) {
+      console.error(e);
+      setErr(authErrorMessage(e));
+      setBusy(false);
+    }
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[#0f172a] px-4 py-12">
+    <div className="grid min-h-screen place-items-center bg-[#111827] px-4 py-12">
       <div className="w-full max-w-[420px] fade-in-up">
         <div className="mb-7 flex flex-col items-center gap-3">
-          <span className="relative grid h-14 w-14 place-items-center rounded-2xl bg-emerald-700 text-base font-black text-white shadow-[0_12px_30px_rgba(5,150,105,0.25)] ring-1 ring-white/15">
+          <span className="relative grid h-14 w-14 place-items-center rounded-2xl bg-[#ec452e] text-base font-black text-white shadow-[0_12px_30px_rgba(236,69,46,0.25)] ring-1 ring-white/15">
             <span className="absolute inset-[4px] rounded-xl border border-white/15" />
             O5
           </span>
           <div className="text-center">
             <p className="text-lg font-black tracking-tight text-white">ODERA 05 STORE</p>
-            <p className="mt-1 text-xs font-semibold text-slate-400">Panel de administracion</p>
+            <p className="mt-1 text-xs font-semibold text-slate-400">Administración comercial</p>
           </div>
         </div>
 
@@ -106,7 +143,7 @@ function LoginPageInner() {
             className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-lg bg-white px-4 text-sm font-black text-slate-900 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <GoogleIcon />
-            {busy ? "Ingresando..." : "Ingresar con Google"}
+            {busy ? "Abriendo Google..." : "Continuar con Google"}
           </button>
 
           <div className="flex items-center gap-2.5 text-xs font-medium text-slate-500">
