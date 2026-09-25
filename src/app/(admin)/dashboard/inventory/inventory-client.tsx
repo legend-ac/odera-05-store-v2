@@ -25,7 +25,9 @@ function formatDate(ms: number | null): string {
 export default function InventoryClient() {
   const routeParams = useSearchParams();
   const routeState = routeParams.get("state");
-  const initialState: "ALL" | InventoryState = routeState === "OUT" || routeState === "LOW" || routeState === "HEALTHY" ? routeState : "ALL";
+  // Al abrir inventario se muestra lo que exige una decisión. El listado
+  // completo sigue disponible como filtro explícito.
+  const initialState: "ALL" | InventoryState = routeState === "OUT" || routeState === "LOW" || routeState === "HEALTHY" ? routeState : "LOW";
   const [items, setItems] = useState<InventoryProduct[]>([]);
   const [state, setState] = useState<"ALL" | InventoryState>(initialState);
   const [search, setSearch] = useState("");
@@ -105,14 +107,14 @@ export default function InventoryClient() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-5 text-white shadow-[var(--shadow-card)] sm:p-6">
+      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-[#4a1711] p-5 text-white shadow-[var(--shadow-card)] sm:p-6">
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">Control operativo</p>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#fec9bf]">Control operativo</p>
             <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Inventario, sin hojas de cálculo</h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-300">Prioriza faltantes, ajusta cada variante con seguridad y deja un registro auditable de cada movimiento.</p>
           </div>
-          <Link href="/dashboard/products" className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-sm font-black text-slate-900 hover:bg-emerald-50">Editar catálogo</Link>
+          <Link href="/dashboard/products" className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-sm font-black text-slate-900 hover:bg-[var(--brand-50)]">Editar catálogo</Link>
         </div>
       </section>
 
@@ -127,7 +129,7 @@ export default function InventoryClient() {
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2" aria-label="Filtro de estado de inventario">
-            {(["ALL", "OUT", "LOW", "HEALTHY"] as const).map((value) => <button key={value} type="button" onClick={() => setState(value)} className={`rounded-xl border px-3 py-2 text-xs font-black transition ${state === value ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>{value === "ALL" ? "Todo el inventario" : STATE_COPY[value].label}</button>)}
+            {(["LOW", "OUT", "HEALTHY", "ALL"] as const).map((value) => <button key={value} type="button" onClick={() => setState(value)} className={`rounded-xl border px-3 py-2 text-xs font-black transition ${state === value ? "border-[var(--brand-600)] bg-[var(--brand-600)] text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>{value === "ALL" ? "Todo el inventario" : STATE_COPY[value].label}</button>)}
           </div>
           <form onSubmit={submitSearch} className="flex gap-2">
             <input value={draftSearch} onChange={(event) => setDraftSearch(event.target.value)} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500 sm:w-72" placeholder="Busca por nombre o marca" />

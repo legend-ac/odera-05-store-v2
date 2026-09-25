@@ -252,6 +252,7 @@ export default function ProductsClient({
   const [sortMode, setSortMode] = useState<SortMode>("name");
   const [viewMode, setViewMode] = useState<"active" | "trash">("active");
   const [editorTab, setEditorTab] = useState<EditorTab>("basic");
+  const [editorOpen, setEditorOpen] = useState(Boolean(initialSelectedId));
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [draft, setDraft] = useState<Product>(() => {
     const selected = initialProducts.find((product) => product.id === initialSelectedId);
@@ -340,6 +341,7 @@ export default function ProductsClient({
     setSelectedId(product.id);
     setDraft(normalizeProduct(product));
     setEditorTab("basic");
+    setEditorOpen(true);
     setMsg(null);
   }
 
@@ -347,6 +349,7 @@ export default function ProductsClient({
     setSelectedId("");
     setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas"));
     setEditorTab("basic");
+    setEditorOpen(true);
     setMsg(null);
   }
 
@@ -858,7 +861,7 @@ export default function ProductsClient({
         )}
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      {editorOpen && <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
@@ -869,6 +872,7 @@ export default function ProductsClient({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button type="button" onClick={() => setEditorOpen(false)} variant="ghost" size="md">Cerrar</Button>
               <Button type="button" onClick={save} disabled={busy} variant="primary" size="md">{busy ? "Guardando..." : "Guardar"}</Button>
               {viewMode === "active" ? (
                 <Button type="button" onClick={() => void deleteSelected()} disabled={busyDelete || !selected} variant="secondary" size="md">
@@ -1105,7 +1109,7 @@ export default function ProductsClient({
             </Panel>
           )}
         </div>
-      </section>
+      </section>}
       </div>
     </div>
   );

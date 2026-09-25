@@ -140,6 +140,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
   const [issues, setIssues] = useState<string[]>([]);
   const [healthBusy, setHealthBusy] = useState<"email" | "cloudinary" | null>(null);
   const [healthStatus, setHealthStatus] = useState<Record<string, string>>({});
+  const [activeSection, setActiveSection] = useState<"store" | "payments" | "channels" | "catalog" | "system">("store");
 
   const enabledSocials = [s.socialLinks?.instagram, s.socialLinks?.tiktok, s.socialLinks?.facebook, s.socialLinks?.whatsapp].filter(Boolean).length;
   const paymentConfigured = Boolean((s.paymentInstructions?.yapeNumber ?? "").trim() || (s.paymentInstructions?.plinNumber ?? "").trim());
@@ -236,7 +237,21 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
         </div>
       </div>
 
-      <SectionCard
+      <nav className="admin-settings-nav" aria-label="Secciones de ajustes">
+        {[
+          ["store", "Tienda", "Identidad y promoción"],
+          ["payments", "Pagos", "Yape y Plin"],
+          ["channels", "Canales", "Contacto y redes"],
+          ["catalog", "Catálogo", "Tipos de producto"],
+          ["system", "Sistema", "Pruebas técnicas"],
+        ].map(([key, label, hint]) => (
+          <button key={key} type="button" onClick={() => setActiveSection(key as typeof activeSection)} className={activeSection === key ? "is-active" : ""}>
+            <strong>{label}</strong><span>{hint}</span>
+          </button>
+        ))}
+      </nav>
+
+      {activeSection === "system" && <SectionCard
         title="Salud y pruebas"
         subtitle="Comprueba servicios críticos antes de vender"
         badge={<StatusBadge ok={Boolean(healthStatus.email || healthStatus.cloudinary)} labelOn="Probado" labelOff="Sin probar" />}
@@ -270,7 +285,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
             </Button>
           </div>
         </div>
-      </SectionCard>
+      </SectionCard>}
 
       {/* Toast de notificación */}
       {msg && <Toast msg={msg} onClose={() => setMsg(null)} />}
@@ -286,7 +301,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
       )}
 
       {/* Sección: Identidad base */}
-      <SectionCard
+      {activeSection === "store" && <SectionCard
         title="Identidad de la tienda"
         subtitle="Nombre visible y configuración del bloque promocional"
         badge={<StatusBadge ok={!!s.storeName?.trim()} labelOn="Configurado" labelOff="Incompleto" />}
@@ -308,10 +323,10 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
             </div>
           </label>
         </div>
-      </SectionCard>
+      </SectionCard>}
 
       {/* Sección: Promo */}
-      <SectionCard
+      {activeSection === "store" && <SectionCard
         title="Bloque promocional del inicio"
         subtitle="Configura el cupón, descuento y mensaje del banner"
         badge={<StatusBadge ok={promoEnabled} labelOn="Activo" labelOff="Oculto" />}
@@ -356,10 +371,10 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
             </div>
           )}
         </div>
-      </SectionCard>
+      </SectionCard>}
 
       {/* Sección: Contacto */}
-      <SectionCard
+      {activeSection === "channels" && <SectionCard
         title="Canales de contacto"
         subtitle="Correo y WhatsApp públicos visibles para los clientes"
         badge={<StatusBadge ok={!!s.publicContactEmail?.includes("@") && !!s.publicWhatsapp?.trim()} labelOn="Listos" labelOff="Incompletos" />}
@@ -375,10 +390,10 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
             <Input value={s.publicWhatsapp} onChange={(e) => setS((p) => ({ ...p, publicWhatsapp: e.target.value }))} placeholder="+51 999 999 999" />
           </label>
         </div>
-      </SectionCard>
+      </SectionCard>}
 
       {/* Sección: Redes sociales */}
-      <SectionCard
+      {activeSection === "channels" && <SectionCard
         title="Redes sociales"
         subtitle="URLs completas de tus perfiles —se muestran en el footer"
         badge={<StatusBadge ok={enabledSocials >= 2} labelOn={`${enabledSocials}/4 configuradas`} labelOff={`${enabledSocials}/4 configuradas`} />}
@@ -400,10 +415,10 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
             </label>
           ))}
         </div>
-      </SectionCard>
+      </SectionCard>}
 
       {/* Sección: Pagos */}
-      <SectionCard
+      {activeSection === "payments" && <SectionCard
         title="Instrucciones de pago"
         subtitle="Datos de Yape y Plin que verán los clientes al hacer checkout"
         badge={<StatusBadge ok={paymentConfigured} labelOn="Listo" labelOff="Sin configurar" />}
@@ -440,10 +455,10 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
             {s.paymentInstructions.plinNumber && <p>Plin a <span className="font-semibold">{s.paymentInstructions.plinName}</span> · {s.paymentInstructions.plinNumber}</p>}
           </div>
         )}
-      </SectionCard>
+      </SectionCard>}
 
       {/* Sección: Tipos de producto */}
-      <SectionCard
+      {activeSection === "catalog" && <SectionCard
         title="Tipos de producto"
         subtitle="Categorías que aparecen en el home y el panel admin"
         badge={<span className="text-xs font-bold text-slate-500">{productTypes.length} tipos</span>}
@@ -574,10 +589,10 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
         >
           + Agregar tipo de producto
         </Button>
-      </SectionCard>
+      </SectionCard>}
 
       {/* Resumen comercial */}
-      <div className="rounded-2xl border border-slate-200 bg-[var(--surface-muted)] p-4">
+      {activeSection === "store" && <div className="rounded-2xl border border-slate-200 bg-[var(--surface-muted)] p-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Resumen de la configuración actual</p>
         <ul className="grid sm:grid-cols-2 gap-2 text-sm text-slate-700">
           <li className="flex items-center gap-2">
@@ -590,7 +605,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
           <li className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${enabledSocials >= 2 ? "bg-emerald-500" : "bg-amber-400"}`} />Redes sociales: <b>{enabledSocials}/4</b></li>
         </ul>
         <p className="text-[11px] text-slate-400 mt-3">La configuración se lee públicamente desde Firestore (rules: settings/store read público, write solo admin).</p>
-      </div>
+      </div>}
     </div>
   );
 }

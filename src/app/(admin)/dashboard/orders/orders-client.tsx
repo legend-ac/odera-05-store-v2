@@ -146,7 +146,8 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
   const [exportStatus, setExportStatus] = useState("ALL");
   const [exportTemplate, setExportTemplate] = useState<"detalle" | "resumen">("detalle");
   const [viewMode, setViewMode] = useState<"active" | "trash">("active");
-  const [layoutMode, setLayoutMode] = useState<"list" | "flow">("flow");
+  // La lista es la vista operativa por defecto. El flujo es complementario.
+  const [layoutMode, setLayoutMode] = useState<"list" | "flow">("list");
   const [busyMass, setBusyMass] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [auditLogs, setAuditLogs] = useState<Record<string, AuditLogRow[]>>({});
@@ -321,17 +322,17 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => setLayoutMode("flow")}
-            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-150 ${layoutMode === "flow" ? "border-slate-900 bg-slate-900 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:bg-[var(--surface-hover)]"}`}
-          >
-            Flujo
-          </button>
-          <button
-            type="button"
             onClick={() => setLayoutMode("list")}
             className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-150 ${layoutMode === "list" ? "border-slate-900 bg-slate-900 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:bg-[var(--surface-hover)]"}`}
           >
             Lista
+          </button>
+          <button
+            type="button"
+            onClick={() => setLayoutMode("flow")}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-150 ${layoutMode === "flow" ? "border-[var(--brand-600)] bg-[var(--brand-600)] text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:bg-[var(--surface-hover)]"}`}
+          >
+            Ver flujo
           </button>
           <button
             type="button"
@@ -405,16 +406,17 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
         )}
       </div>
 
-      {/* Exportación */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]">
-        <div className="flex items-start justify-between gap-3 mb-3">
+      {/* Exportar no debe desplazar la cola de pedidos: se abre solo cuando se necesita. */}
+      <details className="admin-disclosure rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4">
           <div>
-            <p className="text-sm font-bold text-slate-900">Exportación de ventas</p>
-            <p className="text-xs text-slate-500 mt-0.5">Compatible con Excel · Filtros por fecha y estado</p>
+            <p className="text-sm font-bold text-slate-900">Exportar pedidos</p>
+            <p className="text-xs text-slate-500 mt-0.5">CSV o Excel por fecha y estado</p>
           </div>
-          <svg className="h-5 w-5 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-        </div>
-        <div className="grid gap-3 md:grid-cols-[160px_160px_1fr_180px]">
+          <span className="text-sm font-bold text-[var(--brand-700)]">Configurar exportación</span>
+        </summary>
+        <div className="border-t border-slate-100 p-4">
+          <div className="grid gap-3 md:grid-cols-[160px_160px_1fr_180px]">
           <label className="grid gap-1 text-xs font-medium text-slate-600">
             Desde
             <Input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} />
@@ -439,8 +441,8 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
               <option value="resumen">Resumen ejecutivo</option>
             </Select>
           </label>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
           <a
             href={todayHref}
             className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors duration-150"
@@ -472,8 +474,9 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
               {busyMass ? "Procesando..." : "Vaciar papelera (definitivo)"}
             </Button>
           )}
+          </div>
         </div>
-      </div>
+      </details>
 
       {layoutMode === "flow" && viewMode === "active" && (
         <div className="grid gap-3 xl:grid-cols-3 2xl:grid-cols-6">
