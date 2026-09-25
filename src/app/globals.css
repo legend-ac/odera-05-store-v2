@@ -820,4 +820,3 @@ a:hover { text-decoration: none; }
   .admin-stock-state { grid-column:2; }.admin-stock-date { display:none; }.admin-stock-row__arrow { grid-column:3; grid-row:1 / span 2; }
   .admin-stock-adjuster { position:static; }
 }
-}
