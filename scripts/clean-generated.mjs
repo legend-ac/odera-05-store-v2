@@ -4,6 +4,7 @@ import { resolve, relative } from "node:path";
 const root = process.cwd();
 const targets = [
   ".next-quality",
+  ".next-corrupt-local-cache",
   "coverage",
   "playwright-report",
   "test-results",
