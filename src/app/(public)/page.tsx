@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import CategoryGrid from "@/components/CategoryGrid";
+import HomeSocialLinks from "@/components/HomeSocialLinks";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 
 export const revalidate = 60;
@@ -482,6 +483,11 @@ export default async function HomePage() {
             ))}
           </ol>
         </div>
+      </section>
+
+      {/* Canales reales configurados por la tienda: se muestran solo cuando existen. */}
+      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+        <HomeSocialLinks />
       </section>
 
       {/* ── Tienda física ── */}

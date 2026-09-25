@@ -727,13 +727,19 @@ a:hover { text-decoration: none; }
 .admin-stock-adjuster { position:sticky; top:1.25rem; padding:0; }.admin-stock-adjuster__header { align-items:center; }.admin-stock-adjuster__header p { color:#667085; }.admin-stock-adjuster__header span { display:block; margin-top:.4rem; color:#667085; font-size:12px; }.admin-stock-adjuster__header a { border-radius:8px; padding:.55rem .7rem; color:#a8291d; background:#fff5f2; font-size:11px; font-weight:800; white-space:nowrap; }
 .admin-stock-adjuster > .grid, .admin-stock-adjuster__note { padding:0 1.25rem; }.admin-stock-adjuster > .grid { padding-top:1.1rem; }.admin-stock-variant { display:grid; gap:.8rem; border:1px solid #e3e8ef; border-radius:12px; padding:.9rem; background:#fbfcfd; }.admin-stock-variant b { color:#172033; font-size:13px; }.admin-stock-variant span { margin-top:3px; color:#667085; font-size:11px; }.admin-stock-variant input, .admin-stock-variant select { min-width:0; height:40px; border:1px solid #d8e0eb; border-radius:8px; padding:0 .7rem; color:#172033; background:#fff; font-size:12px; }.admin-stock-variant button { min-height:40px; border-radius:8px; padding:0 .75rem; color:#fff; background:#ec452e; font-size:12px; font-weight:800; }.admin-stock-variant button:disabled { opacity:.55; }.admin-stock-after { color:#a8291d !important; font-weight:800; white-space:nowrap; }.admin-stock-adjuster__note { margin:1rem 0 0; padding-bottom:1.25rem; color:#667085; font-size:11px; line-height:1.45; }.admin-stock-adjuster__empty { display:grid; gap:.4rem; min-height:220px; place-content:center; padding:1.25rem; color:#667085; text-align:center; }.admin-stock-adjuster__empty b { color:#172033; font-size:15px; }.admin-stock-adjuster__empty span { max-width:28ch; font-size:12px; line-height:1.5; }
 
-/* Catalog: browsing and editing are two different jobs. On wide screens
-   they stay side-by-side, so the operator never loses the selected item. */
+/* Catalog: browsing and editing are separate tasks. The list owns the page
+   scroll; a nested vertical scrollbar makes inventory work error-prone. */
 .admin-product-page > section:first-child {
   border-radius: 16px;
   border-color: #dfe7f1;
   box-shadow: var(--shadow-card);
 }
+
+.admin-product-catalog-header { border-top: 3px solid #ec452e !important; }
+.admin-product-summary { border:1px solid #dfe7f1; border-radius:999px; padding:.48rem .75rem; color:#526176; background:#fff; font-size:12px; font-weight:800; transition:.15s ease; }
+.admin-product-summary:hover { border-color:#ec452e; color:#a8291d; background:#fff5f2; }
+.admin-product-summary--critical { border-color:#fecdd3; color:#be123c; background:#fff1f2; }
+.admin-product-summary--warning { border-color:#fde68a; color:#a16207; background:#fffbeb; }
 
 .admin-catalog-workspace > section {
   border-radius: 16px;
@@ -782,22 +788,6 @@ a:hover { text-decoration: none; }
 .admin-task:hover { transform: translateY(-1px); border-color: #fec9bf; box-shadow: 0 8px 18px rgba(236,69,46,.08); }.admin-task__count { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 10px; font-size: 18px; font-weight: 800; }.admin-task b, .admin-task small { display: block; }.admin-task b { color: #172033; font-size: 14px; }.admin-task small { margin-top: 2px; color: #64748b; font-size: 12px; }.admin-task--amber .admin-task__count { background:#fffbeb; color:#b45309; }.admin-task--blue .admin-task__count { background:#fff0ed; color:#c93624; }.admin-task--rose .admin-task__count { background:#fff1f2; color:#be123c; }
 .admin-catalog-health__row { display:flex; justify-content:space-between; padding:.8rem 0; border-top:1px solid #eef2f6; color:#64748b; font-size:13px; }.admin-catalog-health__row b { color:#172033; font-size:16px; }.admin-catalog-health__cta { display:block; margin-top:1rem; border-radius:9px; padding:.72rem; color:#c93624; background:#fff0ed; text-align:center; font-size:12px; font-weight:800; }
 .admin-recent-orders { width:100%; min-width:680px; border-collapse:collapse; color:#334155; font-size:13px; }.admin-recent-orders th { padding:.8rem 1.25rem; color:#64748b; background:#f8fafc; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.1em; }.admin-recent-orders td { padding:.85rem 1.25rem; border-top:1px solid #eef2f6; }.admin-recent-orders tr:hover { background:#f8fbff; }.admin-status { display:inline-flex; border-radius:99px; padding:.28rem .55rem; font-size:11px; font-weight:700; }.admin-status--amber { color:#a16207; background:#fef3c7; }.admin-status--blue { color:#1d4ed8; background:#dbeafe; }.admin-status--green { color:#047857; background:#d1fae5; }.admin-status--slate { color:#475569; background:#e2e8f0; }
-
-@media (min-width: 1280px) {
-  .admin-catalog-workspace {
-    grid-template-columns: minmax(440px, .92fr) minmax(560px, 1.18fr);
-    align-items: start;
-  }
-
-  .admin-catalog-workspace > section:last-child {
-    position: sticky;
-    top: 1.25rem;
-    max-height: calc(100dvh - 2.5rem);
-    overflow: auto;
-  }
-
-  .admin-catalog-workspace > section:first-child .max-h-\[520px\] { max-height: calc(100dvh - 350px); }
-}
 
 @media (max-width: 1023px) {
   .admin-sidebar { border-radius: 14px; }

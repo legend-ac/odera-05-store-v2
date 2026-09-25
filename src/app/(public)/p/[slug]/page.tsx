@@ -29,23 +29,29 @@ function pickMainImage(images: Img[]): string | undefined {
 }
 
 async function loadInitialProduct(slug: string): Promise<ProductInitial | null> {
-  const snap = await adminDb.doc(`products/${slug}`).get();
-  if (!snap.exists) return null;
-  const d = snap.data() as any;
-  const variants = Array.isArray(d?.variants) ? (d.variants as Variant[]) : [];
-  const status = String(d?.status ?? "active");
-  if (status !== "active" || !hasStock(variants)) return null;
-  return {
-    id: snap.id,
-    name: String(d?.name ?? ""),
-    brand: d?.brand ? String(d.brand) : undefined,
-    price: Number(d?.price ?? 0),
-    salePrice: typeof d?.salePrice === "number" ? d.salePrice : undefined,
-    onSale: Boolean(d?.onSale),
-    description: d?.description ? String(d.description) : undefined,
-    variants,
-    images: Array.isArray(d?.images) ? (d.images as Img[]) : [],
-  };
+  try {
+    const snap = await adminDb.doc(`products/${slug}`).get();
+    if (!snap.exists) return null;
+    const d = snap.data() as any;
+    const variants = Array.isArray(d?.variants) ? (d.variants as Variant[]) : [];
+    const status = String(d?.status ?? "active");
+    if (status !== "active" || !hasStock(variants)) return null;
+    return {
+      id: snap.id,
+      name: String(d?.name ?? ""),
+      brand: d?.brand ? String(d.brand) : undefined,
+      price: Number(d?.price ?? 0),
+      salePrice: typeof d?.salePrice === "number" ? d.salePrice : undefined,
+      onSale: Boolean(d?.onSale),
+      description: d?.description ? String(d.description) : undefined,
+      variants,
+      images: Array.isArray(d?.images) ? (d.images as Img[]) : [],
+    };
+  } catch (error) {
+    // A temporary data-service error must never render a blank product page.
+    console.error("[product-page] initial product lookup failed", error);
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {

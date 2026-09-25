@@ -333,6 +333,7 @@ export default function ProductsClient({
   }
 
   function applyIssueFilter(next: IssueFilter) {
+    if (next !== "archived") setViewMode("active");
     setIssueFilter(next);
     setVisibleCount(PAGE_SIZE);
   }
@@ -536,18 +537,18 @@ export default function ProductsClient({
 
   return (
     <div className="admin-product-page grid gap-5">
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      {!editorOpen && <section className="admin-product-catalog-header rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-emerald-700">Catalogo administrativo</p>
+            <p className="text-xs font-black uppercase tracking-wide text-[var(--brand-700)]">Catálogo</p>
             <h1 className="mt-1 text-2xl font-black text-slate-950">Productos</h1>
             <p className="mt-1 text-sm font-medium text-slate-500">
-              Gestiona visibilidad, precios, stock e imagenes desde una vista de operacion.
+              {activeProducts.length} productos activos. Busca, filtra y abre uno solo cuando necesites editarlo.
             </p>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2 xl:w-[380px]">
+          <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={startNew} variant="primary" size="md">
-              Nuevo producto
+              Agregar producto
             </Button>
             {viewMode === "active" ? (
               <Button type="button" variant="secondary" size="md" onClick={() => void bulkTrashArchived()} disabled={busyBulkTrash}>
@@ -560,20 +561,17 @@ export default function ProductsClient({
             )}
           </div>
         </div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-          <Metric label="Publicados" value={activeVisibleCount} tone="green" />
-          <Metric label="Archivados" value={archivedCount} />
-          <Metric label="Sin imagen" value={noImageCount} tone={noImageCount ? "rose" : "slate"} />
-          <Metric label="Sin stock" value={noStockCount} tone={noStockCount ? "rose" : "slate"} />
-          <Metric label="Bajo stock" value={lowStockCount} tone={lowStockCount ? "rose" : "slate"} />
-          <Metric label="Papelera" value={trashedProducts.length} tone="blue" />
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+          <button type="button" onClick={() => applyIssueFilter("needs-work")} className="admin-product-summary admin-product-summary--critical">Corregir {incompleteCount}</button>
+          <button type="button" onClick={() => applyIssueFilter("low-stock")} className="admin-product-summary admin-product-summary--warning">Reponer {lowStockCount}</button>
+          <button type="button" onClick={() => applyIssueFilter("no-image")} className="admin-product-summary">Sin imagen {noImageCount}</button>
+          <button type="button" onClick={() => { setViewMode("trash"); resetFilters(); }} className="admin-product-summary">Papelera {trashedProducts.length}</button>
         </div>
-      </section>
+      </section>}
 
       {msg && <Toast msg={msg} onClose={() => setMsg(null)} />}
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-wide text-slate-500">Control de catálogo</p>
@@ -637,7 +635,7 @@ export default function ProductsClient({
         <div className="border-b border-slate-200 bg-slate-50/70 p-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-sm font-black text-slate-950">Inventario del catalogo</p>
+              <p className="text-sm font-black text-slate-950">Explorar productos</p>
               <p className="mt-1 text-xs font-semibold text-slate-500">
                 {filteredProducts.length} de {baseProducts.length} productos visibles con los filtros actuales.
               </p>
@@ -735,15 +733,15 @@ export default function ProductsClient({
           </div>
         </div>
 
-        <div className="max-h-[520px] overflow-auto">
-          <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-sm">
-            <thead className="sticky top-0 z-10 bg-white text-left text-[11px] font-black uppercase tracking-wide text-slate-500 shadow-[inset_0_-1px_0_#e2e8f0]">
+        <div className="overflow-x-auto">
+          <table className="w-full border-separate border-spacing-0 text-sm">
+            <thead className="bg-white text-left text-[11px] font-black uppercase tracking-wide text-slate-500 shadow-[inset_0_-1px_0_#e2e8f0]">
               <tr>
                 <th className="px-4 py-3">Producto</th>
-                <th className="px-3 py-3">Categoria</th>
-                <th className="px-3 py-3">Estado</th>
+                <th className="hidden px-3 py-3 md:table-cell">Categoria</th>
+                <th className="hidden px-3 py-3 lg:table-cell">Estado</th>
                 <th className="px-3 py-3 text-right">Stock</th>
-                <th className="px-3 py-3">Revision</th>
+                <th className="hidden px-3 py-3 xl:table-cell">Revision</th>
                 <th className="px-3 py-3 text-right">Precio</th>
                 <th className="px-4 py-3 text-right">Edicion</th>
               </tr>
@@ -785,11 +783,11 @@ export default function ProductsClient({
                         </div>
                       </div>
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-3">
+                    <td className="hidden border-b border-slate-100 px-3 py-3 md:table-cell">
                       <p className="text-xs font-black text-slate-700">{p.productType}</p>
                       <p className="mt-1 text-[11px] font-semibold text-slate-400">{p.audience}</p>
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-3">
+                    <td className="hidden border-b border-slate-100 px-3 py-3 lg:table-cell">
                       <span className={`inline-flex min-w-[78px] justify-center rounded-full border px-2 py-1 text-[11px] font-black ${p.status === "active" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-100 text-slate-600"}`}>
                         {p.status === "active" ? "Activo" : "Archivado"}
                       </span>
@@ -799,7 +797,7 @@ export default function ProductsClient({
                         {stock}
                       </span>
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-3">
+                    <td className="hidden border-b border-slate-100 px-3 py-3 xl:table-cell">
                       {issues.length === 0 ? (
                         <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-black text-emerald-700">
                           Completo

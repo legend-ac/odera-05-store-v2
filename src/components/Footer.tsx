@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Container } from "@/components/ui/layout";
+import HomeSocialLinks from "@/components/HomeSocialLinks";
 
 const mapsUrl =
   "https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA";
@@ -65,6 +66,10 @@ export default function Footer() {
           <a href={mapsUrl} target="_blank" rel="noreferrer" className="w-fit font-bold uppercase hover:text-[var(--vermeil)]" style={{ fontSize: "11px", letterSpacing: ".12em", color: "var(--paper)" }}>Ver cómo llegar ↗</a>
           <Link href="/nosotros" className="w-fit hover:text-[var(--vermeil)]" style={footerLink}>Frontis y ubicación de la tienda</Link>
         </section>
+      </Container>
+
+      <Container className="pb-12">
+        <HomeSocialLinks compact />
       </Container>
 
       <div style={{ borderTop: "1px solid var(--ash-2)" }}>

@@ -68,7 +68,7 @@ const SOCIALS = [
   },
 ];
 
-export default function HomeSocialLinks() {
+export default function HomeSocialLinks({ compact = false }: { compact?: boolean }) {
   const [links, setLinks] = useState<SocialLinks>({});
 
   useEffect(() => {
@@ -92,6 +92,19 @@ export default function HomeSocialLinks() {
   );
 
   if (!items.length) return null;
+
+  if (compact) {
+    return (
+      <nav aria-label="Redes sociales de ODERA 05" className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-5">
+        <span className="mr-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Síguenos</span>
+        {items.map((s) => (
+          <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs font-bold text-slate-200 transition hover:border-orange-400 hover:text-white">
+            <span className="h-4 w-4" aria-hidden="true">{s.icon}</span>{s.label}
+          </a>
+        ))}
+      </nav>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-900 shadow-[0_2px_12px_rgba(0,0,0,0.10)]">
