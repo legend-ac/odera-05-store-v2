@@ -759,7 +759,7 @@ export default function ProductsClient({
                 const stock = totalStock(p);
                 const issues = productIssues(p);
                 return (
-                  <tr key={p.id} onClick={() => selectProduct(p)} className={`cursor-pointer transition ${isSelected ? "bg-emerald-50" : "bg-white hover:bg-slate-50"}`}>
+                  <tr key={p.id} className={`transition ${isSelected ? "bg-emerald-50" : "bg-white hover:bg-slate-50"}`}>
                     <td className="border-b border-slate-100 px-4 py-3">
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
@@ -820,9 +820,9 @@ export default function ProductsClient({
                       {p.onSale && <p className="text-[11px] font-black text-rose-600">Oferta</p>}
                     </td>
                     <td className="border-b border-slate-100 px-4 py-3 text-right">
-                      <span className={`inline-flex min-w-[76px] justify-center rounded-lg px-3 py-2 text-xs font-black ${isSelected ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-600"}`}>
+                      <button type="button" onClick={() => selectProduct(p)} className={`inline-flex min-w-[76px] justify-center rounded-lg px-3 py-2 text-xs font-black transition hover:brightness-95 ${isSelected ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-600"}`}>
                         {isSelected ? "Editando" : "Editar"}
-                      </span>
+                      </button>
                     </td>
                   </tr>
                 );

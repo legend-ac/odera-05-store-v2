@@ -41,6 +41,7 @@ export default function InventoryClient() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deltas, setDeltas] = useState<Record<string, string>>({});
   const [reasons, setReasons] = useState<Record<string, "RECEIPT" | "CORRECTION" | "DAMAGE" | "RETURN">>({});
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -58,7 +59,12 @@ export default function InventoryClient() {
       const nextItems = json.items as InventoryProduct[];
       setItems((previous) => mode === "replace" ? nextItems : [...previous, ...nextItems]);
       setCursor(json.nextCursor ?? null);
-      setSelectedId((current) => current && nextItems.some((item) => item.id === current) ? current : nextItems[0]?.id ?? null);
+      setSelectedId((current) => {
+        // Loading another page must not steal the operator away from the item
+        // currently being adjusted.
+        if (mode === "append" && current) return current;
+        return current && nextItems.some((item) => item.id === current) ? current : nextItems[0]?.id ?? null;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo cargar el inventario");
     } finally {
@@ -93,7 +99,7 @@ export default function InventoryClient() {
     try {
       const result = await apiPost<{ inventoryTotal: number; inventoryState: InventoryState; variantStock: number; status: string }>(
         "/api/admin/inventory/adjust",
-        { productId: product.id, variantId: variant.id, delta, reason: reasons[key] ?? (delta > 0 ? "RECEIPT" : "CORRECTION") },
+        { productId: product.id, variantId: variant.id, delta, reason: reasons[key] ?? (delta > 0 ? "RECEIPT" : "CORRECTION"), note: notes[key]?.trim() || undefined },
         { csrfCookieName: CSRF_COOKIE_NAME }
       );
       setItems((all) => all.map((item) => item.id !== product.id ? item : {
@@ -105,6 +111,7 @@ export default function InventoryClient() {
         variants: item.variants.map((current) => current.id === variant.id ? { ...current, stock: result.variantStock } : current),
       }));
       setDeltas((all) => ({ ...all, [key]: "" }));
+      setNotes((all) => ({ ...all, [key]: "" }));
       setNotice(`${product.name}: movimiento registrado. El nuevo stock ya está disponible para la tienda.`);
     } catch (err) {
       setNotice(`Error: ${err instanceof Error ? err.message : "No se pudo registrar el movimiento"}`);
@@ -184,6 +191,7 @@ export default function InventoryClient() {
                     <select value={reasons[key] ?? (delta < 0 ? "CORRECTION" : "RECEIPT")} onChange={(event) => setReasons((all) => ({ ...all, [key]: event.target.value as "RECEIPT" | "CORRECTION" | "DAMAGE" | "RETURN" }))}><option value="RECEIPT">Ingreso de compra</option><option value="CORRECTION">Corrección</option><option value="DAMAGE">Merma o daño</option><option value="RETURN">Devolución</option></select>
                     <button type="button" disabled={busy} onClick={() => void adjust(selected, variant)}>{busy ? "Guardando" : "Aplicar"}</button>
                   </div>
+                  <input aria-label={`Nota del movimiento para ${variantLabel(variant)}`} value={notes[key] ?? ""} onChange={(event) => setNotes((all) => ({ ...all, [key]: event.target.value }))} maxLength={240} placeholder="Nota opcional para auditoría: OC, proveedor o incidencia" />
                 </div>;
               })}
             </div>
