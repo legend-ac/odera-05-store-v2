@@ -632,7 +632,7 @@ export default function ProductsClient({
         )}
       </section>
 
-      <div className="admin-catalog-workspace grid gap-4">
+      {!editorOpen && <div className="admin-catalog-workspace grid gap-4">
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 bg-slate-50/70 p-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -860,6 +860,7 @@ export default function ProductsClient({
           </div>
         )}
       </section>
+      </div>}
 
       {editorOpen && <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 p-4">
@@ -1110,7 +1111,6 @@ export default function ProductsClient({
           )}
         </div>
       </section>}
-      </div>
     </div>
   );
 }

@@ -14,19 +14,21 @@ type InventoryProduct = {
 
 const STATE_COPY: Record<InventoryState, { label: string; style: string }> = {
   OUT: { label: "Agotado", style: "border-rose-200 bg-rose-50 text-rose-700" },
-  LOW: { label: "Reposición", style: "border-amber-200 bg-amber-50 text-amber-700" },
+  LOW: { label: "Reponer", style: "border-amber-200 bg-amber-50 text-amber-700" },
   HEALTHY: { label: "Disponible", style: "border-emerald-200 bg-emerald-50 text-emerald-700" },
 };
 
 function formatDate(ms: number | null): string {
-  return ms ? new Date(ms).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) : "—";
+  return ms ? new Date(ms).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) : "Sin movimientos";
+}
+
+function variantLabel(variant: Variant): string {
+  return [variant.size && `Talla ${variant.size}`, variant.color, variant.sku && `SKU ${variant.sku}`].filter(Boolean).join(" · ") || "Variante principal";
 }
 
 export default function InventoryClient() {
   const routeParams = useSearchParams();
   const routeState = routeParams.get("state");
-  // Al abrir inventario se muestra lo que exige una decisión. El listado
-  // completo sigue disponible como filtro explícito.
   const initialState: "ALL" | InventoryState = routeState === "OUT" || routeState === "LOW" || routeState === "HEALTHY" ? routeState : "LOW";
   const [items, setItems] = useState<InventoryProduct[]>([]);
   const [state, setState] = useState<"ALL" | InventoryState>(initialState);
@@ -36,9 +38,9 @@ export default function InventoryClient() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deltas, setDeltas] = useState<Record<string, string>>({});
-  const [reason, setReason] = useState<Record<string, "RECEIPT" | "CORRECTION" | "DAMAGE" | "RETURN">>({});
+  const [reasons, setReasons] = useState<Record<string, "RECEIPT" | "CORRECTION" | "DAMAGE" | "RETURN">>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -53,8 +55,10 @@ export default function InventoryClient() {
       const response = await fetch(`/api/admin/inventory?${params.toString()}`, { cache: "no-store" });
       const json = await response.json();
       if (!response.ok) throw new Error(String(json?.error ?? "No se pudo cargar el inventario"));
-      setItems((previous) => mode === "replace" ? json.items : [...previous, ...json.items]);
+      const nextItems = json.items as InventoryProduct[];
+      setItems((previous) => mode === "replace" ? nextItems : [...previous, ...nextItems]);
       setCursor(json.nextCursor ?? null);
+      setSelectedId((current) => current && nextItems.some((item) => item.id === current) ? current : nextItems[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo cargar el inventario");
     } finally {
@@ -65,10 +69,11 @@ export default function InventoryClient() {
 
   useEffect(() => { void load("replace"); }, [load]);
 
+  const selected = useMemo(() => items.find((item) => item.id === selectedId) ?? null, [items, selectedId]);
   const summary = useMemo(() => ({
     out: items.filter((item) => item.inventoryState === "OUT").length,
     low: items.filter((item) => item.inventoryState === "LOW").length,
-    total: items.reduce((sum, item) => sum + item.inventoryTotal, 0),
+    units: items.reduce((sum, item) => sum + item.inventoryTotal, 0),
   }), [items]);
 
   function submitSearch(event: React.FormEvent) {
@@ -80,14 +85,15 @@ export default function InventoryClient() {
     const key = `${product.id}:${variant.id}`;
     const delta = Number(deltas[key] ?? "0");
     if (!Number.isInteger(delta) || delta === 0) {
-      setNotice("Indica una cantidad entera distinta de cero.");
+      setNotice("Indica una cantidad entera, positiva o negativa, antes de aplicar el movimiento.");
       return;
     }
-    setBusyKey(key); setNotice(null);
+    setBusyKey(key);
+    setNotice(null);
     try {
       const result = await apiPost<{ inventoryTotal: number; inventoryState: InventoryState; variantStock: number; status: string }>(
         "/api/admin/inventory/adjust",
-        { productId: product.id, variantId: variant.id, delta, reason: reason[key] ?? (delta > 0 ? "RECEIPT" : "CORRECTION") },
+        { productId: product.id, variantId: variant.id, delta, reason: reasons[key] ?? (delta > 0 ? "RECEIPT" : "CORRECTION") },
         { csrfCookieName: CSRF_COOKIE_NAME }
       );
       setItems((all) => all.map((item) => item.id !== product.id ? item : {
@@ -99,71 +105,92 @@ export default function InventoryClient() {
         variants: item.variants.map((current) => current.id === variant.id ? { ...current, stock: result.variantStock } : current),
       }));
       setDeltas((all) => ({ ...all, [key]: "" }));
-      setNotice(`Stock de ${product.name} actualizado y registrado en el historial.`);
+      setNotice(`${product.name}: movimiento registrado. El nuevo stock ya está disponible para la tienda.`);
     } catch (err) {
-      setNotice(`Error: ${err instanceof Error ? err.message : "No se pudo ajustar"}`);
-    } finally { setBusyKey(null); }
+      setNotice(`Error: ${err instanceof Error ? err.message : "No se pudo registrar el movimiento"}`);
+    } finally {
+      setBusyKey(null);
+    }
   }
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-[#4a1711] p-5 text-white shadow-[var(--shadow-card)] sm:p-6">
-        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#fec9bf]">Control operativo</p>
-            <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Inventario, sin hojas de cálculo</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-300">Prioriza faltantes, ajusta cada variante con seguridad y deja un registro auditable de cada movimiento.</p>
-          </div>
-          <Link href="/dashboard/products" className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-sm font-black text-slate-900 hover:bg-[var(--brand-50)]">Editar catálogo</Link>
+    <div className="admin-inventory grid gap-5">
+      <section className="admin-inventory__hero">
+        <div>
+          <p>OPERACIÓN DE STOCK</p>
+          <h1>Reposición y movimientos</h1>
+          <span>Revisa lo urgente, ajusta por variante y conserva un historial de cada movimiento.</span>
         </div>
+        <Link href="/dashboard/products" className="admin-inventory__hero-action">Administrar productos</Link>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
-        {[
-          ["Unidades en esta vista", summary.total, "bg-slate-700"],
-          ["Productos agotados", summary.out, "bg-rose-500"],
-          ["Requieren reposición", summary.low, "bg-amber-500"],
-        ].map(([label, value, accent]) => <div key={String(label)} className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><span className={`absolute inset-y-0 left-0 w-1 ${accent}`} /><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-3xl font-black tabular-nums text-slate-950">{value}</p></div>)}
+        <div className="admin-metric admin-metric--rose"><p>Agotados</p><strong>{summary.out}</strong><span>Productos no vendibles</span></div>
+        <div className="admin-metric admin-metric--amber"><p>Por reponer</p><strong>{summary.low}</strong><span>Prioridad de compra</span></div>
+        <div className="admin-metric admin-metric--blue"><p>Unidades en vista</p><strong>{summary.units}</strong><span>Según el filtro actual</span></div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-2" aria-label="Filtro de estado de inventario">
-            {(["LOW", "OUT", "HEALTHY", "ALL"] as const).map((value) => <button key={value} type="button" onClick={() => setState(value)} className={`rounded-xl border px-3 py-2 text-xs font-black transition ${state === value ? "border-[var(--brand-600)] bg-[var(--brand-600)] text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>{value === "ALL" ? "Todo el inventario" : STATE_COPY[value].label}</button>)}
-          </div>
-          <form onSubmit={submitSearch} className="flex gap-2">
-            <input value={draftSearch} onChange={(event) => setDraftSearch(event.target.value)} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500 sm:w-72" placeholder="Busca por nombre o marca" />
-            <button className="h-10 rounded-xl bg-slate-900 px-4 text-sm font-bold text-white hover:bg-slate-700">Buscar</button>
-          </form>
+      <section className="admin-inventory__toolbar">
+        <div className="admin-inventory__filters" aria-label="Filtro de inventario">
+          {(["LOW", "OUT", "HEALTHY", "ALL"] as const).map((value) => (
+            <button key={value} type="button" onClick={() => setState(value)} className={state === value ? "is-active" : ""}>
+              {value === "ALL" ? "Todo" : STATE_COPY[value].label}
+            </button>
+          ))}
         </div>
-        {search && <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600"><span>Resultados para <strong>“{search}”</strong></span><button type="button" onClick={() => { setDraftSearch(""); setSearch(""); }} className="font-bold text-rose-600">Limpiar</button></div>}
+        <form onSubmit={submitSearch} className="admin-inventory__search">
+          <input value={draftSearch} onChange={(event) => setDraftSearch(event.target.value)} placeholder="Buscar producto, marca o SKU" />
+          <button type="submit">Buscar</button>
+        </form>
       </section>
 
-      {notice && <div className={`rounded-xl border px-4 py-3 text-sm font-medium ${notice.startsWith("Error") ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{notice}</div>}
-      {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div>}
+      {notice && <div className={`rounded-xl border px-4 py-3 text-sm font-semibold ${notice.startsWith("Error") ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{notice}</div>}
+      {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div>}
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-[minmax(190px,1.8fr)_80px_120px_100px] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-black uppercase tracking-wide text-slate-500 sm:px-5"><span>Producto</span><span className="text-right">Stock</span><span>Estado</span><span>Actualizado</span></div>
-        {loading ? <div className="space-y-3 p-5">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-14 animate-pulse rounded-xl bg-slate-100" />)}</div> : items.length === 0 ? <div className="px-5 py-16 text-center"><p className="text-base font-black text-slate-900">No hay productos en esta vista</p><p className="mt-1 text-sm text-slate-500">Si acabas de activar este módulo, ejecuta la sincronización inicial de inventario.</p></div> : <div className="divide-y divide-slate-100">
-          {items.map((product) => {
-            const stateCopy = STATE_COPY[product.inventoryState] ?? STATE_COPY.OUT;
-            const expanded = openId === product.id;
-            return <div key={product.id}>
-              <button type="button" onClick={() => setOpenId(expanded ? null : product.id)} className="grid w-full grid-cols-[minmax(190px,1.8fr)_80px_120px_100px] items-center gap-3 px-4 py-4 text-left transition hover:bg-slate-50 sm:px-5">
-                <span className="min-w-0"><span className="block truncate text-sm font-black text-slate-900">{product.name}</span><span className="mt-0.5 block truncate text-xs text-slate-500">{[product.brand, product.productType, product.slug].filter(Boolean).join(" · ")}</span></span>
-                <span className="text-right text-lg font-black tabular-nums text-slate-950">{product.inventoryTotal}</span>
-                <span><span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black ${stateCopy.style}`}>{stateCopy.label}</span></span>
-                <span className="text-xs font-medium text-slate-500">{formatDate(product.inventoryUpdatedAtMs)}</span>
-              </button>
-              {expanded && <div className="border-t border-slate-100 bg-slate-50 px-4 py-4 sm:px-5"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-wide text-slate-500">Variantes y movimientos</p><Link href={`/dashboard/products?edit=${encodeURIComponent(product.id)}`} className="text-xs font-bold text-emerald-700 hover:underline">Abrir ficha completa</Link></div><div className="grid gap-2">
-                {product.variants.map((variant) => { const key = `${product.id}:${variant.id}`; const busy = busyKey === key; return <div key={variant.id} className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3 lg:grid-cols-[minmax(180px,1fr)_80px_130px_150px_100px]"><div><p className="text-sm font-bold text-slate-900">{[variant.size && `Talla ${variant.size}`, variant.color, variant.sku && `SKU ${variant.sku}`].filter(Boolean).join(" · ") || variant.id}</p><p className="text-xs text-slate-500">ID: {variant.id}</p></div><p className="self-center text-lg font-black tabular-nums text-slate-950">{variant.stock}</p><input aria-label={`Ajuste para ${variant.id}`} value={deltas[key] ?? ""} onChange={(event) => setDeltas((all) => ({ ...all, [key]: event.target.value }))} type="number" step="1" className="h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500" placeholder="+ / − cantidad" /><select value={reason[key] ?? (Number(deltas[key] ?? 0) < 0 ? "CORRECTION" : "RECEIPT")} onChange={(event) => setReason((all) => ({ ...all, [key]: event.target.value as any }))} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm"><option value="RECEIPT">Ingreso de compra</option><option value="CORRECTION">Corrección</option><option value="DAMAGE">Merma / daño</option><option value="RETURN">Devolución</option></select><button type="button" disabled={busy} onClick={() => void adjust(product, variant)} className="h-10 rounded-lg bg-slate-900 px-3 text-sm font-black text-white disabled:opacity-50 hover:bg-slate-700">{busy ? "Guardando" : "Aplicar"}</button></div>; })}
-              </div></div>}
-            </div>;
-          })}
-        </div>}
-        {cursor && !search && <div className="border-t border-slate-100 p-4 text-center"><button type="button" disabled={loadingMore} onClick={() => void load("append", cursor)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">{loadingMore ? "Cargando…" : "Cargar 50 productos más"}</button></div>}
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px] xl:items-start">
+        <div className="admin-stock-table">
+          <div className="admin-stock-table__heading"><div><p>COLA DE INVENTARIO</p><h2>{state === "LOW" ? "Productos que requieren reposición" : "Productos del inventario"}</h2></div><button type="button" onClick={() => void load("replace")}>Actualizar</button></div>
+          {loading ? <div className="space-y-3 p-5">{Array.from({ length: 7 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-xl bg-slate-100" />)}</div> : items.length === 0 ? (
+            <div className="px-5 py-16 text-center"><p className="text-base font-black text-slate-900">No hay productos en esta vista</p><p className="mt-1 text-sm text-slate-500">Cambia el filtro o busca por nombre, marca o SKU.</p></div>
+          ) : <div className="divide-y divide-slate-100">
+            {items.map((product) => {
+              const stateCopy = STATE_COPY[product.inventoryState] ?? STATE_COPY.OUT;
+              const active = selected?.id === product.id;
+              return <button key={product.id} type="button" onClick={() => setSelectedId(product.id)} className={`admin-stock-row ${active ? "is-selected" : ""}`}>
+                <span className="min-w-0"><b>{product.name}</b><small>{[product.brand, product.productType, product.slug].filter(Boolean).join(" · ")}</small></span>
+                <strong>{product.inventoryTotal}</strong>
+                <span className={`admin-stock-state ${stateCopy.style}`}>{stateCopy.label}</span>
+                <small className="admin-stock-date">{formatDate(product.inventoryUpdatedAtMs)}</small>
+                <span className="admin-stock-row__arrow" aria-hidden="true">→</span>
+              </button>;
+            })}
+          </div>}
+          {cursor && !search && <div className="border-t border-slate-100 p-4 text-center"><button type="button" disabled={loadingMore} onClick={() => void load("append", cursor)} className="admin-load-more">{loadingMore ? "Cargando…" : "Cargar más productos"}</button></div>}
+        </div>
+
+        <aside className="admin-stock-adjuster">
+          {!selected ? <div className="admin-stock-adjuster__empty"><b>Selecciona un producto</b><span>Elige una fila para ajustar sus variantes sin perder el contexto de la reposición.</span></div> : <>
+            <div className="admin-stock-adjuster__header"><div><p>AJUSTE RÁPIDO</p><h2>{selected.name}</h2><span>{selected.brand || "Sin marca"} · Stock total: <b>{selected.inventoryTotal}</b></span></div><Link href={`/dashboard/products?edit=${encodeURIComponent(selected.id)}`}>Editar ficha</Link></div>
+            <div className="grid gap-3">
+              {selected.variants.map((variant) => {
+                const key = `${selected.id}:${variant.id}`;
+                const delta = Number(deltas[key] ?? 0);
+                const after = variant.stock + (Number.isFinite(delta) ? delta : 0);
+                const busy = busyKey === key;
+                return <div key={variant.id} className="admin-stock-variant">
+                  <div className="flex items-start justify-between gap-3"><div><b>{variantLabel(variant)}</b><span>Disponible ahora: <strong>{variant.stock}</strong></span></div><span className="admin-stock-after">Después: {after}</span></div>
+                  <div className="grid gap-2 sm:grid-cols-[126px_minmax(0,1fr)_auto]">
+                    <input aria-label={`Movimiento para ${variantLabel(variant)}`} value={deltas[key] ?? ""} onChange={(event) => setDeltas((all) => ({ ...all, [key]: event.target.value }))} type="number" step="1" placeholder="+ / − unidades" />
+                    <select value={reasons[key] ?? (delta < 0 ? "CORRECTION" : "RECEIPT")} onChange={(event) => setReasons((all) => ({ ...all, [key]: event.target.value as "RECEIPT" | "CORRECTION" | "DAMAGE" | "RETURN" }))}><option value="RECEIPT">Ingreso de compra</option><option value="CORRECTION">Corrección</option><option value="DAMAGE">Merma o daño</option><option value="RETURN">Devolución</option></select>
+                    <button type="button" disabled={busy} onClick={() => void adjust(selected, variant)}>{busy ? "Guardando" : "Aplicar"}</button>
+                  </div>
+                </div>;
+              })}
+            </div>
+            <p className="admin-stock-adjuster__note">Cada ajuste se guarda como transacción: no permite stock negativo y conserva usuario, motivo y fecha.</p>
+          </>}
+        </aside>
       </section>
-      <p className="text-xs text-slate-500">Cada ajuste se ejecuta como transacción: el stock nunca puede quedar negativo y el movimiento queda registrado con usuario, motivo y fecha.</p>
     </div>
   );
 }
