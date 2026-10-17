@@ -13,6 +13,7 @@ import { formatPEN } from "@/lib/money";
 import { renderOrderEmail } from "@/lib/server/emailTemplates";
 import type { ProductDoc } from "@/types/firestore";
 import { deriveStockDrivenStatus, getInventorySummary } from "@/lib/productStock";
+import { shippingCostFor, shippingThreshold } from "@/lib/shipping";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -97,8 +98,9 @@ export async function POST(req: Request) {
     const promoCoupon = String(settingsSnapForPromo.data()?.homePromo?.couponCode ?? "ODERA10").trim().toUpperCase();
     const promoDiscountPctRaw = Number(settingsSnapForPromo.data()?.homePromo?.discountPercent ?? 10);
     const promoDiscountPct = Math.max(0, Math.min(100, Number.isFinite(promoDiscountPctRaw) ? promoDiscountPctRaw : 0));
-    const promoFreeShippingRaw = Number(settingsSnapForPromo.data()?.homePromo?.freeShippingFrom ?? 200);
-    const promoFreeShippingFrom = Math.max(0, Number.isFinite(promoFreeShippingRaw) ? promoFreeShippingRaw : 200);
+    const promoFreeShippingFrom = shippingThreshold(settingsSnapForPromo.data()?.homePromo?.freeShippingFrom);
+    const initialStatus = payment.receiptImageUrl ? "PENDING_VALIDATION" : "SCHEDULED";
+    const statusLabel = payment.receiptImageUrl ? "Pendiente de validación de pago" : "Reservado, pendiente de pago";
 
     const now = Timestamp.now();
     const reservedUntil = Timestamp.fromMillis(now.toMillis() + 20 * 60 * 1000);
@@ -113,12 +115,21 @@ export async function POST(req: Request) {
         const idemSnap = await tx.get(idemRef);
         if (idemSnap.exists) {
           const data = idemSnap.data() as any;
+          const existingOrderSnap = await tx.get(adminDb.collection("orders").doc(data.orderId));
+          if (!existingOrderSnap.exists) throw new Error("ORDER_NOT_FOUND");
+          const existingOrder = existingOrderSnap.data() as any;
+          if (existingOrder.status === "CANCELLED") throw new Error("ORDER_CANCELLED");
+          if (existingOrder.status === "CANCELLED_EXPIRED" || existingOrder.status === "EXPIRED") throw new Error("ORDER_EXPIRED");
+          if (existingOrder.status === "SCHEDULED" && existingOrder.reservedUntil?.toMillis() <= now.toMillis()) {
+            throw new Error("ORDER_EXPIRED");
+          }
           return {
             orderId: data.orderId as string,
             publicCode: data.publicCode as string,
             trackingToken: data.trackingToken as string,
             reservedUntilMs: data.reservedUntilMs as number,
             shippingCost: (data.shippingCost as number | undefined) ?? 0,
+            discountAmount: (data.discountAmount as number | undefined) ?? 0,
             totalToPay: data.totalToPay as number | undefined,
             idempotent: true as const,
           };
@@ -126,11 +137,11 @@ export async function POST(req: Request) {
       }
 
       const productSnaps: { productId: string; snap: FirebaseFirestore.DocumentSnapshot }[] = [];
-      for (const it of normItems) {
-        const ref = adminDb.collection("products").doc(it.productId);
+      for (const productId of new Set(normItems.map(it => it.productId))) {
+        const ref = adminDb.collection("products").doc(productId);
         const snap = await tx.get(ref);
-        if (!snap.exists) throw new Error(`PRODUCT_NOT_FOUND:${it.productId}`);
-        productSnaps.push({ productId: it.productId, snap });
+        if (!snap.exists) throw new Error(`PRODUCT_NOT_FOUND:${productId}`);
+        productSnaps.push({ productId, snap });
       }
 
       const counterSnap = await tx.get(counterRef);
@@ -142,6 +153,7 @@ export async function POST(req: Request) {
 
       const itemsSnapshots = [];
       let subtotal = 0;
+      const updatedVariants = new Map<string, ProductRefData["variants"]>();
 
       for (const it of normItems) {
         const productSnap = productSnaps.find((x) => x.productId === it.productId)!.snap;
@@ -151,13 +163,14 @@ export async function POST(req: Request) {
           throw new Error(`PRODUCT_INACTIVE:${it.productId}`);
         }
 
-        const variants = Array.isArray(product.variants) ? [...product.variants] : [];
+        const variants = updatedVariants.get(it.productId) ?? (Array.isArray(product.variants) ? [...product.variants] : []);
         const vIdx = variants.findIndex((v) => v.id === it.variantId);
         if (vIdx < 0) throw new Error(`VARIANT_NOT_FOUND:${it.productId}:${it.variantId}`);
         const variant = variants[vIdx]!;
         if (variant.stock < it.qty) throw new Error(`OUT_OF_STOCK:${it.productId}:${it.variantId}`);
 
         variants[vIdx] = { ...variant, stock: variant.stock - it.qty };
+        updatedVariants.set(it.productId, variants);
 
         const unitPrice = pickUnitPrice(product);
         subtotal += unitPrice * it.qty;
@@ -176,20 +189,6 @@ export async function POST(req: Request) {
           qty: it.qty,
         });
 
-        const statusAfterStock = deriveStockDrivenStatus(
-          (product.status as "active" | "archived") ?? "active",
-          variants,
-          Boolean((product as any).autoArchivedByStock)
-        );
-        tx.update(productSnap.ref, {
-          variants,
-          status: statusAfterStock.status,
-          autoArchivedByStock: statusAfterStock.autoArchivedByStock,
-          ...getInventorySummary(variants),
-          inventoryUpdatedAt: now,
-          updatedAt: now,
-        });
-
         const stockLogRef = adminDb.collection("stockLogs").doc();
         tx.set(stockLogRef, {
           productId: it.productId,
@@ -201,17 +200,36 @@ export async function POST(req: Request) {
         });
       }
 
+      for (const { productId, snap } of productSnaps) {
+        const product = snap.data() as ProductRefData;
+        const variants = updatedVariants.get(productId)!;
+        const statusAfterStock = deriveStockDrivenStatus(
+          (product.status as "active" | "archived") ?? "active",
+          variants,
+          Boolean((product as any).autoArchivedByStock)
+        );
+        tx.update(snap.ref, {
+          variants,
+          status: statusAfterStock.status,
+          autoArchivedByStock: statusAfterStock.autoArchivedByStock,
+          ...getInventorySummary(variants),
+          inventoryUpdatedAt: now,
+          updatedAt: now,
+        });
+
+      }
+
       const normalizedCoupon = (couponCode ?? "").trim().toUpperCase();
       const isCouponValid = promoEnabled && promoCoupon.length >= 4 && normalizedCoupon === promoCoupon && promoDiscountPct > 0;
       const discountAmount = isCouponValid ? Math.round(subtotal * (promoDiscountPct / 100) * 100) / 100 : 0;
       const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
-      const shippingCost = subtotal >= promoFreeShippingFrom ? 0 : 10;
+      const shippingCost = shippingCostFor(subtotal, promoFreeShippingFrom);
       const totalToPay = subtotalAfterDiscount + shippingCost;
 
       const orderDoc = {
         publicCode,
         trackingToken,
-        status: "PENDING_VALIDATION",
+        status: initialStatus,
         reservedUntil,
         customer,
         shipping,
@@ -220,8 +238,7 @@ export async function POST(req: Request) {
         totals: { subtotal, discountAmount, shippingCost, totalToPay },
         payment: {
           method: payment.method,
-          receiptImageUrl: payment.receiptImageUrl,
-          paymentSentAt: now,
+          ...(payment.receiptImageUrl ? { receiptImageUrl: payment.receiptImageUrl, paymentSentAt: now } : {}),
         },
         createdAt: now,
         updatedAt: now,
@@ -235,7 +252,7 @@ export async function POST(req: Request) {
         action: "ORDER_CREATED",
         target: { type: "order", id: orderRef.id, publicCode },
         before: null,
-        after: { status: "PENDING_VALIDATION" },
+        after: { status: initialStatus },
         meta: { ip, userAgent: ua, shippingMethod: shipping.method },
         createdAt: new Date(),
       });
@@ -297,14 +314,14 @@ export async function POST(req: Request) {
 
     const mailDetail =
       `Pedido: ${result.publicCode}\n` +
-      `Estado: Pendiente de validacion de pago\n\n` +
+      `Estado: ${statusLabel}\n\n` +
       `Cliente\n` +
       `Nombre: ${customer.name}\n` +
       `Correo: ${customer.email}\n` +
       `Telefono: ${customer.phone}\n\n` +
       `${shippingToText(shipping)}\n\n` +
       `Metodo de pago: ${payment.method}\n` +
-      `Comprobante: ${payment.receiptImageUrl}\n\n` +
+      (payment.receiptImageUrl ? `Comprobante: ${payment.receiptImageUrl}\n\n` : "Realiza el pago después de comprobar el total y la vigencia de tu reserva en el enlace de seguimiento.\n\n") +
       `Productos:\n${orderLines}\n\n` +
       `Descuento: S/ ${((result as any).discountAmount ?? 0).toFixed(2)}\n` +
       `Envio: S/ ${((result as any).shippingCost ?? 0).toFixed(2)}\n` +
@@ -315,7 +332,7 @@ export async function POST(req: Request) {
     const htmlBase = {
       storeName: store,
       publicCode: result.publicCode,
-      statusLabel: "Pendiente de validacion de pago",
+      statusLabel,
       customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.phone,
@@ -342,7 +359,7 @@ export async function POST(req: Request) {
     if (!wasIdempotent) {
       const customerMail = await sendTransactionalEmail({
         to: customer.email,
-        subject: `${store} - Pedido ${result.publicCode} (Pendiente de validacion)`,
+        subject: `${store} - Pedido ${result.publicCode} (${statusLabel})`,
         text: `Tu pedido fue registrado correctamente.\n\n${mailDetail}`,
         html: customerHtml,
       });
@@ -400,6 +417,9 @@ export async function POST(req: Request) {
     if (typeof msg === "string" && msg.startsWith("VARIANT_NOT_FOUND")) {
       return NextResponse.json({ error: "VARIANT_NOT_FOUND", detail: msg }, { status: 404 });
     }
+    if (msg === "ORDER_CANCELLED") return NextResponse.json({ error: msg }, { status: 409 });
+    if (msg === "ORDER_EXPIRED") return NextResponse.json({ error: msg }, { status: 410 });
+    if (msg === "ORDER_NOT_FOUND") return NextResponse.json({ error: msg }, { status: 404 });
     return NextResponse.json({ error: "SERVER_ERROR", detail: msg }, { status: 500 });
   }
 }

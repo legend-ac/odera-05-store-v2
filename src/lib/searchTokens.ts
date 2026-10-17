@@ -8,15 +8,32 @@ export function normalizeToken(s: string): string {
 }
 
 export function makeSearchTokens(input: string): string[] {
-  const normalized = normalizeToken(input);
-  if (!normalized) return [];
-  const parts = normalized.split(/\s+/g).filter(Boolean);
-  const uniq = new Set<string>();
-  for (const p of parts) {
-    if (p.length < 2) continue;
-    uniq.add(p);
-  }
-  return Array.from(uniq).slice(0, 30);
+  return getSearchTerms(input).filter((part) => part.length >= 2).slice(0, 30);
+}
+
+/** Query terms must not inherit the stored index's 30-token limit. */
+export function getSearchTerms(input: string): string[] {
+  return Array.from(new Set(normalizeToken(input).split(/\s+/g).filter(Boolean)));
+}
+
+export function productMatchesSearch(
+  product: {
+    slug?: unknown;
+    name?: unknown;
+    description?: unknown;
+    brand?: unknown;
+    category?: unknown;
+    searchTokens?: unknown;
+  },
+  terms: readonly string[]
+): boolean {
+  const indexedTokens = Array.isArray(product.searchTokens) ? product.searchTokens : [];
+  const searchable = [
+    product.slug, product.name, product.description, product.brand, product.category,
+    ...indexedTokens,
+  ].map((value) => String(value ?? "")).join(" ");
+  const available = new Set(getSearchTerms(searchable));
+  return terms.every((term) => available.has(term));
 }
 
 export function makeProductSearchTokens(args: {

@@ -4,6 +4,11 @@ import { hasStock } from "@/lib/productStock";
 
 export const revalidate = 60;
 
+// This uploaded asset is a flyer with contact text, so it is unsuitable for
+// the home product grid. The product remains in the catalog and automatically
+// returns here when its main image is replaced.
+const PROMOTIONAL_FLYER_IMAGE_ID = "/ukdxjji4xbmurb79wzzm.";
+
 async function loadFeatured(): Promise<ProductCardData[]> {
   const snap = await adminDb.collection("products").where("status", "==", "active").limit(100).get();
   const raw = snap.docs.map((d) => {
@@ -23,13 +28,14 @@ async function loadFeatured(): Promise<ProductCardData[]> {
       onSale: Boolean(data.onSale),
       imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
       imageUrls,
+      isPromotionalFlyer: typeof mainUrl === "string" && mainUrl.includes(PROMOTIONAL_FLYER_IMAGE_ID),
       hasStock: hasStock(variants),
       dedupeKey,
       updatedAtMs,
     };
   });
 
-  const byLatest = raw.filter((x: any) => x.hasStock).sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+  const byLatest = raw.filter((x: any) => x.hasStock && !x.isPromotionalFlyer).sort((a, b) => b.updatedAtMs - a.updatedAtMs);
   const seen = new Set<string>();
   const list: ProductCardData[] = [];
   for (const it of byLatest) {
@@ -68,14 +74,14 @@ export default async function FeaturedProducts() {
       );
     }
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         {items.map((p, index) => (
-          <ProductCard key={p.id} p={p} priority={index < 4} />
+          <ProductCard key={p.id} p={p} priority={index < 3} />
         ))}
       </div>
     );
   } catch (e) {
     console.error("[FeaturedProducts] load failed", e);
-    return <div className="text-sm text-red-600">No pudimos cargar los productos destacados.</div>;
+    return <div className="text-sm" style={{ color: "var(--ash)" }}>No pudimos cargar los productos destacados.</div>;
   }
 }

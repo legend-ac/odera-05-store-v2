@@ -1038,7 +1038,7 @@ export default function ProductsClient({
                 </div>
                 <div>
                   <p className="text-sm font-black text-slate-950">{draft.images.length} imagen(es)</p>
-                  <p className="mt-1 text-sm text-slate-500">La principal aparece en catalogo y tarjetas.</p>
+                  <p className="mt-1 text-sm text-slate-500">La principal aparece en catálogo y tarjetas. Usa una foto clara del producto sin texto promocional; deja los anuncios como imágenes secundarias.</p>
                 </div>
                 <label className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-[var(--brand-200,#a7d7ac)] bg-[var(--brand-50)] px-4 text-sm font-black text-[var(--brand-700)] hover:bg-[var(--brand-100,#d8eedc)]">
                   Subir WebP

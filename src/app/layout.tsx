@@ -4,6 +4,7 @@ import { Roboto, Roboto_Condensed } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
+import { getMetadataBaseUrl } from "@/lib/productMetadata";
 
 const display = Roboto_Condensed({
   subsets: ["latin"],
@@ -20,6 +21,7 @@ const sans = Roboto({
 });
 
 export const metadata: Metadata = {
+  metadataBase: getMetadataBaseUrl(),
   title: {
     default: "ODERA 05 STORE — Zapatillas y Ropa Original",
     template: "%s | ODERA 05 STORE",

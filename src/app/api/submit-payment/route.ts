@@ -29,22 +29,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "VALIDATION_ERROR", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const { publicCode, trackingToken, operationCode, method } = parsed.data;
+    const { publicCode, trackingToken, operationCode, receiptImageUrl, method } = parsed.data;
     const now = Timestamp.now();
 
-    const opRef = adminDb.collection("paymentOps").doc(operationCode);
+    const opRef = operationCode ? adminDb.collection("paymentOps").doc(operationCode) : null;
 
     const result = await adminDb.runTransaction(async (tx) => {
-      const opSnap = await tx.get(opRef);
-      if (opSnap.exists) {
-        const data = opSnap.data() as { orderPublicCode?: string; orderId?: string };
-        if (data?.orderPublicCode === publicCode) {
-          // Idempotent repeat: return success
-          return { ok: true as const, idempotent: true as const };
-        }
-        throw new Error("OPERATION_CODE_ALREADY_USED");
-      }
-
       // Find order by publicCode
       const q = adminDb.collection("orders").where("publicCode", "==", publicCode).limit(1);
       const qs = await tx.get(q);
@@ -57,7 +47,19 @@ export async function POST(req: Request) {
       }
 
       const status = order.status as string;
-      const decision = decidePaymentSubmission(status, order.payment?.operationCode, operationCode);
+      const opSnap = opRef ? await tx.get(opRef) : null;
+      if (opSnap?.exists) {
+        const operation = opSnap.data() as { orderId?: string };
+        if (operation.orderId === orderSnap.id) return { ok: true as const, idempotent: true as const };
+        throw new Error("OPERATION_CODE_ALREADY_USED");
+      }
+      if (status === "PAYMENT_SENT" || status === "PENDING_VALIDATION") {
+        if (receiptImageUrl && order.payment?.receiptImageUrl === receiptImageUrl) {
+          return { ok: true as const, idempotent: true as const };
+        }
+        if (receiptImageUrl) throw new Error("PAYMENT_ALREADY_SENT");
+      }
+      const decision = decidePaymentSubmission(status, order.payment?.operationCode, operationCode ?? "");
       if (decision === "ORDER_CANCELLED") throw new Error("ORDER_CANCELLED");
       if (decision === "ORDER_ALREADY_FINAL") throw new Error("ORDER_ALREADY_FINAL");
       if (decision === "PAYMENT_ALREADY_SENT") throw new Error("PAYMENT_ALREADY_SENT");
@@ -71,15 +73,18 @@ export async function POST(req: Request) {
         throw new Error("ORDER_EXPIRED");
       }
 
-      tx.set(opRef, {
-        orderId: orderSnap.id,
-        orderPublicCode: publicCode,
-        createdAt: new Date(),
-      });
+      if (opRef) {
+        tx.set(opRef, {
+          orderId: orderSnap.id,
+          orderPublicCode: publicCode,
+          createdAt: new Date(),
+        });
+      }
 
       tx.update(orderSnap.ref, {
         status: "PAYMENT_SENT",
-        "payment.operationCode": operationCode,
+        ...(operationCode ? { "payment.operationCode": operationCode } : {}),
+        ...(receiptImageUrl ? { "payment.receiptImageUrl": receiptImageUrl } : {}),
         "payment.method": method,
         "payment.paymentSentAt": now,
         updatedAt: now,
@@ -92,7 +97,7 @@ export async function POST(req: Request) {
         action: "PAYMENT_SUBMITTED",
         target: { type: "order", id: orderSnap.id, publicCode },
         before: { status },
-        after: { status: "PAYMENT_SENT", operationCode, method },
+        after: { status: "PAYMENT_SENT", ...(operationCode ? { operationCode } : {}), method },
         meta: { ip, userAgent: ua },
         createdAt: new Date(),
       });
@@ -119,7 +124,7 @@ export async function POST(req: Request) {
           `Pedido: ${publicCode}\n` +
           `Nombre: ${(result as any).customerName ?? "-"}\n` +
           `Telefono: ${(result as any).customerPhone ?? "-"}\n` +
-          `Operacion: ${operationCode}\n` +
+          (operationCode ? `Operacion: ${operationCode}\n` : "Comprobante de pago recibido\n") +
           `Metodo: ${method}\n\n` +
           `Estado actual: Pendiente de validacion de pago\n` +
           `Te notificaremos cuando se confirme.`,

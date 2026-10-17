@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { getServerEnv } from "@/lib/env";
-import type { OrderStatus } from "@/lib/orderStatus";
+import { EXPIRABLE_ORDER_STATUSES, type OrderStatus } from "@/lib/orderStatus";
 import { deriveStockDrivenStatus, getInventorySummary } from "@/lib/productStock";
 
 export const runtime = "nodejs";
@@ -222,14 +222,15 @@ export async function POST(req: Request) {
 
     const now = Timestamp.now();
 
-    const a = await processExpiredForStatus("PENDING_VALIDATION", now, 50);
-    const b = await processExpiredForStatus("SCHEDULED", now, 50);
-    const c = await processExpiredForStatus("PAYMENT_SENT", now, 50);
+    let processed = 0;
+    for (const status of EXPIRABLE_ORDER_STATUSES) {
+      processed += await processExpiredForStatus(status as "SCHEDULED", now, 50);
+    }
     const d = await autoTrashOldCancelledOrders(now, 90, 100);
     const e = await autoPurgeTrashOrders(now, 30, 100);
     const f = await autoPurgeTrashProducts(now, 30, 100);
 
-    return NextResponse.json({ ok: true, processed: a + b + c, autoTrashedOldCancelled: d, autoPurgedOrders: e, autoPurgedProducts: f }, { status: 200 });
+    return NextResponse.json({ ok: true, processed, autoTrashedOldCancelled: d, autoPurgedOrders: e, autoPurgedProducts: f }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     console.error("[cron/release-expired] error", msg);

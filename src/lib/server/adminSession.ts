@@ -57,7 +57,7 @@ export async function verifyAdminSessionCookie(sessionCookie: string): Promise<A
 }
 
 export async function requireAdminSessionOrRedirect(): Promise<AdminSession> {
-  const cookie = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const cookie = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
   if (!cookie) redirect("/login");
   try {
     const session = await verifyAdminSessionCookie(cookie);

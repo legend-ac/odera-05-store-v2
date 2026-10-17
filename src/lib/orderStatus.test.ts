@@ -13,7 +13,7 @@ describe("order status transitions", () => {
     expect(ALLOWED_NEXT.CANCELLED_EXPIRED).toEqual([]);
   });
 
-  it("marks PENDING_VALIDATION as expirable by TTL", () => {
-    expect(EXPIRABLE_ORDER_STATUSES).toContain("PENDING_VALIDATION");
+  it("expires unpaid reservations without releasing orders awaiting payment review", () => {
+    expect(EXPIRABLE_ORDER_STATUSES).toEqual(["SCHEDULED"]);
   });
 });

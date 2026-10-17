@@ -27,7 +27,7 @@ function toMs(ts: any): number | null {
 
 export async function GET(req: Request) {
   try {
-    const sessionCookie = cookies().get(SESSION_COOKIE_NAME)?.value;
+    const sessionCookie = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
     if (!sessionCookie) return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
     await verifyAdminSessionCookie(sessionCookie);
 

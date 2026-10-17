@@ -5,8 +5,9 @@ import { doc, getDoc } from "firebase/firestore";
 import { apiPost } from "@/lib/apiClient";
 import { formatPEN } from "@/lib/money";
 import { db } from "@/lib/firebase/client";
-import { Input, Select } from "@/components/ui/fields";
+import { Input } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
+import { parseTrackingUrl } from "@/lib/trackingUrl";
 
 type TrackResponse = {
   orderId: string;
@@ -43,7 +44,7 @@ type TrackResponse = {
 
 const STATUS_STYLE: Record<string, { dot: string; badge: string; label: string }> = {
   PENDING_VALIDATION: { dot: "bg-amber-500", badge: "bg-amber-50 text-amber-700 border-amber-200", label: "Pendiente de validación" },
-  SCHEDULED: { dot: "bg-slate-400", badge: "bg-slate-50 text-slate-700 border-slate-200", label: "Pedido registrado" },
+  SCHEDULED: { dot: "bg-slate-400", badge: "bg-slate-50 text-slate-700 border-slate-200", label: "Reservado · pendiente de pago" },
   PAYMENT_SENT: { dot: "bg-blue-500", badge: "bg-blue-50 text-blue-700 border-blue-200", label: "Pago reportado" },
   PAID: { dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Pago confirmado" },
   PREPARING: { dot: "bg-violet-500", badge: "bg-violet-50 text-violet-700 border-violet-200", label: "Preparando pedido" },
@@ -51,6 +52,7 @@ const STATUS_STYLE: Record<string, { dot: string; badge: string; label: string }
   DELIVERED: { dot: "bg-emerald-600", badge: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "Entregado" },
   CANCELLED: { dot: "bg-rose-500", badge: "bg-rose-50 text-rose-700 border-rose-200", label: "Cancelado" },
   EXPIRED: { dot: "bg-rose-400", badge: "bg-rose-50 text-rose-600 border-rose-200", label: "Vencido" },
+  CANCELLED_EXPIRED: { dot: "bg-rose-400", badge: "bg-rose-50 text-rose-600 border-rose-200", label: "Reserva vencida" },
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -91,18 +93,18 @@ function TrackPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const [operationCode, setOperationCode] = useState("");
-  const [method, setMethod] = useState<"YAPE" | "PLIN" | "OTHER">("YAPE");
-  const [busyPay, setBusyPay] = useState(false);
-  const [payMsg, setPayMsg] = useState<string | null>(null);
   const [copyMsg, setCopyMsg] = useState<string | null>(null);
   const [recent, setRecent] = useState<Array<{ publicCode: string; trackingToken: string; ts: number }>>([]);
   const [businessWhatsapp, setBusinessWhatsapp] = useState("");
 
-  const expired = useMemo(() => {
-    if (!data?.reservedUntilMs) return false;
-    return Date.now() > data.reservedUntilMs;
-  }, [data?.reservedUntilMs]);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    setNow(Date.now());
+    if (data?.status !== "SCHEDULED") return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [data?.status, data?.reservedUntilMs]);
+  const expired = data?.status === "CANCELLED_EXPIRED" || (data?.status === "SCHEDULED" && Boolean(data.reservedUntilMs) && now >= data.reservedUntilMs!);
 
   async function copyText(value: string, label: string) {
     try {
@@ -133,22 +135,16 @@ function TrackPageInner() {
   }
 
   function applyTrackingUrl() {
-    try {
-      if (!trackingUrl.trim()) return;
-      const u = new URL(trackingUrl.trim());
-      const code = (u.searchParams.get("publicCode") ?? "").trim();
-      const token = (u.searchParams.get("trackingToken") ?? "").trim();
-      if (!code || !token) {
-        setError("El enlace no contiene los datos de seguimiento necesarios.");
-        return;
-      }
-      setError(null);
-      setPublicCode(code);
-      setTrackingToken(token);
-      void load(code, token);
-    } catch {
+    if (!trackingUrl.trim()) return;
+    const tracking = parseTrackingUrl(trackingUrl);
+    if (!tracking) {
       setError("El enlace de seguimiento no es válido.");
+      return;
     }
+    setError(null);
+    setPublicCode(tracking.publicCode);
+    setTrackingToken(tracking.trackingToken);
+    void load(tracking.publicCode, tracking.trackingToken);
   }
 
   useEffect(() => {
@@ -229,27 +225,8 @@ function TrackPageInner() {
     return businessWhatsapp;
   }, [businessWhatsapp, waText]);
 
-  async function submitPayment() {
-    setBusyPay(true);
-    setPayMsg(null);
-    try {
-      const res = await apiPost<{ ok: boolean; idempotent: boolean }>("/api/submit-payment", {
-        publicCode,
-        trackingToken,
-        operationCode,
-        method,
-      });
-      setPayMsg(res.idempotent ? "Ese código ya estaba registrado para este pedido." : "Comprobante enviado correctamente.");
-      await load();
-    } catch {
-      setPayMsg("No se pudo registrar el comprobante. Intenta nuevamente.");
-    } finally {
-      setBusyPay(false);
-    }
-  }
-
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
+    <div className="shopping-flow mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Seguimiento de pedido</h1>
@@ -283,7 +260,7 @@ function TrackPageInner() {
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-slate-700">Pegar enlace de seguimiento (opcional)</label>
           <div className="flex gap-2">
-            <Input value={trackingUrl} onChange={(e) => setTrackingUrl(e.target.value)} placeholder="https://.../track?publicCode=OD-0001&trackingToken=..." uiSize="sm" />
+            <Input value={trackingUrl} onChange={(e) => setTrackingUrl(e.target.value)} placeholder="https://.../t/OD-0001/código-de-seguimiento" uiSize="sm" />
             <Button type="button" variant="secondary" size="sm" onClick={applyTrackingUrl}>Cargar</Button>
           </div>
         </div>
@@ -335,9 +312,9 @@ function TrackPageInner() {
           <div className="p-5 flex flex-col gap-3">
             {data.shipping ? <p className="text-sm text-slate-600">Envío: {shippingLabel(data.shipping)}</p> : null}
 
-            {data.reservedUntilMs ? (
+            {data.reservedUntilMs && (data.status === "SCHEDULED" || data.status === "CANCELLED_EXPIRED") ? (
               <p className="text-sm text-slate-500">
-                Reserva vigente hasta: {new Date(data.reservedUntilMs).toLocaleString("es-PE")}{expired ? " (vencida)" : ""}
+                Reserva vigente hasta: {new Date(data.reservedUntilMs).toLocaleString("es-PE", { timeZone: "America/Lima" })}{expired ? " (vencida)" : ""}
               </p>
             ) : null}
 
@@ -379,35 +356,19 @@ function TrackPageInner() {
         </div>
       ) : null}
 
-      {/* Payment form */}
-      {data && (data.status === "SCHEDULED" || data.status === "PAYMENT_SENT") ? (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] p-5 flex flex-col gap-4 fade-in-up">
-          <p className="font-semibold text-slate-900">Enviar comprobante</p>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">Código de operación</label>
-            <Input value={operationCode} onChange={(e) => setOperationCode(e.target.value)} uiSize="sm" />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">Medio de pago</label>
-            <Select value={method} onChange={(e) => setMethod(e.target.value as any)} uiSize="sm" className="w-48">
-              <option value="YAPE">Yape</option>
-              <option value="PLIN">Plin</option>
-              <option value="OTHER">Otro</option>
-            </Select>
-          </div>
-
-          <Button type="button" onClick={submitPayment} disabled={busyPay || !operationCode} size="md">
-            {busyPay ? "Enviando..." : "Enviar comprobante"}
-          </Button>
-
-          {payMsg ? (
-            <div className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">{payMsg}</div>
-          ) : null}
-          <p className="text-xs text-slate-500">Usa el mismo código que aparece en tu comprobante.</p>
+      {data?.status === "SCHEDULED" && !expired ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col gap-3">
+          <p className="text-sm text-slate-600">Tu pedido está reservado. Completa el pago antes de que venza la reserva.</p>
+          <a
+            href={`/checkout/pago?publicCode=${encodeURIComponent(data.publicCode)}&trackingToken=${encodeURIComponent(trackingToken)}`}
+            className="btn-brand self-start"
+          >
+            Completar pago
+          </a>
         </div>
       ) : null}
+
+      {data && (data.status === "PAYMENT_SENT" || data.status === "PENDING_VALIDATION") ? <p className="text-sm text-slate-600">Comprobante recibido. Tu pago está pendiente de validación; no necesitas enviarlo otra vez.</p> : null}
     </div>
   );
 }

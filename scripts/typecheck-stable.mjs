@@ -5,19 +5,13 @@ const run = (command, args) => {
   return result.status ?? 1;
 };
 
-const runTsc = () => run("npx", ["tsc", "-p", "tsconfig.json", "--noEmit"]);
-
-let status = runTsc();
-if (status === 0) {
-  process.exit(0);
-}
-
-// If Next generated types are stale/missing, regenerate and retry once.
-status = run("npx", ["next", "build", "--no-lint"]);
+// Route types are small and reproducible. Regenerate them without creating an
+// entire production build when caches have just been cleaned.
+let status = run("npx", ["next", "typegen"]);
 if (status !== 0) {
   process.exit(status);
 }
 
-status = runTsc();
+status = run("npx", ["tsc", "-p", "tsconfig.json", "--noEmit"]);
 process.exit(status);
 

@@ -15,7 +15,7 @@
   --paper-2:  #E8E0CC;
   --vermeil:  #E8452C;
   --vermeil-2:#C93820;
-  --ash:      #5A5868;
+  --ash:      #A7A3B1;
   --ash-2:    #3A3848;
   --white:    #FFFFFF;
   --gold:     #D4A84B;
@@ -152,7 +152,7 @@ a:hover { text-decoration: none; }
   /* ── Buttons ── */
   .btn-brand {
     @apply inline-flex min-h-11 select-none items-center justify-center px-5 py-2.5 text-[15px] leading-tight font-bold text-white transition-all duration-150 active:scale-[0.97] sm:min-h-10 sm:text-sm;
-    background: linear-gradient(135deg, var(--vermeil-2) 0%, var(--vermeil) 100%);
+    background: linear-gradient(135deg, #B9341E 0%, var(--vermeil-2) 100%);
     box-shadow: var(--shadow-brand);
     border-radius: 2px;
     letter-spacing: 0.06em;
@@ -221,6 +221,20 @@ a:hover { text-decoration: none; }
     background: linear-gradient(135deg, #22c55e, #16a34a);
     color: #fff;
     border-color: transparent;
+  }
+
+  .footer-social__icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .footer-social__icon svg {
+    width: 18px;
+    height: 18px;
   }
 
   /* ── Animations ── */
@@ -340,6 +354,75 @@ a:hover { text-decoration: none; }
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 8px rgba(232,69,44,0.3); }
   50%       { box-shadow: 0 0 20px rgba(232,69,44,0.6), 0 0 40px rgba(232,69,44,0.2); }
+}
+
+/* Two identical runs of the offer create a seamless ticker. */
+.promo-banner {
+  overflow: hidden;
+  padding-block: 7px;
+  color: white;
+  font-family: 'Bebas Neue', 'Roboto Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 20px;
+  letter-spacing: .16em;
+}
+
+.promo-banner__track {
+  display: flex;
+  width: max-content;
+  animation: marquee 96s linear infinite;
+  will-change: transform;
+}
+
+.promo-banner:hover .promo-banner__track {
+  animation-play-state: paused;
+}
+
+.promo-banner__group {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 100vw;
+  white-space: nowrap;
+}
+
+.promo-banner__item {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 24px;
+  padding-right: 24px;
+}
+
+.promo-banner__star {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.promo-banner__coupon {
+  border: 1px solid rgba(255, 255, 255, .5);
+  padding: 0 6px;
+  font-family: monospace;
+  font-size: 10px;
+  line-height: 18px;
+  letter-spacing: .12em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-banner {
+    overflow-x: auto;
+  }
+
+  .promo-banner__track {
+    animation: none;
+    will-change: auto;
+  }
+
+  .promo-banner__group + .promo-banner__group {
+    display: none;
+  }
 }
 
 @keyframes marquee {
@@ -524,34 +607,235 @@ a:hover { text-decoration: none; }
   }
 }
 
+.home-social__inner {
+  padding-block: 22px 28px;
+  border-top: 1px solid var(--ash-2);
+}
+
+.home-social__heading { text-align: center; }
+
+.home-social h2 {
+  font-family: 'Bebas Neue', var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: .06em;
+  color: var(--paper);
+}
+
+.home-social__heading p {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ash);
+}
+
+.home-social__links {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: 720px;
+  margin: 20px auto 0;
+}
+
+.home-social__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 8px 12px;
+  color: var(--paper);
+  transition: color 150ms ease;
+}
+
+.home-social__link + .home-social__link {
+  border-left: 1px solid var(--ash-2);
+}
+
+.home-social__link:hover,
+.home-social__link:focus-visible {
+  color: var(--vermeil);
+}
+
+.home-social__icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+}
+
+.home-social__icon svg { width: 26px; height: 26px; }
+.home-social__name { font-size: 16px; font-weight: 700; }
+.home-social__arrow { color: var(--vermeil); font-size: 17px; }
+
+@media (max-width: 600px) {
+  .home-social__inner { padding-block: 20px 24px; }
+  .home-social h2 { font-size: 26px; }
+  .home-social__heading p { font-size: 11px; }
+  .home-social__links { margin-top: 16px; }
+  .home-social__link { flex-direction: column; min-height: 72px; gap: 8px; padding: 8px 4px; }
+  .home-social__name { font-size: 13px; }
+  .home-social__arrow { display: none; }
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.category-card {
+  position: relative;
+  display: block;
+  min-height: 360px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid #393943;
+  background: var(--ink-2);
+  color: white;
+  transition: border-color 220ms ease, transform 220ms ease;
+}
+
+.category-card:hover,
+.category-card:focus-visible {
+  border-color: var(--vermeil);
+  transform: translateY(-4px);
+}
+
+.category-card:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+
+.category-card__media,
+.category-card__shade {
+  position: absolute;
+  inset: 0;
+}
+
+.category-card__image {
+  object-fit: cover;
+  object-position: center;
+  filter: brightness(1.12);
+  transition: transform 500ms ease;
+}
+
+.category-card:hover .category-card__image,
+.category-card:focus-visible .category-card__image {
+  transform: scale(1.055);
+}
+
+.category-card__shade {
+  background: linear-gradient(180deg, rgba(7, 8, 11, .3), transparent 27%, rgba(7, 8, 11, .05) 48%, rgba(7, 8, 11, .93) 100%);
+}
+
+.category-card__number {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  font: 700 12px/1 monospace;
+  letter-spacing: .12em;
+  color: white;
+}
+
+.category-card__content {
+  position: absolute;
+  right: 20px;
+  bottom: 22px;
+  left: 20px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.category-card__eyebrow {
+  color: #ff8f79;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.category-card__title {
+  margin-top: 5px;
+  font-family: 'Bebas Neue', 'Roboto Condensed', sans-serif;
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1;
+  letter-spacing: .045em;
+}
+
+.category-card__subtitle {
+  margin-top: 5px;
+  color: #d2d1d2;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.category-card__arrow {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--vermeil);
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 220ms ease, background 220ms ease;
+}
+
+.category-card:hover .category-card__arrow,
+.category-card:focus-visible .category-card__arrow {
+  transform: translate(2px, -2px);
+  background: var(--vermeil-2);
+}
+
 @media (max-width: 639px) {
   .shopping-flow { padding-left: 1rem !important; padding-right: 1rem !important; }
   .shopping-flow section { padding: 1rem !important; }
 
-  /* Category navigation is intentionally a compact list on phones. A tall
-     product-editorial card makes the visitor scroll through imagery before
-     they can understand the three shopping paths. */
+  .category-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
   .category-card {
-    display: grid !important;
-    grid-template-columns: minmax(92px, 32%) minmax(0, 1fr);
-    min-height: 96px;
+    min-height: 138px;
   }
 
   .category-card__media {
-    min-height: 96px;
-    aspect-ratio: auto !important;
+    right: auto;
+    width: 42%;
+  }
+
+  .category-card__image {
+    object-position: center;
+  }
+
+  .category-card__shade {
+    background: linear-gradient(90deg, transparent 24%, rgba(7, 8, 11, .22) 42%, rgba(7, 8, 11, .97) 54%);
+  }
+
+  .category-card__number {
+    top: 12px;
+    left: 12px;
   }
 
   .category-card__content {
-    align-items: center !important;
-    padding: .7rem .8rem !important;
-    border-top: 0 !important;
-    border-left: 1px solid var(--ash-2);
+    top: 0;
+    right: 14px;
+    bottom: 0;
+    left: 45%;
+    align-items: center;
   }
 
-  .category-card__title { font-size: 20px !important; }
-  .category-card__subtitle { max-width: 18ch; line-height: 1.45; }
-  .category-card__arrow { align-self: center; padding-top: 0 !important; }
+  .category-card__eyebrow { font-size: 8px; }
+  .category-card__title { font-size: 24px; }
+  .category-card__subtitle { font-size: 10px; }
+  .category-card__arrow { flex-basis: 28px; width: 28px; height: 28px; font-size: 17px; }
 }
 
 /* Admin workspace ---------------------------------------------------------

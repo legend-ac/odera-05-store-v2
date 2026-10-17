@@ -53,11 +53,6 @@ function ConfirmPageInner() {
       try {
         const snap = await getDoc(doc(db, "settings", "store"));
         if (snap.exists() && mounted) setSettings(snap.data());
-
-        if (publicCode && trackingToken) {
-          const t = await apiPost<TrackResponse>("/api/track", { publicCode, trackingToken });
-          if (mounted) setData(t);
-        }
       } catch (e) {
         console.warn(e);
       }
@@ -65,6 +60,16 @@ function ConfirmPageInner() {
     return () => {
       mounted = false;
     };
+  }, [publicCode, trackingToken]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (publicCode && trackingToken) {
+      apiPost<TrackResponse>("/api/track", { publicCode, trackingToken })
+        .then(order => { if (mounted) setData(order); })
+        .catch(error => console.warn(error));
+    }
+    return () => { mounted = false; };
   }, [publicCode, trackingToken]);
 
   useEffect(() => {
@@ -146,7 +151,7 @@ function ConfirmPageInner() {
   }, [publicCode, trackingToken, trackingShortUrl, trackingUrl]);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 flex flex-col gap-5">
+    <div className="shopping-flow mx-auto max-w-3xl px-4 py-8 flex flex-col gap-5">
       {/* Header */}
       <div>
         <div className="flex items-center gap-3 mb-2">
@@ -156,10 +161,10 @@ function ConfirmPageInner() {
             </svg>
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Pedido confirmado</h1>
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">{data?.status === "PAYMENT_SENT" || data?.status === "PENDING_VALIDATION" ? "Comprobante recibido" : "Pedido registrado"}</h1>
           </div>
         </div>
-        <p className="text-sm text-slate-500 mt-1">Guarda estos datos para revisar el estado de tu pedido cuando quieras.</p>
+        <p className="text-sm text-slate-500 mt-1">La tienda revisará tu pago. Guarda estos datos para consultar el estado de tu pedido.</p>
       </div>
 
       {/* Tracking Data */}

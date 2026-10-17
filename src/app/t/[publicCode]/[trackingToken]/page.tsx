@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 
-export default function ShortTrackPage({
+export default async function ShortTrackPage({
   params,
 }: {
-  params: { publicCode: string; trackingToken: string };
+  params: Promise<{ publicCode: string; trackingToken: string }>;
 }) {
-  const publicCode = decodeURIComponent(params.publicCode);
-  const trackingToken = decodeURIComponent(params.trackingToken);
+  const routeParams = await params;
+  const publicCode = decodeURIComponent(routeParams.publicCode);
+  const trackingToken = decodeURIComponent(routeParams.trackingToken);
 
   redirect(`/track?publicCode=${encodeURIComponent(publicCode)}&trackingToken=${encodeURIComponent(trackingToken)}`);
 }

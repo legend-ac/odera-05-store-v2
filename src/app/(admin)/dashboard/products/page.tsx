@@ -4,7 +4,8 @@ export const maxDuration = 60;
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import ProductsClient from "./products-client";
 
-export default async function ProductsPage({ searchParams }: { searchParams?: { edit?: string | string[] } }) {
+export default async function ProductsPage({ searchParams }: { searchParams?: Promise<{ edit?: string | string[] }> }) {
+  const query = await searchParams;
   let snap: any = null;
   let settingsSnap: any = null;
   try {
@@ -41,7 +42,7 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
 
   // The normal editor stays deliberately compact. Inventory can link directly
   // to any product, including one outside the recent-products working set.
-  const requestedId = typeof searchParams?.edit === "string" && !searchParams.edit.includes("/") ? searchParams.edit : "";
+  const requestedId = typeof query?.edit === "string" && !query.edit.includes("/") ? query.edit : "";
   if (requestedId && !products.some((product: any) => product.id === requestedId)) {
     const selectedSnap = await adminDb.collection("products").doc(requestedId).get();
     if (selectedSnap.exists) {

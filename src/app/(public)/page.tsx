@@ -5,6 +5,7 @@ import FeaturedProducts from "@/components/FeaturedProducts";
 import CategoryGrid from "@/components/CategoryGrid";
 import HomeSocialLinks from "@/components/HomeSocialLinks";
 import { adminDb } from "@/lib/server/firebaseAdmin";
+import { normalizeStoreInformation } from "@/lib/storeInformation";
 
 export const revalidate = 60;
 
@@ -23,12 +24,14 @@ const DEFAULT_CATEGORIES: Category[] = [
 
 export default async function HomePage() {
   let categories = DEFAULT_CATEGORIES;
+  let storeHours = "";
   let promo = { enabled: true, message: "Envío gratis desde S/ 200", couponCode: "" };
 
   try {
     const snapshot = await adminDb.doc("settings/store").get();
     if (snapshot.exists) {
       const data = snapshot.data() as any;
+      storeHours = normalizeStoreInformation(data?.businessInformation).storeHours;
       promo = {
         enabled: Boolean(data?.homePromoEnabled ?? true),
         message: String(data?.homePromo?.message ?? promo.message),
@@ -58,38 +61,32 @@ export default async function HomePage() {
       {/* ── Promo Banner ── */}
       {promo.enabled && (
         <div
-          className="px-4 py-2.5 text-center"
+          className="promo-banner"
           style={{
             background: "var(--vermeil)",
             borderBottom: "1px solid var(--vermeil-2)",
           }}
         >
-          <p
-            className="font-black text-white flex items-center justify-center gap-6 flex-wrap"
-            style={{
-              fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
-              fontSize: "13px",
-              letterSpacing: "0.2em",
-            }}
-          >
-            <span>★</span>
-            {promo.couponCode && (
-              <span
-                style={{
-                  border: "1px solid rgba(255,255,255,0.5)",
-                  padding: "1px 6px",
-                  fontFamily: "monospace",
-                  fontSize: "10px",
-                }}
-              >
-                {promo.couponCode}
-              </span>
-            )}
-            <span>{promo.message}</span>
-            <span>★</span>
-            <span>ODERA 05 · ペルー</span>
-            <span>★</span>
+          <p className="sr-only">
+            {promo.couponCode ? `${promo.couponCode} · ` : ""}{promo.message} · ODERA 05
           </p>
+          <div className="promo-banner__track" aria-hidden="true">
+            {[0, 1].map((copy) => (
+              <div className="promo-banner__group" key={copy}>
+                {Array.from({ length: 8 }, (_, repeat) => (
+                  <span className="promo-banner__item" key={repeat}>
+                    <span className="promo-banner__star">★</span>
+                    {promo.couponCode && (
+                      <span className="promo-banner__coupon">{promo.couponCode}</span>
+                    )}
+                    <span>{promo.message}</span>
+                    <span className="promo-banner__star">★</span>
+                    <span>ODERA 05 · ペルー</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -136,7 +133,7 @@ export default async function HomePage() {
             <h1
               className="leading-none"
               style={{
-                fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
                 fontSize: "clamp(52px, 6.2vw, 96px)",
                 letterSpacing: "0.04em",
                 color: "var(--paper)",
@@ -168,7 +165,7 @@ export default async function HomePage() {
             {/* Subtitle japonés */}
             <p
               className="mt-3 mb-4"
-              style={{ fontSize: "11px", letterSpacing: "0.18em", color: "var(--ash)" }}
+              style={{ fontSize: "12px", letterSpacing: "0.14em", color: "var(--ash)" }}
             >
               ザパティージャス・ロパ ——{" "}
               <span style={{ color: "var(--paper)" }}>毎日のために厳選</span>
@@ -176,7 +173,7 @@ export default async function HomePage() {
 
             <p
               className="max-w-md mb-6"
-              style={{ fontSize: "14px", color: "var(--ash)", lineHeight: "1.6" }}
+              style={{ fontSize: "15px", color: "var(--ash)", lineHeight: "1.6" }}
             >
               Zapatillas, ropa y accesorios seleccionados para todos los días.
             </p>
@@ -205,7 +202,7 @@ export default async function HomePage() {
                   <span
                     className="font-black"
                     style={{
-                      fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                      fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
                       fontSize: "26px",
                       color: "var(--paper)",
                       letterSpacing: "0.04em",
@@ -215,7 +212,7 @@ export default async function HomePage() {
                   </span>
                   <span
                     style={{
-                      fontSize: "10px",
+                      fontSize: "11px",
                       letterSpacing: "0.18em",
                       color: "var(--ash)",
                       textTransform: "uppercase",
@@ -318,7 +315,7 @@ export default async function HomePage() {
               <span
                 className="font-black tabular-nums"
                 style={{
-                  fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                  fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
                   fontSize: "24px",
                   color: "var(--vermeil)",
                   letterSpacing: "0.04em",
@@ -339,8 +336,8 @@ export default async function HomePage() {
       </section>
 
       {/* ── Categorías ── */}
-      <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24">
-        <div className="mb-10 flex items-end justify-between pb-4" style={{ borderBottom: "1px solid var(--ash-2)" }}>
+      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+        <div className="mb-8 flex items-end justify-between pb-4" style={{ borderBottom: "1px solid var(--ash-2)" }}>
           <div>
             <p
               className="font-black"
@@ -357,7 +354,7 @@ export default async function HomePage() {
             <h2
               className="font-black"
               style={{
-                fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
                 fontSize: "clamp(28px, 5vw, 42px)",
                 letterSpacing: "0.06em",
                 color: "var(--paper)",
@@ -369,7 +366,7 @@ export default async function HomePage() {
           <Link
             href="/catalog"
             className="hidden sm:flex items-center gap-2 font-bold uppercase transition-colors duration-150 hover:text-[var(--vermeil)]"
-            style={{ fontSize: "12px", letterSpacing: "0.1em", color: "var(--ash)" }}
+            style={{ fontSize: "12px", letterSpacing: "0.1em", color: "var(--paper)" }}
           >
             Ver todo →
           </Link>
@@ -380,7 +377,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Novedades ── */}
-      <section style={{ background: "var(--ink-2)", padding: "64px 0" }}>
+      <section className="py-12 sm:py-16" style={{ background: "var(--ink-2)" }}>
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="mb-8 flex items-end justify-between pb-4" style={{ borderBottom: "1px solid var(--ash-2)" }}>
             <div>
@@ -399,7 +396,7 @@ export default async function HomePage() {
               <h2
                 className="font-black"
                 style={{
-                  fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                  fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
                   fontSize: "clamp(28px, 5vw, 42px)",
                   letterSpacing: "0.06em",
                   color: "var(--paper)",
@@ -421,8 +418,8 @@ export default async function HomePage() {
       </section>
 
       {/* ── Cómo funciona ── */}
-      <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24">
-        <div className="grid gap-10 sm:grid-cols-[0.8fr_1.2fr]">
+      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+        <div className="grid gap-6 sm:grid-cols-[0.8fr_1.2fr] sm:gap-10">
           <div>
             <p
               className="font-black"
@@ -439,7 +436,7 @@ export default async function HomePage() {
             <h2
               className="font-black leading-tight"
               style={{
-                fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
                 fontSize: "clamp(32px, 6vw, 52px)",
                 letterSpacing: "0.06em",
                 color: "var(--paper)",
@@ -452,8 +449,8 @@ export default async function HomePage() {
           <ol>
             {[
               { step: "01", text: "Elige talla y agrega al carrito." },
-              { step: "02", text: "Registra tu pago con Yape o Plin." },
-              { step: "03", text: "Revisa el estado de tu pedido." },
+              { step: "02", text: "Confirma tu reserva y paga con Yape o Plin." },
+              { step: "03", text: "Envía tu comprobante y sigue tu pedido." },
             ].map(({ step, text }) => (
               <li
                 key={step}
@@ -463,7 +460,7 @@ export default async function HomePage() {
                 <span
                   className="font-black shrink-0"
                   style={{
-                    fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                    fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
                     fontSize: "32px",
                     color: "var(--vermeil)",
                     letterSpacing: "0.04em",
@@ -485,19 +482,15 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Canales reales configurados por la tienda: se muestran solo cuando existen. */}
-      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
-        <HomeSocialLinks />
-      </section>
+      <HomeSocialLinks />
 
       {/* ── Tienda física ── */}
       <section
         id="ubicacion"
-        hidden
         className="relative overflow-hidden"
         style={{ background: "var(--ink-2)", borderTop: "1px solid var(--ash-2)", borderBottom: "1px solid var(--ash-2)" }}
       >
-        <div className="mx-auto grid max-w-7xl gap-8 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">
+        <div className="mx-auto grid max-w-7xl gap-8 px-5 py-12 sm:px-8 sm:py-16 md:grid-cols-[1.06fr_0.94fr] md:items-center">
           <div className="relative overflow-hidden" style={{ border: "1px solid var(--ash-2)", minHeight: "320px" }}>
             <Image
               src="/brand/storefront-odera-05.png"
@@ -514,21 +507,21 @@ export default async function HomePage() {
           <div className="flex flex-col gap-5 lg:pl-4">
             <div>
               <p className="font-black uppercase mb-2" style={{ fontSize: "10px", letterSpacing: ".28em", color: "var(--vermeil)" }}>Encuéntranos</p>
-              <h2 className="font-black leading-none" style={{ fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif", fontSize: "clamp(34px, 5vw, 52px)", letterSpacing: ".06em", color: "var(--paper)" }}>
+              <h2 className="font-black leading-none" style={{ fontFamily: "'Bebas Neue', var(--font-display), sans-serif", fontSize: "clamp(34px, 5vw, 52px)", letterSpacing: ".06em", color: "var(--paper)" }}>
                 VISITA LA<br />TIENDA
               </h2>
             </div>
-            <p className="max-w-md" style={{ fontSize: "14px", color: "var(--ash)", lineHeight: "1.7" }}>
+            <p className="max-w-md" style={{ fontSize: "15px", color: "var(--ash)", lineHeight: "1.7" }}>
               Conoce zapatillas, ropa y accesorios en persona. Nuestro equipo te ayuda a encontrar la talla y el estilo que buscas.
             </p>
             <div className="grid gap-3" style={{ borderTop: "1px solid var(--ash-2)", paddingTop: "16px" }}>
               <div className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,.12)", color: "var(--vermeil)" }}>⌖</span>
-                <div><p className="font-bold" style={{ fontSize: "13px", color: "var(--paper)" }}>Ollantaytambo 608</p><p style={{ fontSize: "12px", color: "var(--ash)", marginTop: "2px" }}>Tahuantinsuyo, Independencia · Lima, Perú</p></div>
+                <div><p className="font-bold" style={{ fontSize: "14px", color: "var(--paper)" }}>Ollantaytambo 608</p><p style={{ fontSize: "13px", color: "var(--ash)", marginTop: "2px", lineHeight: "1.5" }}>Tahuantinsuyo, Independencia · Lima, Perú</p></div>
               </div>
               <div className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,.12)", color: "var(--vermeil)" }}>◷</span>
-                <div><p className="font-bold" style={{ fontSize: "13px", color: "var(--paper)" }}>Atención directa</p><p style={{ fontSize: "12px", color: "var(--ash)", marginTop: "2px" }}>Consulta horarios y disponibilidad por WhatsApp.</p></div>
+                <div><p className="font-bold" style={{ fontSize: "14px", color: "var(--paper)" }}>{storeHours ? "Horario de atención" : "Atención directa"}</p><p className="whitespace-pre-line" style={{ fontSize: "13px", color: "var(--ash)", marginTop: "2px", lineHeight: "1.5" }}>{storeHours || "Consulta horarios y disponibilidad por WhatsApp."}</p></div>
               </div>
             </div>
             <a
@@ -540,17 +533,9 @@ export default async function HomePage() {
             >
               Abrir en Google Maps →
             </a>
-          </div>
-        </div>
-        <div className="mx-auto max-w-7xl px-5 pb-14 sm:px-8 sm:pb-20">
-          <div className="overflow-hidden" style={{ height: "280px", border: "1px solid var(--ash-2)" }}>
-            <iframe
-              title="Ubicación de ODERA 05 STORE"
-              src="https://www.google.com/maps?q=Ollantaytambo%20608%2C%20Tahuantinsuyo%2C%20Independencia%2C%20Lima%2C%20Per%C3%BA&output=embed"
-              className="h-full w-full border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+            <Link href="/nosotros" className="w-fit text-xs font-bold uppercase tracking-wider hover:text-[var(--vermeil)]">
+              Conoce nuestra tienda ↗
+            </Link>
           </div>
         </div>
       </section>
@@ -572,7 +557,7 @@ export default async function HomePage() {
             )`,
           }}
         />
-        <div className="relative z-10 mx-auto max-w-4xl px-5 py-16 sm:px-8 sm:py-24 text-center">
+        <div className="relative z-10 mx-auto max-w-4xl px-5 py-12 sm:px-8 sm:py-16 text-center">
           <p
             className="font-black mb-4"
             style={{
@@ -587,7 +572,7 @@ export default async function HomePage() {
           <h2
             className="font-black leading-tight mb-8"
             style={{
-              fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+              fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
               fontSize: "clamp(36px, 8vw, 72px)",
               letterSpacing: "0.04em",
               color: "var(--paper)",

@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import { formatPEN } from "@/lib/money";
-import { optimizedProductImage } from "@/lib/image";
+import ProductImage from "@/components/ProductImage";
+import { DEFAULT_FREE_SHIPPING_FROM, shippingCostFor } from "@/lib/shipping";
 
 /* ── Style tokens ── */
 const S = {
@@ -21,6 +21,7 @@ const S = {
 
 type ProductData = {
   id: string;
+  status: string;
   name: string;
   price: number;
   salePrice?: number;
@@ -29,11 +30,11 @@ type ProductData = {
   variants: { id: string; size?: string; color?: string; stock: number }[];
 };
 
-function getMainImage(p: ProductData): string {
-  if (!p.images?.length) return "";
+function getProductImages(p: ProductData): string[] {
+  if (!p.images?.length) return [];
   const sorted = [...p.images].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const main = sorted.find((img) => img.isMain) ?? sorted[0];
-  return main?.url ? String(main.url) : "";
+  return [main?.url, ...sorted.map((image) => image.url)].filter((url): url is string => Boolean(url));
 }
 
 export default function CartPage() {
@@ -41,6 +42,7 @@ export default function CartPage() {
   const [products, setProducts] = useState<Record<string, ProductData>>({});
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [freeShippingFrom, setFreeShippingFrom] = useState(DEFAULT_FREE_SHIPPING_FROM);
 
   const uniqueProductIds = useMemo(
     () => Array.from(new Set(items.map((x) => x.productId))),
@@ -55,10 +57,13 @@ export default function CartPage() {
       try {
         setLoading(true);
         setLoadError(null);
-        const response = await fetch(`/api/products/cart?ids=${encodeURIComponent(uniqueProductIds.join(","))}`, { signal: controller.signal });
-        const payload = await response.json().catch(() => null) as { products?: ProductData[] } | null;
+        const response = await fetch(`/api/products/cart?ids=${encodeURIComponent(uniqueProductIds.join(","))}`, { signal: controller.signal, cache: "no-store" });
+        const payload = await response.json().catch(() => null) as { products?: ProductData[]; shipping?: { freeShippingFrom: number } } | null;
         if (!response.ok || !payload?.products) throw new Error("CART_PRODUCTS_UNAVAILABLE");
-        if (mounted) setProducts(Object.fromEntries(payload.products.map((product) => [product.id, product])));
+        if (mounted) {
+          setProducts(Object.fromEntries(payload.products.map((product) => [product.id, product])));
+          if (payload.shipping) setFreeShippingFrom(payload.shipping.freeShippingFrom);
+        }
       } catch (error) {
         if ((error as Error).name === "AbortError") return;
         if (mounted) setLoadError("No pudimos actualizar los detalles del carrito. Recarga la página para intentarlo otra vez.");
@@ -75,13 +80,15 @@ export default function CartPage() {
       const v = p?.variants?.find((x) => x.id === it.variantId);
       const unit = p ? (p.onSale && typeof p.salePrice === "number" ? p.salePrice : p.price) : 0;
       const subtotal = unit * it.qty;
-      const imageSrc = p ? getMainImage(p) : "";
-      return { it, p, v, unit, subtotal, imageSrc };
+      const imageUrls = p ? getProductImages(p) : [];
+      return { it, p, v, unit, subtotal, imageUrls };
     });
   }, [items, products]);
 
   const total = useMemo(() => lines.reduce((acc, x) => acc + x.subtotal, 0), [lines]);
   const totalItems = useMemo(() => items.reduce((acc, x) => acc + x.qty, 0), [items]);
+  const shippingCost = shippingCostFor(total, freeShippingFrom);
+  const invalidItems = lines.some(({it, p, v}) => !p || p.status !== "active" || !v || v.stock < it.qty);
 
   return (
     <div style={{ background: S.ink, minHeight: "100vh" }}>
@@ -186,14 +193,14 @@ export default function CartPage() {
         )}
 
         {items.length > 0 && (
-          <div className="grid lg:grid-cols-[1fr_320px] gap-5 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
 
             {/* ── Lista de productos ── */}
             <div className="flex flex-col gap-3">
-              {lines.map(({ it, p, v, unit, subtotal, imageSrc }, i) => (
+              {lines.map(({ it, p, v, unit, subtotal, imageUrls }, i) => (
                 <div
                   key={`${it.productId}:${it.variantId}`}
-                  className="flex gap-4 p-4"
+                  className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 p-4 sm:flex sm:gap-4"
                   style={{
                     background: S.ink2,
                     border: S.border,
@@ -203,26 +210,20 @@ export default function CartPage() {
                 >
                   {/* Imagen */}
                   <div
-                    className="relative shrink-0 overflow-hidden"
-                    style={{ width: 88, height: 88, background: S.ink3, border: S.border, borderRadius: "2px" }}
+                    className="relative h-[72px] w-[72px] shrink-0 overflow-hidden sm:h-[88px] sm:w-[88px]"
+                    style={{ background: S.ink3, border: S.border, borderRadius: "2px" }}
                   >
-                    {imageSrc ? (
-                      <Image
-                        src={optimizedProductImage(imageSrc, 220)}
+                      <ProductImage
+                        sources={imageUrls}
+                        productId={it.productId}
+                        imageWidth={220}
+                        compact
                         alt={p?.name ?? "Producto"}
                         fill
                         unoptimized
                         sizes="88px"
                         className="object-contain p-1.5"
-                        onError={() => {}}
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <svg className="h-7 w-7" style={{ color: S.ash2 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
                   </div>
 
                   {/* Info */}
@@ -236,10 +237,11 @@ export default function CartPage() {
                           {[v.size && `Talla: ${v.size}`, v.color && `Color: ${v.color}`].filter(Boolean).join(" · ") || v.id}
                         </p>
                       )}
+                      {!loading && (!p || p.status !== "active" || !v || v.stock < it.qty) ? <p className="mt-2 text-xs" style={{color: "#ff9a86"}}>{v && v.stock > 0 && p?.status === "active" ? `Solo quedan ${v.stock}. Reduce la cantidad para continuar.` : "Esta opción ya no está disponible. Retírala del carrito."}</p> : null}
                     </div>
-                    <div className="flex items-center gap-3" style={{ fontSize: "13px" }}>
+                    <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3" style={{ fontSize: "13px" }}>
                       <span style={{ color: S.ash }}>Unitario: <span className="font-semibold" style={{ color: S.paper }}>{formatPEN(unit)}</span></span>
-                      <span style={{ color: "var(--ash-2)" }}>·</span>
+                      <span className="hidden sm:inline" style={{ color: "var(--ash-2)" }}>·</span>
                       <span className="font-black tabular-nums" style={{ color: "var(--vermeil)", fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif", fontSize: "18px", letterSpacing: "0.04em" }}>
                         {formatPEN(subtotal)}
                       </span>
@@ -247,7 +249,7 @@ export default function CartPage() {
                   </div>
 
                   {/* Controles */}
-                  <div className="flex flex-col items-end justify-between gap-2 shrink-0">
+                  <div className="col-span-2 flex items-center justify-between gap-2 sm:shrink-0 sm:flex-col sm:items-end">
                     {/* Qty */}
                     <div className="inline-flex items-center overflow-hidden" style={{ border: S.border, borderRadius: "2px", height: 32 }}>
                       <button
@@ -266,8 +268,9 @@ export default function CartPage() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => setQty(it.productId, it.variantId, Math.min(50, it.qty + 1))}
-                        className="flex items-center justify-center transition-colors"
+                        onClick={() => setQty(it.productId, it.variantId, Math.min(50, v?.stock ?? 0, it.qty + 1))}
+                        disabled={!v || p?.status !== "active" || it.qty >= Math.min(50, v.stock)}
+                        className="flex items-center justify-center transition-colors disabled:opacity-30"
                         style={{ width: 28, height: "100%", color: S.ash, fontSize: "16px", background: "transparent" }}
                         onMouseEnter={(e) => { (e.target as HTMLElement).style.background = S.ink3; }}
                         onMouseLeave={(e) => { (e.target as HTMLElement).style.background = "transparent"; }}
@@ -311,12 +314,12 @@ export default function CartPage() {
                 </div>
                 <div className="flex items-center justify-between" style={{ fontSize: "13px" }}>
                   <span style={{ color: S.ash }}>Envío</span>
-                  <span style={{ color: S.ash }}>Coordinado por WhatsApp</span>
+                  <span style={{ color: S.paper }}>{loading ? "Calculando..." : shippingCost === 0 ? "Gratis" : formatPEN(shippingCost)}</span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between">
-                <span style={{ fontSize: "13px", color: S.ash }}>Total</span>
+                <span style={{ fontSize: "13px", color: S.ash }}>Total sin cupón</span>
                 <span
                   className="font-black tabular-nums"
                   style={{
@@ -326,21 +329,21 @@ export default function CartPage() {
                     color: S.paper,
                   }}
                 >
-                  {formatPEN(total)}
+                  {formatPEN(total + shippingCost)}
                 </span>
               </div>
 
-              <p style={{ fontSize: "11px", color: S.ash }}>
-                El stock final se confirma al crear el pedido.
+              <p style={{ fontSize: "12px", color: S.ash }}>
+                Envío gratis desde {formatPEN(freeShippingFrom)} en productos antes del descuento. Confirmamos stock y total antes de que pagues.
               </p>
 
-              <Link
+              {loading || loadError || invalidItems ? <p role="status" className="text-sm" style={{color: S.ash}}>{loading ? "Actualizando disponibilidad…" : "Revisa los productos indicados para continuar."}</p> : <Link
                 href="/checkout"
                 className="btn-brand justify-center w-full"
                 style={{ fontSize: "13px", padding: "14px", textAlign: "center" }}
               >
                 Continuar compra →
-              </Link>
+              </Link>}
 
               <Link
                 href="/catalog"

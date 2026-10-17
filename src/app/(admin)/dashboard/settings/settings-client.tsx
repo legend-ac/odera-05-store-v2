@@ -5,6 +5,7 @@ import Image from "next/image";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { Input } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
+import { normalizeStoreInformation, type StoreBusinessInformation } from "@/lib/storeInformation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ type Settings = {
   };
   publicContactEmail: string;
   publicWhatsapp: string;
+  businessInformation?: Partial<StoreBusinessInformation>;
   socialLinks: {
     instagram?: string;
     tiktok?: string;
@@ -149,6 +151,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
   const freeShippingFrom = Number(s.homePromo?.freeShippingFrom ?? 0);
   const discountPercent = Number(s.homePromo?.discountPercent ?? 0);
   const productTypes = Array.isArray(s.productTypes) ? s.productTypes : [];
+  const businessInformation = { ...normalizeStoreInformation(undefined), ...s.businessInformation };
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
   function validateInput(data: Settings): string[] {
@@ -158,6 +161,9 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
     if (promoEnabled && couponCode && couponCode.length < 4) errs.push("El código de cupón debe tener al menos 4 caracteres.");
     if (promoEnabled && (discountPercent < 0 || discountPercent > 100)) errs.push("El porcentaje de descuento debe estar entre 0 y 100.");
     if (promoEnabled && freeShippingFrom < 0) errs.push("Envío gratis desde no puede ser negativo.");
+    for (const [key, value] of Object.entries(normalizeStoreInformation(data.businessInformation))) {
+      if (value.length > (key === "exchangeConditions" ? 2000 : 500)) errs.push("La información comercial supera la longitud permitida.");
+    }
     if (!Array.isArray(data.productTypes) || data.productTypes.length === 0) errs.push("Debes tener al menos un tipo de producto activo.");
     const keys = new Set<string>();
     for (const t of data.productTypes ?? []) {
@@ -589,6 +595,37 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
         >
           + Agregar tipo de producto
         </Button>
+      </SectionCard>}
+
+      {activeSection === "store" && <SectionCard
+        title="Información para comprar y visitar"
+        subtitle="Publica únicamente horarios, plazos y condiciones confirmados por la tienda"
+        badge={<StatusBadge ok={Object.values(businessInformation).every((value) => value.trim())} labelOn="Completa" labelOff="Datos pendientes" />}
+        icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+      >
+        <p className="mb-4 text-xs leading-relaxed text-slate-500">Estos campos son opcionales. Si dejas alguno vacío, la página indicará al cliente que consulte con la tienda; no se publicarán horarios ni plazos por defecto.</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          {([
+            ["storeHours", "Horario del local", "Indica los días y el horario real de atención."],
+            ["deliveryLima", "Plazo estimado de entrega en Lima", "Indica el plazo habitual y desde cuándo empieza a contarse."],
+            ["deliveryProvinces", "Plazo estimado de entrega en provincias", "Indica el plazo por agencia o las condiciones según destino."],
+            ["exchangePeriod", "Plazo para solicitar cambios", "Indica el plazo confirmado y desde qué fecha se cuenta."],
+            ["exchangeConditions", "Condiciones para cambios y devoluciones", "Incluye estado del producto, comprobantes, procedimiento y costos aplicables."],
+          ] as const).map(([key, label, hint]) => (
+            <label key={key} className={`grid gap-1 text-xs font-medium text-slate-600 ${key === "exchangeConditions" ? "md:col-span-2" : ""}`}>
+              {label}
+              <textarea
+                value={businessInformation[key]}
+                onChange={(e) => setS((previous) => ({ ...previous, businessInformation: { ...previous.businessInformation, [key]: e.target.value } }))}
+                rows={key === "exchangeConditions" ? 4 : 3}
+                maxLength={key === "exchangeConditions" ? 2000 : 500}
+                className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[var(--brand-500)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-100)]"
+                placeholder="Pendiente de confirmar"
+              />
+              <span className="font-normal leading-relaxed text-slate-400">{hint}</span>
+            </label>
+          ))}
+        </div>
       </SectionCard>}
 
       {/* Resumen comercial */}

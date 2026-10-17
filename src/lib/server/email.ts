@@ -2,49 +2,27 @@ import "server-only";
 
 import nodemailer from "nodemailer";
 import { getServerEnv } from "@/lib/env";
+import { deliverTransactionalEmail, type TransactionalMessage } from "./emailDelivery";
 
-type SendEmailParams = {
-  to: string;
-  subject: string;
-  text: string;
-  html?: string;
-};
-
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+export function createTransactionalTransport() {
+  const env = getServerEnv();
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+  });
 }
 
-export async function sendTransactionalEmail(params: SendEmailParams): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function sendTransactionalEmail(params: TransactionalMessage): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const env = getServerEnv();
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS,
-      },
-    });
-
-    let lastError = "";
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        await transporter.sendMail({
-          from: `"ODERA 05 STORE" <${env.SMTP_USER}>`,
-          to: params.to,
-          subject: params.subject,
-          text: params.text,
-          html: params.html,
-        });
-        return { ok: true };
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : "unknown error";
-        if (attempt < 3) await wait(350 * attempt);
-      }
-    }
-
-    console.error("[email] send failed after retries", lastError);
-    return { ok: false, error: lastError };
+    const transporter = createTransactionalTransport();
+    const result = await deliverTransactionalEmail(params, transporter, `"ODERA 05 STORE" <${env.SMTP_USER}>`);
+    if (!result.ok) console.error("[email] send failed", result.error);
+    return result;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown error";
     console.error("[email] send failed", msg);

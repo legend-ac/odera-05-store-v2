@@ -3,6 +3,7 @@ export const maxDuration = 60;
 
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import SettingsClient from "./settings-client";
+import { normalizeStoreInformation } from "@/lib/storeInformation";
 
 const DEFAULT_PRODUCT_TYPES = [
   { key: "zapatillas", label: "Zapatillas", subtitle: "Running, urbano y futbol", cta: "Ver zapatillas", enabled: true },
@@ -34,6 +35,7 @@ export default async function SettingsPage() {
           },
           publicContactEmail: String(data.publicContactEmail ?? ""),
           publicWhatsapp: String(data.publicWhatsapp ?? ""),
+          businessInformation: normalizeStoreInformation(data.businessInformation),
           socialLinks: {
             instagram: String(data.socialLinks?.instagram ?? ""),
             tiktok: String(data.socialLinks?.tiktok ?? ""),
@@ -53,6 +55,7 @@ export default async function SettingsPage() {
               subtitle: String(x?.subtitle ?? ""),
               cta: String(x?.cta ?? ""),
               enabled: Boolean(x?.enabled ?? true),
+              imageUrl: typeof x?.imageUrl === "string" ? x.imageUrl : "",
             }))
           : DEFAULT_PRODUCT_TYPES,
       }
@@ -69,6 +72,7 @@ export default async function SettingsPage() {
           },
           publicContactEmail: "",
           publicWhatsapp: "",
+          businessInformation: normalizeStoreInformation(undefined),
           socialLinks: { instagram: "", tiktok: "", facebook: "", whatsapp: "" },
           paymentInstructions: { yapeName: "", yapeNumber: "", plinName: "", plinNumber: "" },
           productTypes: DEFAULT_PRODUCT_TYPES,

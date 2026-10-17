@@ -66,9 +66,9 @@ function statusToText(status: string): string {
 
 export async function POST(req: Request) {
   try {
-    assertCsrfHeader(req);
+    await assertCsrfHeader(req);
 
-    const sessionCookie = cookies().get(SESSION_COOKIE_NAME)?.value;
+    const sessionCookie = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
     if (!sessionCookie) return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
 
     const admin = await verifyAdminSessionCookie(sessionCookie);

@@ -19,7 +19,8 @@ export const ALLOWED_NEXT: Record<OrderStatus, OrderStatus[]> = {
   CANCELLED_EXPIRED: [],
 };
 
-export const EXPIRABLE_ORDER_STATUSES: OrderStatus[] = ["SCHEDULED", "PENDING_VALIDATION", "PAYMENT_SENT"];
+// A received payment must remain reserved until staff validate or cancel it.
+export const EXPIRABLE_ORDER_STATUSES: OrderStatus[] = ["SCHEDULED"];
 
 export function isAllowedTransition(from: OrderStatus, to: OrderStatus): boolean {
   return ALLOWED_NEXT[from].includes(to);

@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { useCart } from "@/components/cart/CartProvider";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/fields";
 import { apiPost, makeIdempotencyKey } from "@/lib/apiClient";
 import type { CreateOrderResponse } from "@/schemas/createOrder";
 import { db } from "@/lib/firebase/client";
 import { formatPEN } from "@/lib/money";
-import { notify } from "@/lib/toast";
-import { safeHostname } from "@/lib/safeUrl";
+import { checkoutErrorMessage } from "@/lib/checkoutErrors";
+import { shippingCostFor, shippingThreshold } from "@/lib/shipping";
 
 type ShippingMethod = "LIMA_DELIVERY" | "AGENCIA_PROVINCIA";
 type PayMethod = "YAPE" | "PLIN";
@@ -25,13 +25,6 @@ type ItemPreview = {
   lineTotal: number;
 };
 
-type StorePaymentInstructions = {
-  yapeName?: string;
-  yapeNumber?: string;
-  plinName?: string;
-  plinNumber?: string;
-};
-
 type StorePromo = {
   enabled: boolean;
   couponCode: string;
@@ -40,26 +33,6 @@ type StorePromo = {
 };
 
 type FieldErrors = Record<string, string>;
-
-async function uploadReceiptToCloudinary(file: File): Promise<string> {
-  const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "").trim();
-  const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
-  if (!cloudName || !uploadPreset) throw new Error("CLOUDINARY_NOT_CONFIGURED");
-
-  const form = new FormData();
-  form.append("file", file);
-  form.append("upload_preset", uploadPreset);
-  form.append("folder", "receipts");
-
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: form,
-  });
-  const json = await res.json().catch(() => ({} as any));
-  if (!res.ok) throw new Error(`RECEIPT_UPLOAD_FAILED:${json?.error?.message ?? res.status}`);
-  if (!json?.secure_url) throw new Error("RECEIPT_UPLOAD_NO_URL");
-  return String(json.secure_url);
-}
 
 function ErrorText({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
@@ -73,6 +46,7 @@ function ErrorText({ id, message }: { id: string; message?: string }) {
 export default function CheckoutPage() {
   const { items, clear } = useCart();
   const router = useRouter();
+  const pendingRequest = useRef<{payload: string; key: string; createdAt: number} | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -93,8 +67,6 @@ export default function CheckoutPage() {
   const [agencyReference, setAgencyReference] = useState("");
 
   const [payMethod, setPayMethod] = useState<PayMethod>("YAPE");
-  const [receiptUrl, setReceiptUrl] = useState("");
-  const [receiptBusy, setReceiptBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -103,7 +75,6 @@ export default function CheckoutPage() {
   const [subtotal, setSubtotal] = useState(0);
   const [loadingTotals, setLoadingTotals] = useState(false);
   const [couponCode, setCouponCode] = useState("");
-  const [paymentInstructions, setPaymentInstructions] = useState<StorePaymentInstructions>({});
   const [promo, setPromo] = useState<StorePromo>({
     enabled: true,
     couponCode: "ODERA10",
@@ -119,10 +90,13 @@ export default function CheckoutPage() {
         let nextSubtotal = 0;
         const preview: ItemPreview[] = [];
 
+        if (!items.length) { setSubtotal(0); setItemsPreview([]); return; }
+        const response = await fetch(`/api/products/cart?ids=${encodeURIComponent(Array.from(new Set(items.map(it => it.productId))).join(","))}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("CART_PRODUCTS_UNAVAILABLE");
+        const { products } = await response.json();
         for (const it of items) {
-          const snap = await getDoc(doc(db, "products", it.productId));
-          if (!snap.exists()) continue;
-          const data = snap.data() as any;
+          const data = products.find((product: { id: string }) => product.id === it.productId);
+          if (!data) throw new Error("PRODUCT_NOT_FOUND");
           const unit = data.onSale && typeof data.salePrice === "number" ? Number(data.salePrice) : Number(data.price ?? 0);
           const line = unit * it.qty;
           nextSubtotal += line;
@@ -140,6 +114,8 @@ export default function CheckoutPage() {
           setSubtotal(nextSubtotal);
           setItemsPreview(preview);
         }
+      } catch {
+        if (mounted) setError("No pudimos actualizar el resumen. Revisa el carrito antes de reservar.");
       } finally {
         if (mounted) setLoadingTotals(false);
       }
@@ -157,12 +133,6 @@ export default function CheckoutPage() {
         const snap = await getDoc(doc(db, "settings", "store"));
         if (!mounted || !snap.exists()) return;
         const data = snap.data() as any;
-        setPaymentInstructions({
-          yapeName: String(data?.paymentInstructions?.yapeName ?? ""),
-          yapeNumber: String(data?.paymentInstructions?.yapeNumber ?? ""),
-          plinName: String(data?.paymentInstructions?.plinName ?? ""),
-          plinNumber: String(data?.paymentInstructions?.plinNumber ?? ""),
-        });
         setPromo({
           enabled: Boolean(data?.homePromoEnabled ?? true),
           couponCode: String(data?.homePromo?.couponCode ?? "ODERA10").trim().toUpperCase(),
@@ -188,8 +158,8 @@ export default function CheckoutPage() {
     return Math.round(subtotal * (pct / 100) * 100) / 100;
   }, [couponValid, promo.discountPercent, subtotal]);
 
-  const shippingThreshold = Number.isFinite(promo.freeShippingFrom) ? Math.max(0, promo.freeShippingFrom) : 200;
-  const shippingCost = useMemo(() => (subtotal >= shippingThreshold ? 0 : 10), [subtotal, shippingThreshold]);
+  const freeShippingFrom = shippingThreshold(promo.freeShippingFrom);
+  const shippingCost = useMemo(() => shippingCostFor(subtotal, freeShippingFrom), [subtotal, freeShippingFrom]);
   const totalToPay = useMemo(() => Math.max(0, subtotal - discountAmount) + shippingCost, [subtotal, discountAmount, shippingCost]);
 
   function setFieldErrorAware<K extends keyof FieldErrors>(key: K, value: string) {
@@ -219,7 +189,6 @@ export default function CheckoutPage() {
       if (agencyName.trim().length < 2) next.agencyName = "Ingresa agencia.";
       if (agencyAddress.trim().length < 5) next.agencyAddress = "Ingresa dirección de agencia.";
     }
-    if (!receiptUrl) next.receiptUrl = "Debes subir un comprobante para confirmar.";
     if (!items.length) next.items = "Tu carrito está vacío.";
     return next;
   }
@@ -235,24 +204,6 @@ export default function CheckoutPage() {
     }
   }
 
-  async function onPickReceipt(file: File) {
-    setError(null);
-    setReceiptBusy(true);
-    try {
-      const url = await uploadReceiptToCloudinary(file);
-      setReceiptUrl(url);
-      setFieldErrorAware("receiptUrl", url);
-      notify.success("Comprobante subido");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      if (msg.includes("CLOUDINARY_NOT_CONFIGURED")) setError("El sistema de comprobantes está en mantenimiento temporal.");
-      else setError("No se pudo subir el comprobante. Intenta nuevamente.");
-      setReceiptUrl("");
-    } finally {
-      setReceiptBusy(false);
-    }
-  }
-
   async function submit() {
     setError(null);
     const nextErrors = validateFields();
@@ -263,21 +214,40 @@ export default function CheckoutPage() {
     }
     setBusy(true);
     try {
-      const key = makeIdempotencyKey();
       const shipping = shippingMethod === "LIMA_DELIVERY"
         ? { method: "LIMA_DELIVERY" as const, receiverName: receiverName.trim(), receiverDni: receiverDni.trim(), receiverPhone: receiverPhone.trim(), district: district.trim(), addressLine1: addressLine1.trim(), reference: addressReference.trim() || undefined }
         : { method: "AGENCIA_PROVINCIA" as const, receiverName: receiverName.trim(), receiverDni: receiverDni.trim(), receiverPhone: receiverPhone.trim(), department: department.trim(), province: province.trim(), agencyName: agencyName.trim(), agencyAddress: agencyAddress.trim(), reference: agencyReference.trim() || undefined };
 
+      const payload = { items, customer: { name: name.trim(), email: email.trim(), phone: phone.trim() }, payment: { method: payMethod }, shipping, couponCode: couponVisible ? normalizedCoupon || undefined : undefined };
+      const serialized = JSON.stringify(payload);
+      const createdAt = Date.now();
+      const previousRequest = pendingRequest.current;
+      let key = previousRequest?.payload === serialized && createdAt - previousRequest.createdAt < 20 * 60 * 1000 ? previousRequest.key : makeIdempotencyKey();
+      try {
+        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(serialized));
+        const signature = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+        const previous = JSON.parse(sessionStorage.getItem("odera_checkout_request") ?? "null");
+        if (previous?.signature === signature && typeof previous.key === "string" && Number.isFinite(previous.createdAt) && createdAt - previous.createdAt < 20 * 60 * 1000) key = previous.key;
+        sessionStorage.setItem("odera_checkout_request", JSON.stringify({signature, key, createdAt}));
+      } catch { /* A blocked browser storage must not prevent checkout. */ }
+      pendingRequest.current = {payload: serialized, key, createdAt};
       const res = await apiPost<CreateOrderResponse>(
         "/api/create-order",
-        { items, customer: { name: name.trim(), email: email.trim(), phone: phone.trim() }, payment: { method: payMethod, receiptImageUrl: receiptUrl }, shipping, couponCode: couponVisible ? normalizedCoupon || undefined : undefined },
+        payload,
         { idempotencyKey: key }
       );
+      if (res.reservedUntilMs <= Date.now()) throw new Error("ORDER_EXPIRED");
+      pendingRequest.current = null;
+      try { sessionStorage.removeItem("odera_checkout_request"); } catch { /* optional storage */ }
       clear();
-      router.push(`/confirm?publicCode=${encodeURIComponent(res.publicCode)}&trackingToken=${encodeURIComponent(res.trackingToken)}`);
+      router.push(`/checkout/pago?publicCode=${encodeURIComponent(res.publicCode)}&trackingToken=${encodeURIComponent(res.trackingToken)}`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "No se pudo crear el pedido.";
-      setError(msg);
+      if (msg === "ORDER_EXPIRED" || msg === "ORDER_CANCELLED") {
+        pendingRequest.current = null;
+        try { sessionStorage.removeItem("odera_checkout_request"); } catch { /* optional storage */ }
+      }
+      setError(checkoutErrorMessage(msg));
     } finally {
       setBusy(false);
     }
@@ -286,16 +256,16 @@ export default function CheckoutPage() {
   return (
     <div className="shopping-flow checkout-page mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
       <nav className="flex items-center gap-2 text-xs font-medium text-slate-500">
-        <a href="/" className="hover:text-slate-900 transition-colors">Inicio</a>
+        <Link href="/" className="hover:text-slate-900 transition-colors">Inicio</Link>
         <span className="text-slate-300">/</span>
-        <a href="/cart" className="hover:text-slate-900 transition-colors">Carrito</a>
+        <Link href="/cart" className="hover:text-slate-900 transition-colors">Carrito</Link>
         <span className="text-slate-300">/</span>
         <span className="text-slate-900">Checkout</span>
       </nav>
 
       <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Finalizar compra</h1>
-        <p className="text-sm text-slate-500 mt-1">Completa tus datos para confirmar tu compra de forma segura.</p>
+        <p className="text-sm text-slate-500 mt-1">Primero confirmaremos stock y total. Después podrás pagar tu reserva.</p>
       </div>
 
       {!items.length ? (<div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-destructive" role="alert">Tu carrito está vacío.</div>) : null}
@@ -337,39 +307,13 @@ export default function CheckoutPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] p-5 grid gap-4" aria-labelledby="checkout-payment-title">
-        <h2 id="checkout-payment-title" className="flex items-center gap-2.5 font-semibold text-slate-900"><span className="grid place-items-center h-7 w-7 rounded-lg bg-slate-100 text-xs font-bold text-slate-600">3</span>Pago y comprobante</h2>
+        <h2 id="checkout-payment-title" className="flex items-center gap-2.5 font-semibold text-slate-900"><span className="grid place-items-center h-7 w-7 rounded-lg bg-slate-100 text-xs font-bold text-slate-600">3</span>Medio de pago</h2>
         <fieldset className="grid sm:grid-cols-2 gap-2">
           <legend className="sr-only">Método de pago</legend>
           <label className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all duration-150 ${payMethod === "YAPE" ? "border-[#6C2D82] bg-purple-50 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}><input id="checkout-pay-yape" type="radio" checked={payMethod === "YAPE"} onChange={() => setPayMethod("YAPE")} className="accent-[#6C2D82]" /><p className="text-sm font-semibold text-slate-900">💜 Yape</p></label>
           <label className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all duration-150 ${payMethod === "PLIN" ? "border-emerald-600 bg-emerald-50 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}><input id="checkout-pay-plin" type="radio" checked={payMethod === "PLIN"} onChange={() => setPayMethod("PLIN")} className="accent-emerald-600" /><p className="text-sm font-semibold text-slate-900">💚 Plin</p></label>
         </fieldset>
-        <div className="text-sm rounded-xl bg-[var(--surface-muted)] border border-slate-200 p-4">
-          {payMethod === "YAPE" ? (<><p className="font-semibold text-slate-900 mb-1">Datos para pagar por Yape</p><p className="text-slate-600">Nombre: {paymentInstructions.yapeName?.trim() || "Disponible al momento de confirmar"}</p><p className="text-slate-600">Número: {paymentInstructions.yapeNumber?.trim() || "Disponible al momento de confirmar"}</p></>) : (<><p className="font-semibold text-slate-900 mb-1">Datos para pagar por Plin</p><p className="text-slate-600">Nombre: {paymentInstructions.plinName?.trim() || "Disponible al momento de confirmar"}</p><p className="text-slate-600">Número: {paymentInstructions.plinNumber?.trim() || "Disponible al momento de confirmar"}</p></>)}
-        </div>
-        <div className="grid gap-1">
-          <label htmlFor="checkout-receiptUrl" className="text-sm font-medium text-slate-700">Subir comprobante de pago</label>
-          <label className="w-fit inline-flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-[var(--surface-hover)] hover:border-slate-300 cursor-pointer transition-all duration-150 font-medium text-slate-700 shadow-sm">
-            <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            {receiptBusy ? "Subiendo comprobante..." : "Seleccionar imagen"}
-            <input id="checkout-receiptUrl" type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickReceipt(f); e.currentTarget.value = ""; }} />
-          </label>
-          <ErrorText id="checkout-receiptUrl-error" message={fieldErrors.receiptUrl} />
-        </div>
-        {receiptUrl ? (
-          <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div><p className="text-sm font-semibold text-slate-900">Comprobante cargado</p><p className="text-xs text-slate-500">{safeHostname(receiptUrl)}</p></div>
-              <div className="flex gap-2">
-                <a href={receiptUrl} target="_blank" rel="noreferrer" className="inline-flex"><Button type="button" size="sm">Ver</Button></a>
-                <Button type="button" variant="secondary" size="sm" onClick={async () => { try { await navigator.clipboard.writeText(receiptUrl); notify.success("Link copiado"); } catch { notify.error("No se pudo copiar"); } }}>Copiar</Button>
-              </div>
-            </div>
-            <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-[var(--surface-muted)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={receiptUrl} alt="Comprobante" className="max-h-72 w-full object-contain" />
-            </div>
-          </div>
-        ) : (<p className="text-xs text-slate-500">Debes subir el comprobante para confirmar el pedido.</p>)}
+        <p className="text-sm text-slate-500">Verás el número y el titular para pagar después de confirmar la disponibilidad. La reserva dura 20 minutos.</p>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] p-5 grid gap-3" aria-labelledby="checkout-summary-title">
@@ -382,14 +326,15 @@ export default function CheckoutPage() {
           <div className="flex items-center justify-between"><span className="text-slate-500">Subtotal</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : formatPEN(subtotal)}</span></div>
           <div className="flex items-center justify-between"><span className="text-slate-500">Descuento</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : discountAmount > 0 ? `-${formatPEN(discountAmount)}` : formatPEN(0)}</span></div>
           <div className="flex items-center justify-between"><span className="text-slate-500">Envío</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : shippingCost === 0 ? "Gratis" : formatPEN(shippingCost)}</span></div>
-          <div className="flex items-center justify-between font-bold text-slate-900 text-base pt-1"><span>Total</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : formatPEN(totalToPay)}</span></div>
+          <div className="flex items-center justify-between font-bold text-slate-900 text-base pt-1"><span>Total estimado</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : formatPEN(totalToPay)}</span></div>
         </div>
+        <p className="text-xs text-slate-500">Envío S/10 o gratis desde {formatPEN(freeShippingFrom)} de productos antes del descuento. Confirmaremos el importe exacto al reservar.</p>
       </section>
 
-      {error ? (<div className="flex items-center gap-2 text-sm text-destructive bg-rose-50 border border-rose-200 rounded-xl px-4 py-3" role="alert"><svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>No pudimos procesar tu solicitud. Verifica los datos e inténtalo nuevamente.</div>) : null}
+      {error ? <div className="text-sm text-destructive bg-rose-50 border border-rose-200 rounded-xl px-4 py-3" role="alert">{error} <a href="/cart" className="font-bold underline">Revisar carrito</a></div> : null}
 
-      <button type="button" onClick={submit} disabled={busy || receiptBusy || !items.length} className="btn-brand w-full justify-center h-14 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed">
-        {busy ? "Confirmando pedido..." : "Confirmar pedido"}
+      <button type="button" onClick={submit} disabled={busy || loadingTotals || !items.length} className="btn-brand w-full justify-center h-14 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed">
+        {busy ? "Confirmando disponibilidad..." : "Reservar y continuar al pago"}
       </button>
     </div>
   );

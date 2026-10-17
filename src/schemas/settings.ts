@@ -15,6 +15,15 @@ export const storeSettingsSchema = z.object({
     .optional(),
   publicContactEmail: z.union([z.literal(""), z.string().email().max(200)]),
   publicWhatsapp: z.union([z.literal(""), z.string().min(3).max(40)]),
+  businessInformation: z
+    .object({
+      storeHours: z.string().trim().max(500).optional(),
+      deliveryLima: z.string().trim().max(500).optional(),
+      deliveryProvinces: z.string().trim().max(500).optional(),
+      exchangePeriod: z.string().trim().max(500).optional(),
+      exchangeConditions: z.string().trim().max(2000).optional(),
+    })
+    .optional(),
   socialLinks: z
     .object({
       instagram: z.union([z.literal(""), z.string().url().max(300)]).optional(),
@@ -41,6 +50,7 @@ export const storeSettingsSchema = z.object({
         subtitle: z.string().max(90).optional(),
         cta: z.string().max(40).optional(),
         enabled: z.boolean().optional(),
+        imageUrl: z.union([z.literal(""), z.string().url().max(2000)]).optional(),
       })
     )
     .max(12)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/server/firebaseAdmin";
+import { SHIPPING_BASE_COST, shippingThreshold } from "@/lib/shipping";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +20,17 @@ export async function GET(request: NextRequest) {
   if (!ids.length) return NextResponse.json({ products: [] });
 
   try {
-    const snapshots = await adminDb.getAll(...ids.map((id) => adminDb.collection("products").doc(id)));
+    const [snapshots, settings] = await Promise.all([
+      adminDb.getAll(...ids.map((id) => adminDb.collection("products").doc(id))),
+      adminDb.doc("settings/store").get(),
+    ]);
     const products = snapshots.filter((snapshot) => snapshot.exists).map((snapshot) => {
       const data = snapshot.data() as Record<string, unknown>;
       const images = Array.isArray(data.images) ? (data.images as ProductImage[]) : [];
       const variants = Array.isArray(data.variants) ? (data.variants as ProductVariant[]) : [];
       return {
         id: snapshot.id,
+        status: String(data.status ?? "active"),
         name: String(data.name ?? snapshot.id),
         price: Number(data.price ?? 0),
         salePrice: typeof data.salePrice === "number" ? data.salePrice : undefined,
@@ -34,7 +39,7 @@ export async function GET(request: NextRequest) {
         variants: variants.map((variant) => ({ id: String(variant?.id ?? ""), size: variant?.size ? String(variant.size) : undefined, color: variant?.color ? String(variant.color) : undefined, stock: Number(variant?.stock ?? 0) })).filter((variant) => variant.id),
       };
     });
-    return NextResponse.json({ products }, { headers: { "Cache-Control": "private, max-age=30" } });
+    return NextResponse.json({ products, shipping: { baseCost: SHIPPING_BASE_COST, freeShippingFrom: shippingThreshold(settings.data()?.homePromo?.freeShippingFrom) } }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "No se pudo cargar el carrito." }, { status: 503 });
   }

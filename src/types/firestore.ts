@@ -111,6 +111,13 @@ export type StoreSettingsDoc = {
   };
   publicContactEmail: string;
   publicWhatsapp: string;
+  businessInformation?: {
+    storeHours?: string;
+    deliveryLima?: string;
+    deliveryProvinces?: string;
+    exchangePeriod?: string;
+    exchangeConditions?: string;
+  };
   socialLinks?: { instagram?: string; tiktok?: string; facebook?: string; whatsapp?: string };
   paymentInstructions: { yapeName?: string; yapeNumber?: string; plinName?: string; plinNumber?: string };
   productTypes?: Array<{
@@ -119,6 +126,7 @@ export type StoreSettingsDoc = {
     subtitle?: string;
     cta?: string;
     enabled?: boolean;
+    imageUrl?: string;
   }>;
   updatedAt: unknown;
 };

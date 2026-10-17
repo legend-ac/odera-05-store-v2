@@ -9,7 +9,9 @@ import { useCart } from "@/components/cart/CartProvider";
 import { formatPEN } from "@/lib/money";
 import type { ProductCardData } from "@/components/ProductCard";
 import ProductCard from "@/components/ProductCard";
+import ProductImage, { ProductImagePlaceholder, useProductImages } from "@/components/ProductImage";
 import { optimizedProductImage } from "@/lib/image";
+import SizeGuide from "@/components/SizeGuide";
 
 type Variant = { id: string; size?: string; color?: string; sku?: string; stock: number };
 type Img = { url: string; alt?: string; isMain: boolean; order: number };
@@ -44,7 +46,6 @@ export default function ProductClient({
 
   const [variantId, setVariantId] = useState<string>("");
   const [qty, setQty] = useState<number>(1);
-  const [imgIndex, setImgIndex] = useState(0);
   const [showSpecs, setShowSpecs] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
   const [addedQty, setAddedQty] = useState(1);
@@ -54,6 +55,7 @@ export default function ProductClient({
   useEffect(() => {
     let mounted = true;
     if (initialProduct) {
+      setData(initialProduct);
       setLoading(false);
       const variants = Array.isArray(initialProduct.variants) ? (initialProduct.variants as Variant[]) : [];
       if (variants[0]?.id) setVariantId(String(variants[0].id));
@@ -126,26 +128,26 @@ export default function ProductClient({
     return [main, ...urls.slice(0, i), ...urls.slice(i + 1)];
   }, [images]);
 
-  useEffect(() => { setImgIndex(0); }, [slug, galleryUrls.length]);
-
-  const mainImg = galleryUrls[imgIndex] ?? "";
+  const gallery = useProductImages(galleryUrls, slug);
+  const mainImg = gallery.current;
+  const availableGalleryUrls = gallery.availableUrls;
   const mainImgSrc = optimizedProductImage(mainImg, 1200);
   const available = selectedVariant ? selectedVariant.stock : 0;
   const modalSubtotal = useMemo(() => unitPrice * addedQty, [unitPrice, addedQty]);
   const variantLabel = variants[0]?.size ? "Talla" : variants[0]?.color ? "Color" : "Opción";
 
-  function showPreviousImage() { setImgIndex((i) => (i - 1 + galleryUrls.length) % galleryUrls.length); }
-  function showNextImage() { setImgIndex((i) => (i + 1) % galleryUrls.length); }
+  function showPreviousImage() { gallery.previous(); }
+  function showNextImage() { gallery.next(); }
 
   function onGalleryPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (galleryUrls.length <= 1) return;
+    if (availableGalleryUrls.length <= 1) return;
     dragStart.current = { x: e.clientX, y: e.clientY };
     e.currentTarget.setPointerCapture(e.pointerId);
   }
   function onGalleryPointerUp(e: React.PointerEvent<HTMLDivElement>) {
     const start = dragStart.current;
     dragStart.current = null;
-    if (!start || galleryUrls.length <= 1) return;
+    if (!start || availableGalleryUrls.length <= 1) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
     if (Math.abs(dx) < 42 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
@@ -234,6 +236,7 @@ export default function ProductClient({
               >
                 {mainImg ? (
                   <Image
+                    key={mainImg}
                     src={mainImgSrc}
                     alt={data.name ?? ""}
                     fill
@@ -243,20 +246,15 @@ export default function ProductClient({
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-contain transition-transform duration-700 ease-out hover:scale-[1.025]"
                     style={{ padding: "clamp(8px, 2.25%, 22px)" }}
-                    onError={() => setImgIndex((i) => (i + 1 < galleryUrls.length ? i + 1 : i))}
+                    onError={() => gallery.reportFailure(mainImg)}
                   />
                 ) : (
-                  <div className="flex flex-col items-center gap-2" style={{ color: S.ash2 }}>
-                    <svg className="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <p style={{ fontSize: "12px" }}>Sin imagen</p>
-                  </div>
+                  <ProductImagePlaceholder name={String(data.name ?? "")} />
                 )}
               </div>
 
               {/* Flechas */}
-              {galleryUrls.length > 1 && (
+              {availableGalleryUrls.length > 1 && (
                 <>
                   <button type="button" aria-label="Imagen anterior" onClick={showPreviousImage}
                     className="absolute left-3 top-1/2 hidden -translate-y-1/2 items-center justify-center sm:flex transition-all duration-200"
@@ -272,10 +270,10 @@ export default function ProductClient({
                   </button>
                   {/* Dots mobile */}
                   <div className="absolute bottom-3 left-0 right-0 lg:hidden flex justify-center gap-1.5 z-10">
-                    {galleryUrls.map((_, i) => (
-                      <button key={i} type="button" onClick={() => setImgIndex(i)}
+                    {availableGalleryUrls.map((url, i) => (
+                      <button key={url} type="button" onClick={() => gallery.select(url)} aria-label={`Ver imagen ${i + 1}`}
                         className="block transition-all duration-300"
-                        style={{ width: i === imgIndex ? 20 : 6, height: 4, background: i === imgIndex ? S.red : S.ash2, borderRadius: "1px" }}
+                        style={{ width: url === mainImg ? 20 : 6, height: 4, background: url === mainImg ? S.red : S.ash2, borderRadius: "1px" }}
                       />
                     ))}
                   </div>
@@ -284,21 +282,22 @@ export default function ProductClient({
             </div>
 
             {/* Thumbnails */}
-            {galleryUrls.length > 1 && (
+            {availableGalleryUrls.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {galleryUrls.slice(0, 8).map((url, i) => (
+                {availableGalleryUrls.slice(0, 8).map((url, i) => (
                   <button
                     key={`${url}-${i}`}
                     type="button"
-                    onClick={() => setImgIndex(i)}
+                    onClick={() => gallery.select(url)}
+                    aria-label={`Ver imagen ${i + 1} de ${data.name ?? "producto"}`}
                     className="relative shrink-0 overflow-hidden transition-all duration-200"
                     style={{
                       width: 64, height: 64,
                       background: S.ink3,
-                      border: i === imgIndex ? `2px solid var(--vermeil)` : `1px solid var(--ash-2)`,
+                      border: url === mainImg ? `2px solid var(--vermeil)` : `1px solid var(--ash-2)`,
                       borderRadius: "2px",
-                      opacity: i === imgIndex ? 1 : 0.55,
-                      boxShadow: i === imgIndex ? "0 0 8px rgba(232,69,44,0.3)" : "none",
+                      opacity: url === mainImg ? 1 : 0.55,
+                      boxShadow: url === mainImg ? "0 0 8px rgba(232,69,44,0.3)" : "none",
                     }}
                   >
                     <Image
@@ -307,6 +306,7 @@ export default function ProductClient({
                       fill unoptimized draggable={false}
                       sizes="64px"
                       className="object-contain p-1"
+                      onError={() => gallery.reportFailure(url)}
                     />
                   </button>
                 ))}
@@ -435,6 +435,7 @@ export default function ProductClient({
                     );
                   })}
                 </div>
+                {data.productType === "zapatillas" && variants.some((v) => v.size) && <SizeGuide />}
               </div>
             )}
 
@@ -516,7 +517,7 @@ export default function ProductClient({
             <div className="grid grid-cols-2 gap-2 pt-2" style={{ borderTop: S.border }}>
               {[
                 { icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z", t: "Pago seguro", d: "Comprobante verificado" },
-                { icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", t: "Envío directo", d: "Seguimiento en tiempo real" },
+                { icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", t: "Envío directo", d: "Consulta el estado del pedido" },
                 { icon: "M5 13l4 4L19 7", t: "100% Original", d: "Garantía de autenticidad" },
                 { icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", t: "Atención directa", d: "Soporte por WhatsApp" },
               ].map(b => (
@@ -535,6 +536,10 @@ export default function ProductClient({
                 </div>
               ))}
             </div>
+            <nav aria-label="Información antes de comprar" className="flex flex-wrap gap-x-4 gap-y-2 text-xs" style={{ color: S.ash }}>
+              <Link href="/informacion/envios" className="underline underline-offset-4 hover:text-[var(--paper)]">Envíos y entregas</Link>
+              <Link href="/informacion/cambios-devoluciones" className="underline underline-offset-4 hover:text-[var(--paper)]">Cambios y devoluciones</Link>
+            </nav>
           </div>
         </div>
 
@@ -602,9 +607,7 @@ export default function ProductClient({
               <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" style={{ background: S.ink3 }}>
                 <div className="flex gap-3 p-3" style={{ background: S.ink2, border: S.border, borderRadius: "2px" }}>
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden" style={{ background: S.ink3, border: S.border, borderRadius: "2px" }}>
-                    {mainImg && (
-                      <Image src={optimizedProductImage(mainImg, 180)} alt={String(data.name ?? "")} fill unoptimized sizes="64px" className="object-contain p-1" />
-                    )}
+                    <ProductImage sources={availableGalleryUrls} productId={slug} imageWidth={180} compact alt={String(data.name ?? "")} fill unoptimized sizes="64px" className="object-contain p-1" />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
                     <p className="font-bold line-clamp-2 leading-snug" style={{ fontSize: "13px", color: S.paper }}>{String(data.name ?? "")}</p>
@@ -630,16 +633,13 @@ export default function ProductClient({
                     <div className="grid grid-cols-3 gap-2.5">
                       {recommended.slice(0, 3).map((it) => {
                         const price = it.onSale && typeof it.salePrice === "number" ? it.salePrice : it.price;
-                        const imgUrl = it.imageUrl || it.imageUrls?.[0] || "";
                         return (
                           <Link key={it.id} href={`/p/${it.id}`} onClick={() => setShowCartModal(false)}
                             className="group flex min-w-0 flex-col p-2.5 transition-all duration-200 hover:-translate-y-0.5"
                             style={{ background: S.ink2, border: S.border, borderRadius: "2px" }}
                           >
                             <div className="relative aspect-[4/3] overflow-hidden mb-2" style={{ background: S.ink3 }}>
-                              {imgUrl && (
-                                <Image src={optimizedProductImage(imgUrl, 240)} alt={it.name} fill unoptimized sizes="(max-width: 640px) 30vw, 150px" className="object-contain p-1 transition-transform duration-300 group-hover:scale-105" />
-                              )}
+                              <ProductImage sources={[it.imageUrl, ...(it.imageUrls ?? [])]} productId={it.id} imageWidth={240} compact alt={it.name} fill unoptimized sizes="(max-width: 640px) 30vw, 150px" className="object-contain p-1 transition-transform duration-300 group-hover:scale-105" />
                             </div>
                             <p className="line-clamp-2 min-h-[2.5em] leading-tight mb-2" style={{ fontSize: "11px", color: S.paper }}>{it.name}</p>
                             <p className="mt-auto font-black tabular-nums" style={{ fontSize: "14px", color: S.paper }}>{formatPEN(price)}</p>

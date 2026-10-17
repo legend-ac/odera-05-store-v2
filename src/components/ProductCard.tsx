@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import Link from "next/link";
 import { formatPEN } from "@/lib/money";
-import { optimizedProductImage } from "@/lib/image";
+import ProductImage from "@/components/ProductImage";
 
 export type ProductCardData = {
   id: string;
@@ -24,17 +23,7 @@ export default function ProductCard({ p, priority = false }: { p: ProductCardDat
       ? Math.round(((p.price - (p.salePrice as number)) / p.price) * 100)
       : 0;
 
-  const candidates = useMemo(() => {
-    const list = [p.imageUrl, ...(p.imageUrls ?? [])].filter(
-      (x): x is string => Boolean(x && x.trim())
-    );
-    return Array.from(new Set(list));
-  }, [p.imageUrl, p.imageUrls]);
-
-  const [idx, setIdx] = useState(0);
   const [hovered, setHovered] = useState(false);
-  const current = candidates[idx] ?? "";
-  const imageSrc = optimizedProductImage(current, 600);
 
   return (
     <Link
@@ -62,9 +51,10 @@ export default function ProductCard({ p, priority = false }: { p: ProductCardDat
           flexShrink: 0,
         }}
       >
-        {current ? (
-          <Image
-            src={imageSrc}
+          <ProductImage
+            sources={[p.imageUrl, ...(p.imageUrls ?? [])]}
+            productId={p.id}
+            imageWidth={600}
             alt={p.name}
             fill
             unoptimized
@@ -72,19 +62,7 @@ export default function ProductCard({ p, priority = false }: { p: ProductCardDat
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-contain transition-transform duration-400 ease-out group-hover:scale-[1.05]"
             style={{ padding: "8px" }}
-            onError={() => setIdx((i) => (i + 1 < candidates.length ? i + 1 : i))}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <svg
-              className="h-10 w-10"
-              style={{ color: "var(--ash-2)" }}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        )}
 
         {/* Badge descuento */}
         {hasDiscount && (
@@ -92,7 +70,7 @@ export default function ProductCard({ p, priority = false }: { p: ProductCardDat
             <span
               className="inline-flex items-center font-black text-white leading-none"
               style={{
-                background: "var(--vermeil)",
+                background: "var(--vermeil-2)",
                 fontSize: "10px",
                 letterSpacing: "0.06em",
                 padding: "4px 8px",

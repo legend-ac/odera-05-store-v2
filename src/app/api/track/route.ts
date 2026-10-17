@@ -40,6 +40,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "INVALID_TRACKING_TOKEN" }, { status: 403 });
     }
 
+    let paymentInstructions = {};
+    let publicWhatsapp = "";
+    try {
+      const settings = (await adminDb.doc("settings/store").get()).data();
+      publicWhatsapp = String(settings?.publicWhatsapp ?? "");
+      if (data.status === "SCHEDULED") {
+        const configured = settings?.paymentInstructions;
+        paymentInstructions = {
+          yapeName: String(configured?.yapeName ?? "").trim(),
+          yapeNumber: String(configured?.yapeNumber ?? "").trim(),
+          plinName: String(configured?.plinName ?? "").trim(),
+          plinNumber: String(configured?.plinNumber ?? "").trim(),
+        };
+      }
+    } catch { /* Tracking remains available if store settings cannot load. */ }
+
     return NextResponse.json(
       {
         orderId: doc.id,
@@ -52,10 +68,12 @@ export async function POST(req: Request) {
         couponCode: data.couponCode ?? null,
         shipping: data.shipping ?? null,
         payment: data.payment ?? {},
+        paymentInstructions,
+        publicWhatsapp,
         createdAtMs: tsToMillis(data.createdAt),
         updatedAtMs: tsToMillis(data.updatedAt),
       },
-      { status: 200 }
+      { status: 200, headers: { "Cache-Control": "private, no-store" } }
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";

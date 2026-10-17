@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { collection, getDocs, limit, query, where } from "firebase/firestore";
+import { collection, getDocs, limit, query, startAfter, where, type QueryDocumentSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import ProductCard, { type ProductCardData } from "@/components/ProductCard";
-import { normalizeToken } from "@/lib/searchTokens";
+import { getSearchTerms, normalizeToken, productMatchesSearch } from "@/lib/searchTokens";
 import { hasStock } from "@/lib/productStock";
 
 type SortType = "latest" | "price-asc" | "price-desc" | "name";
@@ -68,10 +69,9 @@ export default function CatalogClient({
   const routeAudience = searchParams.get("audience") ?? "";
 
   const [qText, setQText] = useState(routeQuery);
-  const token = useMemo(
-    () => normalizeToken(qText).split(/\s+/g).filter(Boolean)[0] ?? "",
-    [qText]
-  );
+  const terms = useMemo(() => getSearchTerms(qText), [qText]);
+  // Firestore can require one indexed token; the remaining terms are ANDed below.
+  const token = terms.find((term) => term.length >= 2) ?? "";
   const [typeFilter, setTypeFilter] = useState<string>(routeType.toLowerCase().trim());
   const hasLockedType = Boolean(routeType.trim());
   const [audienceFilter, setAudienceFilter] = useState<Audience | "">(
@@ -107,7 +107,7 @@ export default function CatalogClient({
   useEffect(() => {
     let mounted = true;
     setError(null);
-    if (!token) {
+    if (!terms.length) {
       setItems(initialItems ?? []);
       return () => { mounted = false; };
     }
@@ -115,9 +115,21 @@ export default function CatalogClient({
     (async () => {
       try {
         const base = collection(db, "products");
-        const q = query(base, where("status", "==", "active"), where("searchTokens", "array-contains", token), limit(50));
-        const snap = await getDocs(q);
-        const raw = snap.docs.map((d) => {
+        const constraints = [
+          where("status", "==", "active"),
+          ...(token ? [where("searchTokens", "array-contains", token)] : []),
+          limit(50),
+        ];
+        const candidates: QueryDocumentSnapshot[] = [];
+        let cursor: QueryDocumentSnapshot | undefined;
+        // Do not truncate the first word's results before testing the full query.
+        while (mounted) {
+          const snap = await getDocs(query(base, ...constraints, ...(cursor ? [startAfter(cursor)] : [])));
+          candidates.push(...snap.docs.filter((d) => productMatchesSearch(d.data(), terms)));
+          if (snap.size < 50) break;
+          cursor = snap.docs[snap.docs.length - 1];
+        }
+        const raw = candidates.map((d) => {
           const data = d.data() as any;
           const imgs = Array.isArray(data.images) ? [...data.images] : [];
           const sorted = imgs.sort((a: any, b: any) => Number(a?.order ?? 0) - Number(b?.order ?? 0));
@@ -146,6 +158,7 @@ export default function CatalogClient({
           if (seen.has(it.dedupeKey)) continue;
           seen.add(it.dedupeKey);
           list.push({ id: it.id, name: it.name, price: it.price, salePrice: it.salePrice, onSale: it.onSale, imageUrl: it.imageUrl, imageUrls: it.imageUrls, productType: it.productType, audience: it.audience });
+          if (list.length >= 50) break;
         }
         if (mounted) setItems(list);
       } catch (e) {
@@ -154,7 +167,7 @@ export default function CatalogClient({
       }
     })();
     return () => { mounted = false; };
-  }, [token, initialItems]);
+  }, [token, terms, initialItems]);
 
   const sortedItems = useMemo(() => {
     const base = [...(items ?? [])];
@@ -193,13 +206,13 @@ export default function CatalogClient({
             <div>
               {/* Breadcrumb */}
               <div className="flex items-center gap-2 mb-2">
-                <a
+                <Link
                   href="/"
                   className="transition-colors duration-150 hover:text-[var(--vermeil)]"
                   style={{ fontSize: "11px", color: "var(--ash)", letterSpacing: "0.06em" }}
                 >
                   Inicio
-                </a>
+                </Link>
                 <span style={{ color: "var(--ash-2)", fontSize: "11px" }}>›</span>
                 <span style={{ fontSize: "11px", color: "var(--paper)", fontWeight: 600 }}>
                   {hasLockedType ? activeCategoryLabel : "Catálogo"}
@@ -333,9 +346,9 @@ export default function CatalogClient({
             <p style={{ fontSize: "12px", color: "var(--ash)" }}>
               <span style={{ fontWeight: 700, color: "var(--paper)" }}>{sortedItems.length}</span>{" "}
               {sortedItems.length === 1 ? "producto" : "productos"}
-              {token && (
+              {terms.length > 0 && (
                 <span style={{ color: "var(--ash)" }}>
-                  {" "}· &ldquo;{token}&rdquo;
+                  {" "}· &ldquo;{qText.trim()}&rdquo;
                   <button
                     type="button"
                     onClick={() => setQText("")}

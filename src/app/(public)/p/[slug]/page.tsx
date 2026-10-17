@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import ProductClient from "./product-client";
 import { hasStock } from "@/lib/productStock";
+import { buildProductMetadata, getProductCanonicalUrl } from "@/lib/productMetadata";
 
 export const revalidate = 120;
 
@@ -13,6 +15,7 @@ type ProductInitial = {
   id: string;
   name: string;
   brand?: string;
+  productType?: string;
   price: number;
   salePrice?: number;
   onSale: boolean;
@@ -28,7 +31,7 @@ function pickMainImage(images: Img[]): string | undefined {
   return (main && String(main)) || urls[0];
 }
 
-async function loadInitialProduct(slug: string): Promise<ProductInitial | null> {
+const loadInitialProduct = cache(async (slug: string): Promise<ProductInitial | null> => {
   try {
     const snap = await adminDb.doc(`products/${slug}`).get();
     if (!snap.exists) return null;
@@ -40,6 +43,7 @@ async function loadInitialProduct(slug: string): Promise<ProductInitial | null> 
       id: snap.id,
       name: String(d?.name ?? ""),
       brand: d?.brand ? String(d.brand) : undefined,
+      productType: d?.productType ? String(d.productType) : undefined,
       price: Number(d?.price ?? 0),
       salePrice: typeof d?.salePrice === "number" ? d.salePrice : undefined,
       onSale: Boolean(d?.onSale),
@@ -52,30 +56,27 @@ async function loadInitialProduct(slug: string): Promise<ProductInitial | null> 
     console.error("[product-page] initial product lookup failed", error);
     return null;
   }
+});
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  return buildProductMetadata(await loadInitialProduct(slug), slug);
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const readableSlug = params.slug.replace(/-/g, " ");
-  return {
-    title: `${readableSlug} | ODERA 05 STORE`,
-    description: "Producto original disponible en ODERA 05 STORE. Compra con Yape o Plin y sigue tu pedido en tiempo real.",
-    alternates: { canonical: `/p/${params.slug}` },
-  };
-}
-
-export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const initialProduct = await loadInitialProduct(params.slug);
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const initialProduct = await loadInitialProduct(slug);
 
   if (!initialProduct) {
     return (
       <section className="mx-auto max-w-6xl px-4 py-10">
-        <h1 className="text-2xl font-bold text-slate-900">Producto no disponible</h1>
-        <p className="mt-2 text-sm text-slate-600">Este producto ya no esta activo o fue retirado del catalogo.</p>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--paper)" }}>Producto no disponible</h1>
+        <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--ash)" }}>Este producto ya no está disponible. Revisa otras opciones en nuestro catálogo.</p>
         <a
           href="/catalog"
-          className="mt-4 inline-flex rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+          className="btn-soft mt-5 inline-flex text-sm"
         >
-          Volver al catalogo
+          Volver al catálogo
         </a>
       </section>
     );
@@ -97,7 +98,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
       priceCurrency: "PEN",
       price: String(finalPrice),
       availability: "https://schema.org/InStock",
-      url: `/p/${params.slug}`,
+      url: getProductCanonicalUrl(slug),
     },
   };
 
@@ -105,7 +106,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ProductClient
-        slug={params.slug}
+        slug={slug}
         initialProduct={initialProduct}
         initialRecommended={[]}
       />

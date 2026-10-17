@@ -1,6 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { adminDb } from "@/lib/server/firebaseAdmin";
+import { normalizeStoreInformation } from "@/lib/storeInformation";
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Nuestra tienda",
@@ -10,7 +14,15 @@ export const metadata: Metadata = {
 const mapsUrl =
   "https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA";
 
-export default function NosotrosPage() {
+export default async function NosotrosPage() {
+  let businessInformation = normalizeStoreInformation(undefined);
+  try {
+    const settings = await adminDb.doc("settings/store").get();
+    businessInformation = normalizeStoreInformation(settings.data()?.businessInformation);
+  } catch {
+    // Visiting information remains available while store settings are unavailable.
+  }
+
   return (
     <div style={{ background: "var(--ink)", color: "var(--paper)" }}>
       <section className="mx-auto max-w-6xl px-5 pb-16 pt-12 sm:px-8 sm:pb-24 sm:pt-16">
@@ -23,6 +35,8 @@ export default function NosotrosPage() {
           <div className="border-l-2 pl-5" style={{ borderColor: "var(--vermeil)" }}>
             <p className="font-bold" style={{ fontSize: "16px" }}>Ollantaytambo 608</p>
             <p className="mt-1" style={{ color: "var(--ash)", fontSize: "14px", lineHeight: "1.6" }}>Tahuantinsuyo, Independencia<br />Lima, Perú</p>
+            <p className="mt-4 font-bold" style={{ fontSize: "14px" }}>Horario de atención</p>
+            <p className="mt-1 whitespace-pre-line" style={{ color: "var(--ash)", fontSize: "14px", lineHeight: "1.6" }}>{businessInformation.storeHours || "Consulta el horario de atención con la tienda antes de visitarnos."}</p>
             <a href={mapsUrl} target="_blank" rel="noreferrer" className="btn-brand mt-5 inline-flex" style={{ fontSize: "12px", padding: "11px 18px" }}>Abrir en Google Maps ↗</a>
           </div>
         </div>

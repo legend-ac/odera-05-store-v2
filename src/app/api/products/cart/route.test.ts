@@ -5,12 +5,14 @@ const mocks = vi.hoisted(() => ({
   collectionMock: vi.fn(),
   docMock: vi.fn(),
   getAllMock: vi.fn(),
+  settingsGetMock: vi.fn(),
 }));
 
 vi.mock("@/lib/server/firebaseAdmin", () => ({
   adminDb: {
     collection: mocks.collectionMock,
     getAll: mocks.getAllMock,
+    doc: () => ({ get: mocks.settingsGetMock }),
   },
 }));
 
@@ -20,6 +22,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.collectionMock.mockReturnValue({ doc: mocks.docMock });
   mocks.docMock.mockImplementation((id: string) => ({ id }));
+  mocks.settingsGetMock.mockResolvedValue({ data: () => ({ homePromo: { freeShippingFrom: 250 } }) });
 });
 
 describe("GET /api/products/cart", () => {
@@ -53,6 +56,7 @@ describe("GET /api/products/cart", () => {
     expect(response.status).toBe(200);
     expect(body.products).toEqual([{
       id: "carina-lift-mono",
+      status: "active",
       name: "Carina Lift Mono",
       price: 259,
       salePrice: 150,
@@ -60,6 +64,7 @@ describe("GET /api/products/cart", () => {
       images: [{ url: "https://cdn.example/carina.webp", isMain: true, order: 0 }],
       variants: [{ id: "default", size: "37", stock: 1 }],
     }]);
+    expect(body.shipping).toEqual({baseCost: 10, freeShippingFrom: 250});
   });
 
   it("no filtra errores internos al navegador", async () => {

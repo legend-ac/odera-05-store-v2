@@ -41,7 +41,7 @@ export const createOrderSchema = z.object({
   }),
   payment: z.object({
     method: z.enum(["YAPE", "PLIN"]),
-    receiptImageUrl: z.string().url().max(1000),
+    receiptImageUrl: z.string().url().max(1000).optional(),
   }),
   shipping: shippingSchema,
   couponCode: z.string().min(3).max(40).optional(),
