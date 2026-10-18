@@ -129,6 +129,12 @@ desbordamiento horizontal a 1366 px, e inicio móvil a 393 px. El guardado del t
 la compatibilidad con ajustes anteriores y la carga del valor para SSR se
 verificaron con pruebas unitarias de servidor y API.
 
+La aplicación `552add4` quedó publicada con estado `READY` en el dominio de
+producción. Se repitió allí la comprobación de las 10 páginas y la simulación
+visual clara en escritorio y móvil, sin errores JavaScript ni desbordamiento.
+Todas entregaron el atributo de tema en el HTML inicial. La comprobación no
+cambió los ajustes reales: el administrador elige la apariencia al guardar.
+
 ## Cómo revisar para la exposición
 
 1. Ejecutar `npm run test:quality` con la tienda local abierta en `http://localhost:3000`.
