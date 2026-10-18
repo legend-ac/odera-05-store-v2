@@ -18,6 +18,7 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | --- | --- | --- |
 | Reglas y esquemas | Stock, envíos, idempotencia, búsqueda, seguimiento, metadatos, configuración comercial, CSRF y entrega de correo | 82 pruebas unitarias |
 | Rutas y páginas de servidor | Reservas, comprobantes, carrito, Libro de Reclamaciones y metadatos de producto | 32 pruebas unitarias |
+| Automatizaciones y respaldo | Autenticación del cron, limpieza explícita, liberación por talla, pago recibido, cifrado y rechazo de claves/datos alterados | 25 pruebas adicionales; 139 unitarias en total |
 | Recorrido público E2E | Inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 14 pruebas en Chrome de escritorio y móvil |
 | Tipado | Compilación estática TypeScript | Sin errores |
 | Revisión de código | `npm run lint` | Sin errores; una advertencia existente de fuente externa |
@@ -38,7 +39,7 @@ Mínimos bloqueantes configurados:
 - Ramas: 50%
 - Funciones: 80%
 
-En la última ejecución, las **114 pruebas unitarias** pasaron con Vitest 4.1.12. El núcleo alcanzó **94.62%** de líneas, **91.33%** de sentencias, **76.29%** de ramas y **95.23%** de funciones. Las reglas de negocio (`src/lib`) alcanzaron **99.07%** de líneas. La cobertura incluye metadatos de productos, información comercial, entrega de correo, lectores de enlaces, envío y esquemas de reserva/pago. Se agregaron seis casos de cookies/CSRF asíncronos y cinco casos de errores SMTP permanentes y temporales.
+En la última medición de cobertura, las **114 pruebas unitarias** pasaron con Vitest 4.1.12. El núcleo alcanzó **94.62%** de líneas, **91.33%** de sentencias, **76.29%** de ramas y **95.23%** de funciones. Las reglas de negocio (`src/lib`) alcanzaron **99.07%** de líneas. La cobertura incluye metadatos de productos, información comercial, entrega de correo, lectores de enlaces, envío y esquemas de reserva/pago. Se agregaron seis casos de cookies/CSRF asíncronos y cinco casos de errores SMTP permanentes y temporales. Después se añadieron 25 pruebas del cron y del cifrado: la ejecución más reciente pasó **139 pruebas en 22 archivos**; no se recalculó la cobertura con esos casos.
 
 ## Actualización de seguridad
 
@@ -100,7 +101,12 @@ La versión de aplicación `253d813` quedó publicada en Vercel con estado `READ
 
 App Check conserva una clave de prueba en producción: el navegador no obtiene un token válido y continúa sin él. Se comprobó que la verificación del servidor está desactivada (`ENABLE_APP_CHECK_VERIFY` no es `true`), por lo que esta configuración no impide llamar a las API. Firestore y los tres enlaces sociales cargaron correctamente. Queda pendiente configurar una clave real antes de activar esa protección; no se cambiaron claves ni se desactivaron protecciones durante el despliegue.
 
-GitHub informa que los workflows `ttl.yml` y `backup.yml` están desactivados por inactividad (`disabled_inactivity`), aunque están presentes los nombres de los secretos requeridos. Por tanto, la liberación programada de reservas y los respaldos semanales requieren reactivación. No se ejecutó el cron durante la verificación: además de liberar reservas, mueve pedidos cancelados antiguos a la papelera y elimina permanentemente pedidos y productos que llevan más de 30 días en ella.
+Los workflows `ttl.yml` y `backup.yml`, antes desactivados por inactividad, quedaron **activos y verificados**. La versión de aplicación `33c57b9` se publicó en Vercel con estado `READY` antes de reactivar el cron. Pasaron TypeScript, lint (solo la advertencia de fuente ya existente), compilación y las 139 pruebas unitarias.
+
+- **Reservas:** el cron cada 10 minutos envía `includeTrashCleanup: false`. La llamada sin ese campo también omite la limpieza; solo el booleano explícito `true` permite mover o purgar registros antiguos. La [ejecución comprobada](https://github.com/legend-ac/odera-05-store-v2/actions/runs/39095427952) devolvió HTTP 200, liberó una reserva vencida y confirmó cero registros movidos o borrados. Los pagos recibidos conservan su reserva.
+- **Respaldo:** la [ejecución comprobada](https://github.com/legend-ac/odera-05-store-v2/actions/runs/39095415757) generó un artefacto cifrado de 91,388 bytes, con conservación de 30 días. Se descargó y autenticó en memoria cada archivo de `products`, `orders`, `settings` y `counters` con la clave local, sin generar JSON legible ni importar datos a Firestore. Las copias semanales usan AES-256-GCM y requieren `BACKUP_ENCRYPTION_KEY`; solo se suben archivos `.json.enc`.
+
+La clave de recuperación está en `.env.backup.local`, excluida de Git y Vercel, y en un secreto de GitHub. El README explica cómo recuperar un archivo sin sobrescribir exportaciones ni escribir en Firestore. La papelera no tiene limpieza programada. Las comprobaciones temporales se retiran con el comando de limpieza; la clave de recuperación se conserva.
 
 ## Cómo revisar para la exposición
 
