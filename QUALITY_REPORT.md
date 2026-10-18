@@ -61,6 +61,13 @@ lint conserva únicamente la advertencia previa de fuente externa. La búsqueda
 de Productos filtra cada página de hasta 90 documentos; los indicadores de
 Inventario describen la vista cargada y el resumen de Inicio explicita su alcance.
 
+Publicación comprobada: commit `679fa42`, despliegue
+`dpl_7fDvCjNjmZD26mvQQXY2QLhibtTq` en estado **READY**, servido por
+`https://odera-05-store-v2.vercel.app`. El dominio entrega los estilos nuevos;
+Productos, Inventario, Pedidos y Ajustes conservan la redirección protegida con
+su destino, y la API de inventario rechaza solicitudes sin sesión. Se retiró la
+vista ficticia y 234.65 MiB de informes y cachés generados tras la comprobación.
+
 ## Cobertura medida
 
 La cobertura se mide sobre el límite unitario mantenido: reglas de pedido, inventario, pago, carrito y Libro de Reclamaciones. No se incluyen artificialmente el panel administrativo, scripts de mantenimiento o componentes puramente visuales.
