@@ -647,6 +647,26 @@ a:hover { text-decoration: none; }
   }
 }
 
+.footer-social { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-top: 24px; border-top: 1px solid var(--ash-2); }
+.footer-social__heading { flex: 0 0 auto; color: var(--paper); font-family: 'Bebas Neue', var(--font-display), sans-serif; font-size: 18px; line-height: 1.2; letter-spacing: .12em; text-transform: uppercase; }
+.footer-social__links { display: grid; width: min(100%,640px); min-width: 0; border: 1px solid var(--ash-2); border-radius: 2px; background: var(--ink-2); }
+.footer-social__link { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 0; min-height: 52px; padding: 10px 14px; color: var(--paper); transition: color 150ms ease, background-color 150ms ease; }
+.footer-social__link + .footer-social__link { border-left: 1px solid var(--ash-2); }
+.footer-social__link:hover { color: var(--vermeil); background: var(--ink-3); }
+.footer-social__link:focus-visible { position: relative; z-index: 1; outline: 2px solid var(--vermeil); outline-offset: 3px; }
+.footer-social__name { font-size: 13px; font-weight: 600; line-height: 1.25; }
+.footer-social__arrow { color: var(--ash); font-size: 15px; line-height: 1; }
+.footer-social__link:hover .footer-social__arrow { color: var(--vermeil); }
+
+@media (max-width: 639px) {
+  .footer-social { display: block; padding-top: 20px; }
+  .footer-social__heading { margin-bottom: 12px; font-size: 16px; }
+  .footer-social__links { width: 100%; }
+  .footer-social__link { flex-direction: column; min-height: 76px; gap: 8px; padding: 12px 4px; }
+  .footer-social__name { font-size: 12px; }
+  .footer-social__arrow { display: none; }
+}
+
 .home-social__inner {
   padding-block: 22px 28px;
   border-top: 1px solid var(--ash-2);

@@ -87,24 +87,25 @@ export default function HomeSocialLinks({ compact = false }: { compact?: boolean
 
   if (compact) {
     return (
-      <nav aria-label="Redes sociales de ODERA 05" className="border-t border-[var(--ash-2)] pt-6">
-        <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--ash)]">Síguenos</p>
-        <div className="flex flex-wrap items-center gap-2.5">
+      <nav aria-label="Redes sociales de ODERA 05" className="footer-social">
+        <p className="footer-social__heading">Síguenos</p>
+        <div className="footer-social__links" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
           {items.map((s) => (
             <a
               key={s.key}
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--ash-2)] bg-[var(--ink-2)] px-3.5 py-2 text-xs font-semibold text-[var(--paper)] transition-colors hover:border-[var(--vermeil)] hover:bg-[var(--ink-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--vermeil)]"
+              className="footer-social__link"
             >
               <span
-                className={`footer-social__icon ${s.key === "instagram" ? "text-pink-500" : s.key === "whatsapp" ? "text-[var(--success)]" : s.key === "facebook" ? "text-blue-500" : "text-[var(--paper)]"}`}
+                className="footer-social__icon"
                 aria-hidden="true"
               >
                 {s.icon}
               </span>
-              <span>{s.label}</span>
+              <span className="footer-social__name">{s.label}</span>
+              <span className="footer-social__arrow" aria-hidden="true">↗</span>
             </a>
           ))}
         </div>

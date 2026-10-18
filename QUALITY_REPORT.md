@@ -23,7 +23,7 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Acceso al administrador | Sesión, permisos, CSRF, cookies seguras, antigüedad de autenticación, destinos y errores | 39 pruebas adicionales |
 | Gestión administrativa | Paginación de inventario, cantidades, conflictos de edición, creación sin sobrescritura, variantes, imágenes, archivo automático y operaciones masivas | 45 pruebas adicionales |
 | Selección de producto | Talla disponible, límite de cantidad y cambio a una talla con menos stock | 7 pruebas adicionales; 255 unitarias en 34 archivos en total |
-| Recorrido público E2E | Acceso protegido, inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 18 casos mantenidos; en la última revisión pasaron los 8 relacionados con ficha, imágenes y compra |
+| Recorrido público E2E | Acceso protegido, inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 18 casos mantenidos; última revisión del pie: 2 casos correctos en escritorio y teléfono; revisión previa de ficha: 8 correctos |
 | Tipado | Compilación estática TypeScript | Sin errores |
 | Revisión de código | `npm run lint` | Sin errores; una advertencia existente de fuente externa |
 | Producción | Compilación aislada con `npm run build:verify` | Correcta |
@@ -32,6 +32,15 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Cloudinary configurado | Carga real de PNG de prueba y lectura desde CDN | Correcto |
 | Seguridad de producción | `npm run audit:production` | 0 críticas, 0 altas; 8 moderadas pendientes |
 | Firestore actualizado | Lectura real de configuración con el SDK cliente y el parche gRPC | Correcta; ninguna escritura |
+
+## Redes sociales del pie — 18 de octubre de 2026
+
+Los enlaces compactos usan columnas del mismo ancho: icono y nombre en línea
+en PC, icono sobre nombre en teléfono. Se conserva la paleta clara u oscura y
+el bloque del inicio no se duplica en el pie. Revisión visual en 320, 393, 768 y
+1440 px, con ambos temas y simulación de cuatro redes: una sola fila, objetivos
+táctiles de al menos 44 px y sin desbordamiento. Los dos E2E de hidratación y
+navegación del pie pasaron con comprobación de alineación y anchos iguales.
 
 ## Ficha de producto en teléfono — 18 de octubre de 2026
 
