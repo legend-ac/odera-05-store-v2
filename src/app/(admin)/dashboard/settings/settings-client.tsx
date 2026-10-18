@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
 import { normalizeStoreInformation, type StoreBusinessInformation } from "@/lib/storeInformation";
 import { normalizeStoreTheme } from "@/lib/storeTheme";
+import { useUnsavedChanges } from "@/components/admin/useUnsavedChanges";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ function Toast({ msg, onClose }: { msg: string; onClose: () => void }) {
         }
       </span>
       <span className="flex-1">{msg}</span>
-      <button type="button" onClick={onClose} className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+      <button type="button" onClick={onClose} aria-label="Cerrar aviso" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
     </div>
@@ -141,6 +142,7 @@ function StatusBadge({ ok, labelOn, labelOff }: { ok: boolean; labelOn: string; 
 export default function SettingsClient({ initial }: { initial: Settings }) {
   const router = useRouter();
   const [s, setS] = useState<Settings>(initial);
+  const [savedSettings, setSavedSettings] = useState(() => JSON.stringify(initial));
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [issues, setIssues] = useState<string[]>([]);
@@ -157,6 +159,9 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
   const productTypes = Array.isArray(s.productTypes) ? s.productTypes : [];
   const businessInformation = { ...normalizeStoreInformation(undefined), ...s.businessInformation };
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const dirty = JSON.stringify(s) !== savedSettings;
+
+  useUnsavedChanges(dirty);
 
   function validateInput(data: Settings): string[] {
     const errs: string[] = [];
@@ -186,6 +191,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
     setMsg(null);
     try {
       await apiPost("/api/admin/settings/update", s, { csrfCookieName: CSRF_COOKIE_NAME });
+      setSavedSettings(JSON.stringify(s));
       setMsg("Configuración guardada correctamente.");
       router.refresh();
     } catch (e) {
@@ -218,18 +224,27 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="admin-page-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Configuración de tienda</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Controla la apariencia, datos públicos, redes sociales y medios de pago.</p>
+          <p className="admin-eyebrow">TIENDA / ODERA 05</p>
+          <h1>Ajustes de tienda</h1>
+          <p className="admin-page-description">Apariencia, información pública y medios de pago, en un solo lugar.</p>
         </div>
-        <Button type="button" onClick={save} disabled={busy} variant="primary" size="md">
-          {busy ? "Guardando..." : "Guardar configuración"}
+        <Button type="button" onClick={save} disabled={busy || !dirty || uploadingIdx !== null} variant="primary" size="md">
+          {busy ? "Guardando..." : dirty ? "Guardar cambios" : "Todo guardado"}
         </Button>
       </div>
 
+      {dirty && <div className="admin-unsaved" role="status">
+        <span>Tienes cambios sin guardar. Se publicarán al pulsar «Guardar cambios».</span>
+        <button type="button" disabled={busy || uploadingIdx !== null} onClick={() => {
+          if (!window.confirm("¿Descartar los cambios sin guardar?")) return;
+          setS(JSON.parse(savedSettings) as Settings); setIssues([]); setMsg(null);
+        }}>Descartar cambios</button>
+      </div>}
+
       {/* Estado visual de la configuración */}
-      <div className="grid sm:grid-cols-4 gap-3">
+      <div className="admin-settings-summary grid sm:grid-cols-4 gap-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[var(--shadow-card)] flex flex-col gap-2">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Identidad</p>
           <StatusBadge ok={!!s.storeName?.trim()} labelOn="Nombre configurado" labelOff="Sin nombre" />
@@ -256,7 +271,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
           ["catalog", "Catálogo", "Tipos de producto"],
           ["system", "Sistema", "Pruebas técnicas"],
         ].map(([key, label, hint]) => (
-          <button key={key} type="button" onClick={() => setActiveSection(key as typeof activeSection)} className={activeSection === key ? "is-active" : ""}>
+          <button key={key} type="button" aria-pressed={activeSection === key} onClick={() => setActiveSection(key as typeof activeSection)} className={activeSection === key ? "is-active" : ""}>
             <strong>{label}</strong><span>{hint}</span>
           </button>
         ))}

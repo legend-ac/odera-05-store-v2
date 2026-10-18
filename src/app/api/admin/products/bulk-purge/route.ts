@@ -12,7 +12,7 @@ export const maxDuration = 60;
 
 const bodySchema = z.object({
   olderThanDays: z.number().int().min(0).max(3650).optional(),
-  limit: z.number().int().min(1).max(500).optional(),
+  limit: z.number().int().min(1).max(250).optional(),
 });
 
 export async function POST(req: Request) {
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const ip = getRequestIp(req);
     const ua = getUserAgent(req);
     const olderThanDays = parsed.data.olderThanDays ?? 0;
-    const limit = parsed.data.limit ?? 300;
+    const limit = parsed.data.limit ?? 200;
     const cutoffMs = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
 
     const qs = await adminDb.collection("products").orderBy("updatedAt", "desc").limit(2000).get();
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     }
     await batch.commit();
 
-    return NextResponse.json({ ok: true, processed: targets.length }, { status: 200 });
+    return NextResponse.json({ ok: true, processed: targets.length, processedIds: targets.map((doc) => doc.id) }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     const codeToStatus: Record<string, number> = {

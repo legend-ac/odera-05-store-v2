@@ -28,7 +28,9 @@ export async function GET(req: Request) {
     let cursor: { total: number; id: string } | null = null;
     if (cursorRaw) {
       try {
-        cursor = JSON.parse(Buffer.from(cursorRaw, "base64url").toString("utf8"));
+        const parsed = JSON.parse(Buffer.from(cursorRaw, "base64url").toString("utf8"));
+        if (!parsed || !Number.isSafeInteger(parsed.total) || parsed.total < 0 || typeof parsed.id !== "string" || !parsed.id || parsed.id.length > 160 || parsed.id.includes("/")) throw new Error("INVALID_CURSOR");
+        cursor = { total: parsed.total, id: parsed.id };
       } catch {
         return NextResponse.json({ error: "INVALID_CURSOR" }, { status: 400 });
       }
@@ -52,11 +54,12 @@ export async function GET(req: Request) {
       if (STATES.has(state)) query = adminDb.collection("products").where("inventoryState", "==", state).orderBy("inventoryTotal", "asc").orderBy(FieldPath.documentId()).limit(PAGE_SIZE + 1);
       if (cursor && Number.isFinite(cursor.total) && cursor.id) query = query.startAfter(cursor.total, cursor.id);
       const snap = await query.get();
-      // Cursor progression follows the scanned document, not the final visible
-      // item. Otherwise a trashed product could make a page appear final or
-      // cause a product to be skipped on the next request.
-      const scannedLast = snap.docs[snap.docs.length - 1];
-      docs = snap.docs.filter((doc) => !doc.data()?.deletedAt).slice(0, PAGE_SIZE);
+      // The extra document only signals that another page exists. Advance past
+      // the 50 documents consumed by this page so the look-ahead item appears
+      // on the next page, including when some scanned documents are in trash.
+      const scanned = snap.docs.slice(0, PAGE_SIZE);
+      const scannedLast = scanned[scanned.length - 1];
+      docs = scanned.filter((doc) => !doc.data()?.deletedAt);
       if (snap.size > PAGE_SIZE && scannedLast) {
         nextCursor = Buffer.from(JSON.stringify({ total: Number(scannedLast.data().inventoryTotal ?? 0), id: scannedLast.id })).toString("base64url");
       }

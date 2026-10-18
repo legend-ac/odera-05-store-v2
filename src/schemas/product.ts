@@ -16,6 +16,8 @@ export const productVariantSchema = z.object({
 });
 
 export const productUpsertSchema = z.object({
+  productId: z.string().min(1).max(150).regex(/^[^/]+$/).optional(),
+  expectedUpdatedAtMs: z.number().int().nonnegative().optional(),
   productType: z
     .string()
     .min(2)
@@ -38,6 +40,16 @@ export const productUpsertSchema = z.object({
   images: z.array(productImageSchema).max(10),
   variants: z.array(productVariantSchema).min(1).max(50),
 }).superRefine((data, ctx) => {
+  const ids = data.variants.map((variant) => variant.id.trim());
+  if (new Set(ids).size !== ids.length || ids.some((id) => !id)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["variants"], message: "Cada variante debe tener un identificador único." });
+  }
+  if (data.images.length && data.images.filter((image) => image.isMain).length !== 1) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["images"], message: "Selecciona una sola imagen principal." });
+  }
+  if (data.onSale && (!data.salePrice || data.salePrice >= data.price)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["salePrice"], message: "La oferta debe ser mayor a cero y menor que el precio regular." });
+  }
   const pt = data.productType.toLowerCase();
   const requiresAudience = pt.includes("zapat") || pt.includes("ropa");
   if (!requiresAudience) return;

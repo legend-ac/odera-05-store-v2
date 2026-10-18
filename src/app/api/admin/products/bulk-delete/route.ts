@@ -13,7 +13,8 @@ export const maxDuration = 60;
 const bodySchema = z.object({
   status: z.enum(["active", "archived", "ALL"]).optional(),
   productType: z.string().optional(),
-  limit: z.number().int().min(1).max(500).optional(),
+  // Each product also creates an audit entry: two writes per product.
+  limit: z.number().int().min(1).max(250).optional(),
 });
 
 export async function POST(req: Request) {
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
     }
     await batch.commit();
 
-    return NextResponse.json({ ok: true, processed: targets.length }, { status: 200 });
+    return NextResponse.json({ ok: true, processed: targets.length, processedIds: targets.map((doc) => doc.id) }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     const codeToStatus: Record<string, number> = {

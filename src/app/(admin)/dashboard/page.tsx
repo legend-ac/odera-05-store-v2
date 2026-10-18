@@ -8,6 +8,7 @@ type Order = { id: string; publicCode: string; status: string; email?: string; t
 type Product = { id: string; name: string; slug: string; status: string; images: unknown[]; variants: { stock?: number }[]; deletedAt: boolean };
 
 const statusLabel: Record<string, string> = {
+  SCHEDULED: "Reserva sin pago",
   PENDING_VALIDATION: "Validar pago",
   PAYMENT_SENT: "Pago enviado",
   PAID: "Listo para despacho",
@@ -71,8 +72,8 @@ export default async function DashboardHome() {
       <section className="admin-overview__hero">
         <div>
           <p>OPERACIÓN DE LA TIENDA</p>
-          <h1>Hoy tienes <span>{paymentQueue.length + readyToShip.length + catalogIssues.length}</span> prioridades</h1>
-          <span>Empieza por pagos, luego despachos y finalmente los productos que bloquean ventas.</span>
+          <h1>Resumen de la tienda</h1>
+          <span>Pagos por revisar, próximos despachos y disponibilidad del catálogo.</span>
         </div>
         <div className="admin-overview__actions">
           <Link href="/dashboard/orders">Ver pedidos</Link>
@@ -80,10 +81,12 @@ export default async function DashboardHome() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <p className="admin-scope-note">Resumen de los últimos {ordersSnapshot?.size ?? 0} pedidos y {productsSnapshot?.size ?? 0} productos actualizados. Los importes corresponden a esos pedidos.</p>
+
+      <section className="admin-overview-metrics grid gap-3 sm:grid-cols-3">
         <Metric label="Pagos por validar" value={paymentQueue.length} detail={paymentQueue.length ? "Requieren revisión" : "Sin pagos pendientes"} tone="amber" />
         <Metric label="Listos para enviar" value={readyToShip.length} detail={readyToShip.length ? "Ya están pagados" : "Sin despachos pendientes"} />
-        <Metric label="Ventas confirmadas" value={money(confirmedRevenue)} detail={`${orders.length} pedidos activos`} tone="blue" />
+        <Metric label="Ventas confirmadas" value={money(confirmedRevenue)} detail="Pedidos pagados, enviados y entregados del resumen" tone="blue" />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">

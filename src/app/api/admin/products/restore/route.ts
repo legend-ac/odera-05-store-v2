@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       });
     });
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json({ ok: true, updatedAtMs: now.toMillis() }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     const codeToStatus: Record<string, number> = {

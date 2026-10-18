@@ -20,7 +20,8 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Rutas y páginas de servidor | Reservas, comprobantes, carrito, Libro de Reclamaciones y metadatos de producto | 32 pruebas unitarias |
 | Automatizaciones y respaldo | Autenticación del cron, limpieza explícita, liberación por talla, pago recibido, cifrado y rechazo de claves/datos alterados | 25 pruebas adicionales |
 | Apariencia global | Selección clara/oscura, compatibilidad con ajustes antiguos, carga inicial e invalidación de caché | 25 pruebas adicionales |
-| Acceso al administrador | Sesión, permisos, CSRF, cookies seguras, antigüedad de autenticación, destinos y errores | 39 pruebas adicionales; 203 unitarias en total |
+| Acceso al administrador | Sesión, permisos, CSRF, cookies seguras, antigüedad de autenticación, destinos y errores | 39 pruebas adicionales |
+| Gestión administrativa | Paginación de inventario, cantidades, conflictos de edición, creación sin sobrescritura, variantes, imágenes, archivo automático y operaciones masivas | 45 pruebas adicionales; 248 unitarias en 33 archivos en total |
 | Recorrido público E2E | Acceso protegido, inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 16 pruebas en Chrome de escritorio y móvil |
 | Tipado | Compilación estática TypeScript | Sin errores |
 | Revisión de código | `npm run lint` | Sin errores; una advertencia existente de fuente externa |
@@ -30,6 +31,35 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Cloudinary configurado | Carga real de PNG de prueba y lectura desde CDN | Correcto |
 | Seguridad de producción | `npm run audit:production` | 0 críticas, 0 altas; 8 moderadas pendientes |
 | Firestore actualizado | Lectura real de configuración con el SDK cliente y el parche gRPC | Correcta; ninguna escritura |
+
+## Revisión del administrador — 18 de octubre de 2026
+
+El panel comparte la paleta crema, tinta y rojo, la tipografía de marca y los
+bordes del sitio. La navegación identifica una sola sección activa, traduce los
+nombres de las rutas y se adapta al teléfono. El editor de productos se separó
+del listado, con guardado persistente, variantes etiquetadas, identificadores
+estables y una sola imagen principal. Los ajustes indican cambios pendientes.
+
+Se corrigió el cursor de inventario que omitía el producto número 51. Las
+entradas y salidas muestran la cantidad final y bloquean cantidades inválidas.
+Los guardados de productos rechazan enlaces existentes al crear y conflictos
+de versión al editar; conservan el documento original y el borrador del usuario.
+Las acciones masivas respetan el límite de 500 escrituras por lote, contando la
+auditoría, y devuelven los identificadores realmente procesados.
+
+Validación visual con componentes reales y datos ficticios en escritorio de
+1440 px y teléfono de 393 px: Productos, Inventario, Pedidos y Ajustes sin errores
+JavaScript ni desbordamiento horizontal. Se comprobaron nueve escenarios en
+cada tamaño: borrador, cancelación de navegación, conflicto, variantes únicas,
+respuesta de guardado, vista previa de stock, salida excesiva, entrada y ajustes.
+Las API de escritura se simularon: no se cambiaron productos, pedidos ni stock
+reales, ni se enviaron correos o se subieron imágenes durante esta revisión.
+
+La suite unitaria pasa **248 pruebas** y el recorrido público pasa **16 pruebas**
+en Chrome de escritorio y móvil. TypeScript y compilación de producción pasan;
+lint conserva únicamente la advertencia previa de fuente externa. La búsqueda
+de Productos filtra cada página de hasta 90 documentos; los indicadores de
+Inventario describen la vista cargada y el resumen de Inicio explicita su alcance.
 
 ## Cobertura medida
 

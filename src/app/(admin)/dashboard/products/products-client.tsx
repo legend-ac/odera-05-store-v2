@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/fields";
 import { optimizedProductImage } from "@/lib/image";
+import { useUnsavedChanges } from "@/components/admin/useUnsavedChanges";
 
 type Product = {
   id: string;
@@ -23,6 +25,7 @@ type Product = {
   images: { url: string; alt?: string; isMain: boolean; order: number }[];
   variants: { id: string; size?: string; color?: string; sku?: string; stock: number }[];
   deletedAtMs?: number | null;
+  updatedAtMs?: number | null;
 };
 
 type SortMode = "name" | "price-desc" | "price-asc" | "stock-asc" | "status";
@@ -34,7 +37,7 @@ const PAGE_SIZE = 12;
 const AUDIENCE_OPTIONS: Array<{ key: Product["audience"]; label: string }> = [
   { key: "hombre", label: "Hombre" },
   { key: "mujer", label: "Mujer" },
-  { key: "ninos", label: "Ninos" },
+  { key: "ninos", label: "Niños" },
   { key: "todos", label: "Todos" },
 ];
 
@@ -67,10 +70,12 @@ function emptyProduct(defaultType: string): Product {
 }
 
 function normalizeProduct(product: Product): Product {
+  const images = Array.isArray(product.images) ? product.images : [];
+  const main = Math.max(0, images.findIndex((image) => image.isMain));
   return {
     ...product,
     salePrice: product.salePrice ?? null,
-    images: Array.isArray(product.images) ? product.images : [],
+    images: images.map((image, index) => ({ ...image, isMain: index === main, order: index })),
     variants: Array.isArray(product.variants) && product.variants.length ? product.variants : [{ id: "default", stock: 0 }],
   };
 }
@@ -79,10 +84,12 @@ function safeSlug(input: string): string {
   const s = input
     .trim()
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9-]/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
-  return s || "product";
+  return s;
 }
 
 function totalStock(product: Product): number {
@@ -124,14 +131,21 @@ function issueTone(issue: string): string {
 function validateDraft(draft: Product): string[] {
   const errors: string[] = [];
   const slug = draft.slug.trim();
-  if (slug.length < 2) errors.push("El slug es obligatorio.");
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) errors.push("El slug debe estar en kebab-case.");
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test((draft.productType ?? "").trim())) errors.push("El tipo debe estar en kebab-case.");
-  if (needsAudienceByType(draft.productType) && !draft.audience) errors.push("Elige publico objetivo.");
+  if (slug.length < 2 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) errors.push("El enlace debe tener al menos 2 letras o números, separados por guiones.");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test((draft.productType ?? "").trim())) errors.push("Elige un tipo de producto válido.");
+  if (needsAudienceByType(draft.productType) && !draft.audience) errors.push("Elige el público del producto.");
   if ((draft.name ?? "").trim().length < 2) errors.push("El nombre es obligatorio.");
-  if (!Number.isFinite(Number(draft.price)) || Number(draft.price) < 0) errors.push("El precio debe ser valido.");
-  if (draft.onSale && (draft.salePrice === null || Number(draft.salePrice) <= 0)) errors.push("Agrega un precio de oferta valido.");
+  if (!Number.isFinite(Number(draft.price)) || Number(draft.price) < 0) errors.push("El precio debe ser un número mayor o igual a cero.");
+  if (draft.onSale && (draft.salePrice === null || !Number.isFinite(Number(draft.salePrice)) || Number(draft.salePrice) <= 0 || Number(draft.salePrice) >= Number(draft.price))) errors.push("El precio de oferta debe ser mayor a cero y menor al precio regular.");
   if (!Array.isArray(draft.variants) || draft.variants.length === 0) errors.push("Agrega al menos una variante.");
+  const variantIds = new Set<string>();
+  for (const [index, variant] of (draft.variants ?? []).entries()) {
+    if (!variant.id.trim()) errors.push(`Variante ${index + 1}: falta el identificador.`);
+    else if (variantIds.has(variant.id.trim())) errors.push(`Variante ${index + 1}: el identificador está repetido.`);
+    variantIds.add(variant.id.trim());
+    if (!Number.isSafeInteger(Number(variant.stock)) || Number(variant.stock) < 0) errors.push(`Variante ${index + 1}: el stock debe ser un número entero mayor o igual a cero.`);
+  }
+  if (draft.images.some((image) => !/^https?:\/\//i.test(image.url.trim()))) errors.push("Cada imagen debe tener una dirección web válida.");
   return errors;
 }
 
@@ -226,10 +240,16 @@ export default function ProductsClient({
   initialProducts,
   initialProductTypes,
   initialSelectedId,
+  previousPage,
+  nextPage,
+  loadError,
 }: {
   initialProducts: Product[];
   initialProductTypes: { key: string; label: string }[];
   initialSelectedId?: string;
+  previousPage?: string;
+  nextPage?: string;
+  loadError?: string;
 }) {
   const fallbackTypes = useMemo(
     () =>
@@ -259,21 +279,34 @@ export default function ProductsClient({
     return selected ? normalizeProduct(selected) : emptyProduct(fallbackTypes[0]?.key ?? "zapatillas");
   });
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [busyDelete, setBusyDelete] = useState(false);
   const [busyBulkTrash, setBusyBulkTrash] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const selected = useMemo(() => products.find((p) => p.id === selectedId) ?? null, [products, selectedId]);
+  const baseline = selected ?? emptyProduct(fallbackTypes[0]?.key ?? "zapatillas");
+  const hasUnsavedChanges = editorOpen && JSON.stringify(draft) !== JSON.stringify(baseline);
+  const editorLocked = busy || uploading || busyDelete;
+  const inTrash = Boolean(selected?.deletedAtMs);
+
+  useUnsavedChanges(hasUnsavedChanges);
+  useEffect(() => {
+    if (!editorOpen) return;
+    const heading = document.getElementById("product-editor-heading");
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: "start" });
+  }, [editorOpen]);
   const activeProducts = useMemo(() => products.filter((p) => !p.deletedAtMs), [products]);
   const trashedProducts = useMemo(() => products.filter((p) => !!p.deletedAtMs), [products]);
   const baseProducts = viewMode === "active" ? activeProducts : trashedProducts;
-  const activeVisibleCount = useMemo(() => activeProducts.filter((p) => p.status === "active").length, [activeProducts]);
-  const archivedCount = useMemo(() => activeProducts.filter((p) => p.status === "archived").length, [activeProducts]);
-  const noImageCount = useMemo(() => activeProducts.filter((p) => p.images.length === 0).length, [activeProducts]);
-  const noStockCount = useMemo(() => activeProducts.filter((p) => totalStock(p) <= 0).length, [activeProducts]);
-  const lowStockCount = useMemo(() => activeProducts.filter((p) => totalStock(p) > 0 && totalStock(p) <= 3).length, [activeProducts]);
-  const incompleteCount = useMemo(() => activeProducts.filter(isIncomplete).length, [activeProducts]);
-  const onSaleCount = useMemo(() => activeProducts.filter((p) => p.onSale).length, [activeProducts]);
+  const activeVisibleCount = useMemo(() => baseProducts.filter((p) => p.status === "active").length, [baseProducts]);
+  const archivedCount = useMemo(() => baseProducts.filter((p) => p.status === "archived").length, [baseProducts]);
+  const noImageCount = useMemo(() => baseProducts.filter((p) => p.images.length === 0).length, [baseProducts]);
+  const noStockCount = useMemo(() => baseProducts.filter((p) => totalStock(p) <= 0).length, [baseProducts]);
+  const lowStockCount = useMemo(() => baseProducts.filter((p) => totalStock(p) > 0 && totalStock(p) <= 3).length, [baseProducts]);
+  const incompleteCount = useMemo(() => baseProducts.filter(isIncomplete).length, [baseProducts]);
+  const onSaleCount = useMemo(() => baseProducts.filter((p) => p.onSale).length, [baseProducts]);
   const draftStock = totalStock(draft);
   const draftIssues = productIssues(draft);
 
@@ -307,7 +340,7 @@ export default function ProductsClient({
       if (issueFilter === "on-sale" && !p.onSale) return false;
       if (issueFilter === "archived" && p.status !== "archived") return false;
       if (!token) return true;
-      return [p.slug, p.name, p.brand, p.category, p.productType, p.audience, String(p.price)].some((x) =>
+      return [p.slug, p.name, p.brand, p.category, p.productType, p.audience, String(p.price), ...p.variants.flatMap((variant) => [variant.id, variant.sku, variant.size, variant.color])].some((x) =>
         (x ?? "").toLowerCase().includes(token)
       );
     });
@@ -322,7 +355,6 @@ export default function ProductsClient({
   }, [baseProducts, issueFilter, query, sortMode, statusFilter, typeFilter]);
 
   const visibleProducts = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
-  const criticalProducts = useMemo(() => activeProducts.filter(isIncomplete).slice(0, 5), [activeProducts]);
 
   function resetFilters() {
     setQuery("");
@@ -333,12 +365,23 @@ export default function ProductsClient({
   }
 
   function applyIssueFilter(next: IssueFilter) {
-    if (next !== "archived") setViewMode("active");
     setIssueFilter(next);
     setVisibleCount(PAGE_SIZE);
   }
 
+  function discardChanges(): boolean {
+    return !hasUnsavedChanges || window.confirm("Tienes cambios sin guardar. ¿Quieres descartarlos?");
+  }
+
+  function closeEditor() {
+    if (editorLocked || !discardChanges()) return;
+    setEditorOpen(false);
+    setDraft(selected ? normalizeProduct(selected) : emptyProduct(fallbackTypes[0]?.key ?? "zapatillas"));
+    setMsg(null);
+  }
+
   function selectProduct(product: Product) {
+    if (editorLocked || !discardChanges()) return;
     setSelectedId(product.id);
     setDraft(normalizeProduct(product));
     setEditorTab("basic");
@@ -347,6 +390,7 @@ export default function ProductsClient({
   }
 
   function startNew() {
+    if (editorLocked || !discardChanges()) return;
     setSelectedId("");
     setDraft(emptyProduct(typeOptions[0]?.key ?? "zapatillas"));
     setEditorTab("basic");
@@ -355,7 +399,9 @@ export default function ProductsClient({
   }
 
   async function save() {
+    if (editorLocked || inTrash) return;
     const errs = validateDraft(draft);
+    if (!selectedId && products.some((product) => product.slug === draft.slug)) errs.push("Ya existe un producto con este enlace. Abre ese producto para editarlo o elige otro enlace.");
     if (errs.length) {
       setMsg(`Revisa estos campos:\n${errs.join("\n")}`);
       return;
@@ -364,6 +410,8 @@ export default function ProductsClient({
     setMsg(null);
     try {
       const payload = {
+        productId: selectedId || undefined,
+        expectedUpdatedAtMs: selected?.updatedAtMs ?? undefined,
         productType: draft.productType,
         audience: draft.audience,
         slug: draft.slug,
@@ -378,26 +426,38 @@ export default function ProductsClient({
         images: draft.images.map((x, idx) => ({ ...x, order: idx })),
         variants: draft.variants.map((v) => ({ ...v, stock: Number(v.stock) })),
       };
-      await apiPost("/api/admin/products/upsert", payload, { csrfCookieName: CSRF_COOKIE_NAME });
-      const nextItem = normalizeProduct({ ...draft, id: draft.slug });
+      const saved = await apiPost<{ productId: string; status: Product["status"]; updatedAtMs?: number }>("/api/admin/products/upsert", payload, { csrfCookieName: CSRF_COOKIE_NAME });
+      const nextItem = normalizeProduct({ ...draft, id: saved.productId, status: saved.status, updatedAtMs: saved.updatedAtMs ?? draft.updatedAtMs });
       setProducts((prev) => {
         const previousId = selectedId || draft.slug;
         const exists = prev.some((p) => p.id === previousId || p.id === draft.slug);
         if (exists) return prev.map((p) => (p.id === previousId || p.id === draft.slug ? nextItem : p));
         return [nextItem, ...prev];
       });
-      setSelectedId(draft.slug);
+      setSelectedId(saved.productId);
       setDraft(nextItem);
-      setMsg("Producto guardado correctamente.");
+      setMsg(draftStock <= 0 ? "Producto guardado. Queda oculto en la tienda hasta que tenga stock." : "Producto guardado correctamente.");
     } catch (e) {
       const m = e instanceof Error ? e.message : "Error";
-      setMsg(m === "VALIDATION_ERROR" ? "Error de validacion. Revisa tipo, slug, nombre, precio y variantes." : `Error: ${m}`);
+      const messages: Record<string, string> = {
+        VALIDATION_ERROR: "Error de validación. Revisa los datos, imágenes y variantes del producto.",
+        PRODUCT_ALREADY_EXISTS: "Error: ya existe un producto con este enlace. Elige otro enlace o abre el producto existente para editarlo.",
+        PRODUCT_CHANGED: "Error: este producto cambió desde que lo abriste. Conservamos tu borrador; copia los cambios que quieras mantener y recarga la página antes de guardar para no sobrescribir el inventario actualizado.",
+        PRODUCT_NOT_FOUND: "Error: este producto ya no existe. Conservamos tu borrador para que puedas copiar los datos.",
+        PRODUCT_IN_TRASH: "Error: este producto se movió a la papelera. Conservamos tu borrador; recarga la página y restáuralo antes de editarlo.",
+      };
+      setMsg(messages[m] ?? `Error: ${m}`);
     } finally {
       setBusy(false);
     }
   }
 
   async function onPickImage(file: File) {
+    if (editorLocked || inTrash) return;
+    if (!file.type.startsWith("image/")) { setMsg("Error: selecciona un archivo de imagen."); return; }
+    if (file.size > 15 * 1024 * 1024) { setMsg("Error: la imagen no debe superar 15 MB."); return; }
+    if (draft.images.length >= 10) { setMsg("Error: puedes agregar hasta 10 imágenes por producto."); return; }
+    setUploading(true);
     setMsg(null);
     try {
       const slug = safeSlug(draft.slug || draft.name);
@@ -423,25 +483,28 @@ export default function ProductsClient({
         ...d,
         images: [...d.images, { url, isMain: d.images.length === 0, order: d.images.length, alt: d.name || d.slug }],
       }));
-      setMsg(`Imagen subida (${width}x${height}, ${sizeKB}KB).${converted ? " Convertida a WebP." : ""}`);
+      setMsg(`Imagen agregada${converted ? ` (${width} × ${height}, ${sizeKB} KB)` : ""}. Guarda el producto para conservarla.`);
     } catch (e) {
       setMsg(`Error de imagen: ${e instanceof Error ? e.message : "No se pudo subir"}`);
+    } finally {
+      setUploading(false);
     }
   }
 
   async function deleteSelected() {
-    if (!selected) return;
+    if (!selected || editorLocked || !discardChanges()) return;
     if (selected.status !== "archived") {
       setMsg("Para mover a papelera, primero cambia el estado a Archivado y guarda.");
       return;
     }
-    if (!window.confirm(`Mover producto ${selected.slug} a papelera?`)) return;
+    if (!window.confirm(`¿Mover «${selected.name || selected.slug}» a la papelera? Podrás restaurarlo después.`)) return;
     setBusyDelete(true);
     setMsg(null);
     try {
       await apiPost("/api/admin/products/delete", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
       setProducts((prev) => prev.map((p) => (p.id === selected.id ? { ...p, deletedAtMs: Date.now() } : p)));
-      startNew();
+      setEditorOpen(false);
+      setSelectedId("");
       setMsg(`Producto ${selected.slug} enviado a papelera.`);
     } catch (e) {
       setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`);
@@ -459,8 +522,8 @@ export default function ProductsClient({
     setBusyDelete(true);
     setMsg(null);
     try {
-      await apiPost("/api/admin/products/restore", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
-      const restored = { ...selected, deletedAtMs: null };
+      const result = await apiPost<{ updatedAtMs: number }>("/api/admin/products/restore", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
+      const restored = { ...selected, deletedAtMs: null, updatedAtMs: result.updatedAtMs };
       setProducts((prev) => prev.map((p) => (p.id === selected.id ? restored : p)));
       setDraft(restored);
       setMsg(`Producto ${selected.slug} restaurado.`);
@@ -482,7 +545,8 @@ export default function ProductsClient({
     try {
       await apiPost("/api/admin/products/purge", { productId: selected.id }, { csrfCookieName: CSRF_COOKIE_NAME });
       setProducts((prev) => prev.filter((p) => p.id !== selected.id));
-      startNew();
+      setEditorOpen(false);
+      setSelectedId("");
       setMsg(`Producto ${selected.slug} eliminado definitivamente.`);
     } catch (e) {
       setMsg(`Error: ${e instanceof Error ? e.message : "Error"}`);
@@ -492,16 +556,16 @@ export default function ProductsClient({
   }
 
   async function bulkTrashArchived() {
-    if (!window.confirm("Mover a papelera los productos archivados del filtro actual?")) return;
+    if (!window.confirm(`¿Enviar a la papelera hasta 250 productos archivados${typeFilter ? ` del tipo «${typeOptions.find((type) => type.key === typeFilter)?.label ?? typeFilter}»` : " de todo el catálogo"}? Esta acción abarca otras páginas y no aplica la búsqueda ni los filtros de revisión.`)) return;
     setBusyBulkTrash(true);
     setMsg(null);
     try {
-      const targetIds = filteredProducts.filter((p) => p.status === "archived").map((p) => p.id);
       const res = (await apiPost(
         "/api/admin/products/bulk-delete",
-        { status: "archived", productType: typeFilter || undefined, limit: 500 },
+        { status: "archived", productType: typeFilter || undefined, limit: 250 },
         { csrfCookieName: CSRF_COOKIE_NAME }
-      )) as { processed?: number };
+      )) as { processed: number; processedIds: string[] };
+      const targetIds = res.processedIds;
       setProducts((prev) => prev.map((p) => (targetIds.includes(p.id) ? { ...p, deletedAtMs: Date.now() } : p)));
       if (selectedId && targetIds.includes(selectedId)) startNew();
       setMsg(`Productos enviados a papelera: ${res?.processed ?? targetIds.length}.`);
@@ -513,16 +577,16 @@ export default function ProductsClient({
   }
 
   async function bulkPurgeTrash() {
-    if (!window.confirm("Eliminar definitivamente los productos en papelera?")) return;
+    if (!window.confirm("¿Eliminar definitivamente hasta 250 productos de la papelera, incluidas otras páginas? Esta acción no se puede deshacer.")) return;
     setBusyBulkTrash(true);
     setMsg(null);
     try {
-      const targetIds = trashedProducts.map((p) => p.id);
       const res = (await apiPost(
         "/api/admin/products/bulk-purge",
-        { olderThanDays: 0, limit: 500 },
+        { olderThanDays: 0, limit: 250 },
         { csrfCookieName: CSRF_COOKIE_NAME }
-      )) as { processed?: number };
+      )) as { processed: number; processedIds: string[] };
+      const targetIds = res.processedIds;
       setProducts((prev) => prev.filter((p) => !targetIds.includes(p.id)));
       if (selectedId && targetIds.includes(selectedId)) startNew();
       setMsg(`Productos eliminados definitivamente: ${res?.processed ?? targetIds.length}.`);
@@ -543,101 +607,28 @@ export default function ProductsClient({
             <p className="text-xs font-black uppercase tracking-wide text-[var(--brand-700)]">Catálogo</p>
             <h1 className="mt-1 text-2xl font-black text-slate-950">Productos</h1>
             <p className="mt-1 text-sm font-medium text-slate-500">
-              {activeProducts.length} productos activos. Busca, filtra y abre uno solo cuando necesites editarlo.
+              Organiza el catálogo, las fotos y las variantes de tus productos.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={startNew} variant="primary" size="md">
               Agregar producto
             </Button>
-            {viewMode === "active" ? (
-              <Button type="button" variant="secondary" size="md" onClick={() => void bulkTrashArchived()} disabled={busyBulkTrash}>
-                {busyBulkTrash ? "Procesando..." : "Enviar archivados"}
-              </Button>
-            ) : (
-              <Button type="button" variant="destructive" size="md" onClick={() => void bulkPurgeTrash()} disabled={busyBulkTrash}>
-                {busyBulkTrash ? "Procesando..." : "Vaciar papelera"}
-              </Button>
-            )}
           </div>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-          <button type="button" onClick={() => applyIssueFilter("needs-work")} className="admin-product-summary admin-product-summary--critical">Corregir {incompleteCount}</button>
-          <button type="button" onClick={() => applyIssueFilter("low-stock")} className="admin-product-summary admin-product-summary--warning">Reponer {lowStockCount}</button>
-          <button type="button" onClick={() => applyIssueFilter("no-image")} className="admin-product-summary">Sin imagen {noImageCount}</button>
-          <button type="button" onClick={() => { setViewMode("trash"); resetFilters(); }} className="admin-product-summary">Papelera {trashedProducts.length}</button>
         </div>
       </section>}
 
       {msg && <Toast msg={msg} onClose={() => setMsg(null)} />}
-
-      <section className="hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-xs font-black uppercase tracking-wide text-slate-500">Control de catálogo</p>
-            <h2 className="mt-1 text-lg font-black text-slate-950">
-              {incompleteCount > 0 ? "Corrige primero lo que bloquea la venta" : "Catalogo sin bloqueos graves"}
-            </h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">
-              Los productos con solo bajo stock no se mezclan aqui; se revisan aparte para no confundir prioridades.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => applyIssueFilter("needs-work")} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black text-rose-700 hover:bg-rose-100">
-              Corregir graves ({incompleteCount})
-            </button>
-            <button type="button" onClick={() => applyIssueFilter("low-stock")} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 hover:bg-amber-100">
-              Reponer bajo stock ({lowStockCount})
-            </button>
-            <button type="button" onClick={() => applyIssueFilter("no-image")} className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100">
-              Subir imagenes ({noImageCount})
-            </button>
-          </div>
-        </div>
-
-        {criticalProducts.length > 0 ? (
-          <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
-            <div className="grid grid-cols-[1fr_150px_130px] bg-slate-50 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-slate-500">
-              <span>Producto</span>
-              <span>Problema</span>
-              <span className="text-right">Accion</span>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {criticalProducts.map((p) => {
-                const mainIssue = productIssues(p).find((issue) => issue !== "Bajo stock") ?? "Revisar";
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => selectProduct(p)}
-                    className={`grid w-full grid-cols-[1fr_150px_130px] items-center gap-3 px-3 py-3 text-left transition hover:bg-slate-50 ${selectedId === p.id ? "bg-emerald-50" : "bg-white"}`}
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-black text-slate-950">{p.name || p.slug}</span>
-                      <span className="block text-xs font-semibold text-slate-500">Stock {totalStock(p)} / {p.images.length} imagen(es)</span>
-                    </span>
-                    <span className={`w-fit rounded-full border px-2 py-0.5 text-[11px] font-black ${issueTone(mainIssue)}`}>{mainIssue}</span>
-                    <span className="text-right text-xs font-black text-[var(--brand-700)]">{selectedId === p.id ? "Editando" : "Abrir editor"}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-            No hay productos sin imagen, sin stock, sin precio o sin variantes. Solo queda mantenimiento normal de inventario.
-          </div>
-        )}
-      </section>
+      {loadError && <div role="alert" className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{loadError} <Link href="/dashboard/products" className="font-semibold underline">Volver al catálogo</Link></div>}
 
       {!editorOpen && <div className="admin-catalog-workspace grid gap-4">
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 bg-slate-50/70 p-4">
+        <div className="admin-product-filters border-b border-slate-200 bg-slate-50/70 p-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-sm font-black text-slate-950">Explorar productos</p>
+              <p className="text-sm font-black text-slate-950">{viewMode === "trash" ? "Papelera" : "Catálogo"}</p>
               <p className="mt-1 text-xs font-semibold text-slate-500">
-                {filteredProducts.length} de {baseProducts.length} productos visibles con los filtros actuales.
+                {filteredProducts.length} de {baseProducts.length} productos de esta página. {activeVisibleCount} publicados · {archivedCount} archivados.
               </p>
             </div>
             {(query || typeFilter || statusFilter || issueFilter !== "all") && (
@@ -653,8 +644,8 @@ export default function ProductsClient({
 
           <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(280px,1fr)_180px_180px_180px]">
             <label className="grid gap-1 text-xs font-black text-slate-600">
-              Buscar
-              <Input value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(PAGE_SIZE); }} placeholder="Nombre, marca, slug o precio" uiSize="md" />
+              Buscar en esta página
+              <Input type="search" value={query} onChange={(e) => { setQuery(e.target.value); setVisibleCount(PAGE_SIZE); }} placeholder="Nombre, marca, enlace o código" uiSize="md" />
             </label>
             <label className="grid gap-1 text-xs font-black text-slate-600">
               Tipo
@@ -690,14 +681,16 @@ export default function ProductsClient({
           <div className="mt-4 inline-grid grid-cols-2 rounded-lg border border-slate-200 bg-white p-1">
             <button
               type="button"
-              onClick={() => setViewMode("active")}
+              onClick={() => { setViewMode("active"); resetFilters(); }}
+              aria-pressed={viewMode === "active"}
               className={`rounded-md px-4 py-2 text-xs font-black transition ${viewMode === "active" ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:text-slate-950"}`}
             >
-              Catalogo ({activeProducts.length})
+              Catálogo ({activeProducts.length})
             </button>
             <button
               type="button"
-              onClick={() => setViewMode("trash")}
+              onClick={() => { setViewMode("trash"); resetFilters(); }}
+              aria-pressed={viewMode === "trash"}
               className={`rounded-md px-4 py-2 text-xs font-black transition ${viewMode === "trash" ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:text-slate-950"}`}
             >
               Papelera ({trashedProducts.length})
@@ -705,7 +698,7 @@ export default function ProductsClient({
           </div>
 
           <div className="mt-4 border-t border-slate-200 pt-4">
-            <p className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">Filtros utiles</p>
+            <p className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">Revisión rápida</p>
             <div className="flex flex-wrap gap-2">
               {[
                 ["all", `Todos (${baseProducts.length})`],
@@ -720,6 +713,7 @@ export default function ProductsClient({
                   key={key}
                   type="button"
                   onClick={() => applyIssueFilter(key as IssueFilter)}
+                  aria-pressed={issueFilter === key}
                   className={`rounded-full border px-3 py-1.5 text-xs font-black transition ${
                     issueFilter === key
                       ? "border-slate-950 bg-slate-950 text-white shadow-sm"
@@ -734,23 +728,26 @@ export default function ProductsClient({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-sm">
+          <table className="admin-product-table w-full border-separate border-spacing-0 text-sm">
+            <caption className="sr-only">Productos de {viewMode === "trash" ? "la papelera" : "esta página del catálogo"}</caption>
             <thead className="bg-white text-left text-[11px] font-black uppercase tracking-wide text-slate-500 shadow-[inset_0_-1px_0_#e2e8f0]">
               <tr>
                 <th className="px-4 py-3">Producto</th>
                 <th className="hidden px-3 py-3 md:table-cell">Categoria</th>
                 <th className="hidden px-3 py-3 lg:table-cell">Estado</th>
-                <th className="px-3 py-3 text-right">Stock</th>
+                <th className="hidden px-3 py-3 text-right sm:table-cell">Stock</th>
                 <th className="hidden px-3 py-3 xl:table-cell">Revision</th>
-                <th className="px-3 py-3 text-right">Precio</th>
-                <th className="px-4 py-3 text-right">Edicion</th>
+                <th className="hidden px-3 py-3 text-right sm:table-cell">Precio</th>
+                <th className="px-4 py-3 text-right">Acción</th>
               </tr>
             </thead>
             <tbody>
               {filteredProducts.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">
-                    No hay productos con esos filtros.
+                    <p className="font-semibold text-slate-950">{baseProducts.length === 0 ? viewMode === "trash" ? "No hay productos en la papelera de esta página." : "Todavía no hay productos en esta página." : "No encontramos productos con esos filtros."}</p>
+                    <p className="mt-1">{baseProducts.length === 0 ? "Puedes agregar un producto o explorar las otras páginas del catálogo." : "Prueba otra búsqueda o limpia los filtros."}</p>
+                    {(query || typeFilter || statusFilter || issueFilter !== "all") && <button type="button" onClick={resetFilters} className="mt-3 font-semibold text-[var(--brand-700)] underline">Limpiar filtros</button>}
                   </td>
                 </tr>
               )}
@@ -760,7 +757,7 @@ export default function ProductsClient({
                 const issues = productIssues(p);
                 return (
                   <tr key={p.id} className={`transition ${isSelected ? "bg-emerald-50" : "bg-white hover:bg-slate-50"}`}>
-                    <td className="border-b border-slate-100 px-4 py-3">
+                    <td className="max-w-0 border-b border-slate-100 px-4 py-3">
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                           {mainImage(p) ? (
@@ -780,6 +777,8 @@ export default function ProductsClient({
                           <p className="truncate text-sm font-black text-slate-950">{p.name || p.slug}</p>
                           <p className="mt-1 truncate text-xs font-semibold text-slate-500">{p.brand || "Sin marca"}</p>
                           <p className="mt-0.5 truncate font-mono text-[11px] text-slate-400">{p.slug}</p>
+                          <p className="mt-1 text-xs text-slate-600 sm:hidden">{money(p.onSale ? p.salePrice : p.price)} · {stock} disponibles</p>
+                          <p className={`mt-1 text-[11px] font-semibold lg:hidden ${p.status === "active" ? "text-emerald-700" : "text-slate-500"}`}>{p.status === "active" ? "Publicado" : "Archivado"}</p>
                         </div>
                       </div>
                     </td>
@@ -792,7 +791,7 @@ export default function ProductsClient({
                         {p.status === "active" ? "Activo" : "Archivado"}
                       </span>
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-3 text-right">
+                    <td className="hidden border-b border-slate-100 px-3 py-3 text-right sm:table-cell">
                       <span className={`inline-flex min-w-10 justify-center rounded-lg px-2.5 py-1.5 text-sm font-black tabular-nums ${stock <= 3 ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-800"}`}>
                         {stock}
                       </span>
@@ -815,13 +814,13 @@ export default function ProductsClient({
                         </div>
                       )}
                     </td>
-                    <td className="border-b border-slate-100 px-3 py-3 text-right">
+                    <td className="hidden border-b border-slate-100 px-3 py-3 text-right sm:table-cell">
                       <p className="font-black tabular-nums text-slate-950">{money(p.onSale ? p.salePrice : p.price)}</p>
                       {p.onSale && <p className="text-[11px] font-black text-rose-600">Oferta</p>}
                     </td>
                     <td className="border-b border-slate-100 px-4 py-3 text-right">
-                      <button type="button" onClick={() => selectProduct(p)} className={`inline-flex min-w-[76px] justify-center rounded-lg px-3 py-2 text-xs font-black transition hover:brightness-95 ${isSelected ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-600"}`}>
-                        {isSelected ? "Editando" : "Editar"}
+                      <button type="button" aria-label={`${p.deletedAtMs ? "Ver" : "Editar"} ${p.name || p.slug}`} onClick={() => selectProduct(p)} className={`inline-flex min-h-11 min-w-[64px] justify-center items-center rounded-lg px-3 py-2 text-xs font-black transition hover:brightness-95 ${isSelected ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-600"}`}>
+                        {p.deletedAtMs ? "Ver" : "Editar"}
                       </button>
                     </td>
                   </tr>
@@ -833,7 +832,7 @@ export default function ProductsClient({
         {filteredProducts.length > PAGE_SIZE && (
           <div className="flex flex-col gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold text-slate-500">
-              Mostrando {Math.min(visibleCount, filteredProducts.length)} de {filteredProducts.length}. Carga por bloques para mantener el admin rapido.
+              Mostrando {Math.min(visibleCount, filteredProducts.length)} de {filteredProducts.length} resultados de esta página.
             </p>
             <div className="flex gap-2">
               {visibleCount > PAGE_SIZE && (
@@ -851,82 +850,77 @@ export default function ProductsClient({
                   onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
                   className="h-9 rounded-lg border border-slate-950 bg-slate-950 px-3 text-xs font-black text-white hover:bg-slate-800"
                 >
-                  Cargar 12 mas
+                  Ver 12 más
                 </button>
               )}
             </div>
           </div>
         )}
+        {(previousPage || nextPage) && <nav aria-label="Páginas del catálogo" className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm">
+          <p className="text-xs text-slate-500">Los filtros se aplican a los productos de esta página.</p>
+          <div className="flex gap-3">
+            {previousPage && <Link href={previousPage} className="rounded border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">← Más recientes</Link>}
+            {nextPage && <Link href={nextPage} className="rounded border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Más antiguos →</Link>}
+          </div>
+        </nav>}
+        <details className="border-t border-slate-200 px-4 py-3 text-xs text-slate-500">
+          <summary className="cursor-pointer font-semibold">Acciones de limpieza</summary>
+          <p className="mt-3 max-w-2xl">Hasta 250 productos por operación, incluidas otras páginas del catálogo. Revisa el aviso de confirmación antes de continuar.</p>
+          <div className="mt-3">{viewMode === "active" ? <Button type="button" variant="secondary" size="sm" onClick={() => void bulkTrashArchived()} disabled={busyBulkTrash}>{busyBulkTrash ? "Procesando…" : "Enviar archivados a la papelera"}</Button> : <Button type="button" variant="destructive" size="sm" onClick={() => void bulkPurgeTrash()} disabled={busyBulkTrash}>{busyBulkTrash ? "Procesando…" : "Eliminar productos de la papelera"}</Button>}</div>
+        </details>
       </section>
       </div>}
 
-      {editorOpen && <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 p-4">
+      {editorOpen && <section className="admin-product-editor rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="admin-product-editor__header border-b border-slate-200 p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <p className="text-xs font-black uppercase tracking-wide text-slate-500">{selectedId ? "Editor del producto seleccionado" : "Nuevo producto"}</p>
-              <h2 className="mt-1 truncate text-2xl font-black text-slate-950">{draft.name || draft.slug || "Producto sin nombre"}</h2>
+              <h1 id="product-editor-heading" tabIndex={-1} className="mt-1 text-2xl font-black text-slate-950">{draft.name || draft.slug || "Producto sin nombre"}</h1>
               <p className="mt-1 text-sm font-medium text-slate-500">
                 {draft.productType} / {draft.status === "active" ? "visible en tienda" : "oculto o archivado"} / stock {draftStock}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={() => setEditorOpen(false)} variant="ghost" size="md">Cerrar</Button>
-              <Button type="button" onClick={save} disabled={busy} variant="primary" size="md">{busy ? "Guardando..." : "Guardar"}</Button>
-              {viewMode === "active" ? (
-                <Button type="button" onClick={() => void deleteSelected()} disabled={busyDelete || !selected} variant="secondary" size="md">
+              <Button type="button" onClick={closeEditor} disabled={editorLocked} variant="secondary" size="md">← Catálogo</Button>
+              {!inTrash ? (
+                <Button type="button" onClick={() => void deleteSelected()} disabled={editorLocked || !selected} variant="secondary" size="md">
                   {busyDelete ? "Procesando..." : "Mover a papelera"}
                 </Button>
               ) : (
                 <>
-                  <Button type="button" onClick={() => void restoreSelected()} disabled={busyDelete || !selected} variant="secondary" size="md">Restaurar</Button>
-                  <Button type="button" onClick={() => void purgeSelected()} disabled={busyDelete || !selected} variant="destructive" size="md">Eliminar</Button>
+                  <Button type="button" onClick={() => void restoreSelected()} disabled={editorLocked || !selected} variant="secondary" size="md">Restaurar</Button>
+                  <Button type="button" onClick={() => void purgeSelected()} disabled={editorLocked || !selected} variant="destructive" size="md">Eliminar</Button>
                 </>
               )}
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2 rounded-lg bg-slate-100 p-1">
+          <div className="admin-product-editor__tabs mt-4 grid grid-cols-3 gap-2 rounded-lg bg-slate-100 p-1" role="group" aria-label="Secciones del producto">
             {[
               ["basic", "Datos"],
-              ["media", "Imagenes"],
+              ["media", "Imágenes"],
               ["inventory", "Inventario"],
             ].map(([key, label]) => (
-              <button key={key} type="button" onClick={() => setEditorTab(key as EditorTab)} className={`rounded-md px-3 py-2 text-sm font-black transition ${editorTab === key ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-900"}`}>
+              <button key={key} type="button" aria-pressed={editorTab === key} onClick={() => setEditorTab(key as EditorTab)} className={`rounded-md px-3 py-2 text-sm font-black transition ${editorTab === key ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-900"}`}>
                 {label}
               </button>
             ))}
           </div>
 
-          <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_260px]">
-            <div className={`rounded-xl border p-3 ${draftIssues.length ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>
-              <p className={`text-xs font-black uppercase tracking-wide ${draftIssues.length ? "text-amber-700" : "text-emerald-700"}`}>
-                {draftIssues.length ? "Falta corregir" : "Producto listo"}
-              </p>
-              {draftIssues.length ? (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {draftIssues.map((issue) => (
-                    <span key={issue} className={`rounded-full border px-2 py-0.5 text-[11px] font-black ${issueTone(issue)}`}>
-                      {issue}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-1 text-sm font-semibold text-emerald-800">Tiene datos, imagen, precio y stock suficiente para vender.</p>
-              )}
+          {inTrash ? (
+            <p className="mt-4 border-l-2 border-[var(--brand-500)] bg-[var(--brand-50)] px-3 py-2 text-sm text-[var(--brand-700)]">Este producto está en la papelera. Restáuralo para volver a editarlo.</p>
+          ) : draftIssues.length > 0 ? (
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="Revisión del producto">
+              <span className="font-semibold">Por revisar:</span>
+              {draftIssues.map((issue) => <span key={issue} className={`rounded border px-2 py-1 ${issueTone(issue)}`}>{issue}</span>)}
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-black uppercase tracking-wide text-slate-500">Ruta recomendada</p>
-              <ol className="mt-2 grid gap-1 text-xs font-semibold text-slate-600">
-                <li className={editorTab === "basic" ? "text-slate-950" : ""}>1. Datos y precio</li>
-                <li className={editorTab === "media" ? "text-slate-950" : ""}>2. Imagen principal</li>
-                <li className={editorTab === "inventory" ? "text-slate-950" : ""}>3. Stock por variante</li>
-              </ol>
-            </div>
-          </div>
+          ) : <p className="mt-4 text-sm text-emerald-700">Producto completo: datos, imágenes, precio y stock disponibles.</p>}
         </div>
 
-        <div className="p-4">
+        <div className="admin-product-editor__body p-4">
+          <fieldset disabled={editorLocked || inTrash} className="min-w-0 border-0 p-0">
+
           {editorTab === "basic" && (
             <div className="grid gap-4">
               <Panel title="Datos comerciales" subtitle="Define como aparece y se vende el producto.">
@@ -934,11 +928,12 @@ export default function ProductsClient({
                   <label className="grid gap-1 text-xs font-bold text-slate-600 lg:col-span-2">
                     Nombre
                     <Input
+                      maxLength={150}
                       value={draft.name}
                       onChange={(e) =>
                         setDraft((d) => {
                           const name = e.target.value;
-                          const canAutofillSlug = !d.slug || d.slug === safeSlug(d.name || "");
+                          const canAutofillSlug = !selectedId && (!d.slug || d.slug === safeSlug(d.name || ""));
                           return { ...d, name, slug: canAutofillSlug ? safeSlug(name) : d.slug };
                         })
                       }
@@ -963,11 +958,11 @@ export default function ProductsClient({
                 <div className="mt-3 grid gap-3 lg:grid-cols-4">
                   <label className="grid gap-1 text-xs font-bold text-slate-600">
                     Marca
-                    <Input value={draft.brand} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} placeholder="Nike, Adidas..." />
+                    <Input maxLength={80} value={draft.brand} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} placeholder="Nike, Adidas..." />
                   </label>
                   <label className="grid gap-1 text-xs font-bold text-slate-600">
                     Categoria interna
-                    <Input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} placeholder="Running, Casual..." />
+                    <Input maxLength={80} value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} placeholder="Running, Casual..." />
                   </label>
                   <label className="grid gap-1 text-xs font-bold text-slate-600">
                     Publico
@@ -976,14 +971,16 @@ export default function ProductsClient({
                     </Select>
                   </label>
                   <label className="grid gap-1 text-xs font-bold text-slate-600">
-                    Slug
-                    <Input value={draft.slug} onChange={(e) => setDraft((d) => ({ ...d, slug: safeSlug(e.target.value) }))} placeholder="nike-air-max" />
+                    Enlace del producto
+                    <Input disabled={Boolean(selectedId)} maxLength={80} value={draft.slug} onChange={(e) => setDraft((d) => ({ ...d, slug: safeSlug(e.target.value) }))} placeholder="nike-air-max" />
+                    <span className="text-[11px] font-normal text-slate-500">{selectedId ? "El enlace se conserva al editar." : "Se genera a partir del nombre; puedes ajustarlo."}</span>
                   </label>
                 </div>
 
                 <label className="mt-3 grid gap-1 text-xs font-bold text-slate-600">
                   Descripcion
                   <textarea
+                    maxLength={4000}
                     value={draft.description}
                     onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
                     className="min-h-[96px] w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] focus:border-[var(--brand-400)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-400)]/25"
@@ -1064,13 +1061,13 @@ export default function ProductsClient({
                         <div className="grid h-full place-items-center text-xs font-bold text-slate-300">IMG</div>
                       )}
                     </div>
-                    <Input value={img.url} onChange={(e) => setDraft((d) => { const copy = [...d.images]; const current = copy[idx]; if (!current) return d; copy[idx] = { ...current, url: e.target.value }; return { ...d, images: copy }; })} placeholder="URL de imagen" uiSize="sm" />
+                    <label className="grid gap-1 text-xs font-semibold text-slate-600">Enlace de imagen<Input value={img.url} onChange={(e) => setDraft((d) => { const copy = [...d.images]; const current = copy[idx]; if (!current) return d; copy[idx] = { ...current, url: e.target.value }; return { ...d, images: copy }; })} placeholder="https://…" uiSize="sm" /></label>
                     <label className="inline-flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
-                      <input type="checkbox" checked={img.isMain} onChange={() => setDraft((d) => ({ ...d, images: d.images.map((x, i) => ({ ...x, isMain: i === idx })) }))} className="h-4 w-4 rounded border-slate-300" />
+                      <input type="radio" name="product-main-image" checked={img.isMain} onChange={() => setDraft((d) => ({ ...d, images: d.images.map((x, i) => ({ ...x, isMain: i === idx })) }))} className="h-4 w-4 border-slate-300" />
                       Principal
                     </label>
-                    <Input value={img.alt ?? ""} onChange={(e) => setDraft((d) => { const copy = [...d.images]; const current = copy[idx]; if (!current) return d; copy[idx] = { ...current, alt: e.target.value }; return { ...d, images: copy }; })} placeholder="Alt SEO" uiSize="sm" />
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setDraft((d) => ({ ...d, images: d.images.filter((_, i) => i !== idx).map((x, order) => ({ ...x, order, isMain: order === 0 ? true : x.isMain })) }))}>
+                    <label className="grid gap-1 text-xs font-semibold text-slate-600">Descripción de imagen<Input value={img.alt ?? ""} onChange={(e) => setDraft((d) => { const copy = [...d.images]; const current = copy[idx]; if (!current) return d; copy[idx] = { ...current, alt: e.target.value }; return { ...d, images: copy }; })} placeholder="Vista lateral del producto" uiSize="sm" /></label>
+                    <Button type="button" aria-label={`Quitar imagen ${idx + 1}`} variant="ghost" size="sm" onClick={() => setDraft((d) => normalizeProduct({ ...d, images: d.images.filter((_, i) => i !== idx) }))}>
                       Quitar
                     </Button>
                   </div>
@@ -1086,27 +1083,33 @@ export default function ProductsClient({
                   <Metric label="Variantes" value={draft.variants.length} />
                   <Metric label="Stock total" value={draftStock} tone={draftStock <= 3 ? "rose" : "green"} />
                 </div>
-                <Button type="button" variant="secondary" size="sm" onClick={() => setDraft((d) => ({ ...d, variants: [...d.variants, { id: `v${d.variants.length + 1}`, stock: 0 }] }))}>
+                <Button type="button" variant="secondary" size="sm" disabled={draft.variants.length >= 50} onClick={() => setDraft((d) => ({ ...d, variants: [...d.variants, { id: `v-${crypto.randomUUID().slice(0, 12)}`, stock: 0 }] }))}>
                   Agregar variante
                 </Button>
               </div>
 
               <div className="grid gap-2">
                 {draft.variants.map((v, idx) => (
-                  <div key={`${v.id}-${idx}`} className={`grid gap-2 rounded-lg border p-2 lg:grid-cols-[1fr_90px_110px_1fr_110px_90px] lg:items-center ${Number(v.stock) <= 0 ? "border-rose-200 bg-rose-50/60" : "border-slate-200 bg-slate-50"}`}>
-                    <Input value={v.id} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, id: e.target.value } : x)) }))} placeholder="ID" uiSize="sm" />
-                    <Input value={v.size ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, size: e.target.value || undefined } : x)) }))} placeholder="Talla" uiSize="sm" />
-                    <Input value={v.color ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, color: e.target.value || undefined } : x)) }))} placeholder="Color" uiSize="sm" />
-                    <Input value={v.sku ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, sku: e.target.value || undefined } : x)) }))} placeholder="SKU" uiSize="sm" />
-                    <Input type="number" min="0" value={v.stock} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => (i === idx ? { ...x, stock: Number(e.target.value) } : x)) }))} placeholder="Stock" uiSize="sm" />
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setDraft((d) => ({ ...d, variants: d.variants.filter((_, i) => i !== idx) }))}>
-                      Quitar
-                    </Button>
-                  </div>
+                  <fieldset key={idx} className="admin-product-variant grid grid-cols-2 gap-3 p-3 lg:grid-cols-[1fr_1fr_1.3fr_110px_auto] lg:items-end">
+                    <legend className="px-1 text-xs font-semibold text-slate-600">Variante {idx + 1}</legend>
+                    <label className="grid gap-1">Talla<Input maxLength={40} value={v.size ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => i === idx ? { ...x, size: e.target.value || undefined } : x) }))} placeholder="40, M, Única…" uiSize="sm" /></label>
+                    <label className="grid gap-1">Color<Input maxLength={40} value={v.color ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => i === idx ? { ...x, color: e.target.value || undefined } : x) }))} placeholder="Negro, blanco…" uiSize="sm" /></label>
+                    <label className="grid gap-1">Código SKU <span className="sr-only">de variante {idx + 1}</span><Input maxLength={80} value={v.sku ?? ""} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => i === idx ? { ...x, sku: e.target.value || undefined } : x) }))} placeholder="Opcional" uiSize="sm" /></label>
+                    <label className="grid gap-1">Stock <span className="sr-only">de variante {idx + 1}</span><Input type="number" inputMode="numeric" min="0" max="100000" step="1" value={v.stock} onChange={(e) => setDraft((d) => ({ ...d, variants: d.variants.map((x, i) => i === idx ? { ...x, stock: Number(e.target.value) } : x) }))} uiSize="sm" /></label>
+                    <Button type="button" aria-label={`Quitar variante ${idx + 1}`} disabled={draft.variants.length <= 1} variant="ghost" size="sm" onClick={() => setDraft((d) => ({ ...d, variants: d.variants.filter((_, i) => i !== idx) }))}>Quitar</Button>
+                  </fieldset>
                 ))}
               </div>
             </Panel>
           )}
+          </fieldset>
+        </div>
+        <div className="admin-product-editor__footer flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-3">
+          <p className="text-xs text-slate-500" role="status">{uploading ? "Subiendo imagen…" : busy ? "Guardando producto…" : inTrash ? "Producto en la papelera" : hasUnsavedChanges ? "Tienes cambios sin guardar" : selectedId ? "Todos los cambios están guardados" : "Completa los datos del nuevo producto"}</p>
+          <div className="flex gap-2">
+            <Button type="button" onClick={closeEditor} disabled={editorLocked} variant="secondary" size="md">Volver al catálogo</Button>
+            {!inTrash && <Button type="button" onClick={() => void save()} disabled={editorLocked || (Boolean(selectedId) && !hasUnsavedChanges)} variant="primary" size="md">{busy ? "Guardando…" : selectedId ? "Guardar cambios" : "Crear producto"}</Button>}
+          </div>
         </div>
       </section>}
     </div>

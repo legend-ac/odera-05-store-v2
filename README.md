@@ -144,14 +144,34 @@ condiciones de cambios. Los campos vacíos indican consultar a la tienda.
 ## Apariencia clara u oscura
 
 En **Dashboard → Ajustes → Tienda → Apariencia de la tienda** elige **Oscuro** o
-**Claro crema** y pulsa **Guardar configuración**. La selección se guarda para
+**Claro crema** y pulsa **Guardar cambios**. La selección se guarda para
 toda la tienda: inicio, catálogo, fichas, carrito, pago, seguimiento, información
 y acceso. La versión clara usa fondo crema, tarjetas blancas, texto oscuro y
 acentos rojos. Conserva las fotografías originales y el diseño de cada página.
 
 El servidor entrega el tema guardado en el HTML inicial y actualiza la caché al
 guardar los ajustes. Las tiendas sin un tema configurado conservan el oscuro.
-El panel administrativo mantiene su paleta clara de trabajo.
+El panel administrativo usa crema, tinta y rojo, con la tipografía y los bordes
+de la tienda. Conserva su apariencia clara para trabajar con datos.
+
+## Gestión de productos e inventario
+
+- **Productos** separa el listado del editor, con secciones de datos, imágenes y
+  variantes. El guardado permanece visible y avisa antes de descartar cambios.
+- El catálogo carga hasta 90 productos por página, con navegación a productos
+  más antiguos o recientes. Los filtros y la búsqueda operan sobre esa página;
+  Inventario permite localizar productos mediante el índice de búsqueda.
+- Los enlaces de productos existentes se conservan. Crear un enlace repetido
+  se rechaza; una edición desactualizada tampoco reemplaza cambios recientes
+  de stock. El borrador se mantiene para poder recuperar los datos.
+- **Inventario** registra entradas y salidas por talla y color, muestra el stock
+  resultante antes de guardar y conserva responsable, motivo y fecha de cada
+  movimiento. Las cantidades deben ser enteras y una salida no puede dejar
+  stock negativo. Los indicadores describen los productos de la vista cargada.
+- La papelera y las acciones masivas están separadas de la edición diaria.
+  Cada operación masiva afecta hasta 250 productos y confirma su alcance.
+- El resumen de Inicio indica el alcance de sus cifras. Un comprobante recibido
+  permanece pendiente de validación, sin mostrarse como una reserva vencida.
 
 ## Verificaciones
 

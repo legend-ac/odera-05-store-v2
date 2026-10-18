@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { formatPEN } from "@/lib/money";
 import { ALLOWED_NEXT, isOrderStatus, type OrderStatus } from "@/lib/orderStatus";
+import { orderReservationNotice } from "@/lib/adminOrderPresentation";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/fields";
 
@@ -39,7 +40,7 @@ type AuditLogRow = {
 const STATUS_LABEL: Record<string, string> = {
   PENDING_VALIDATION: "Pendiente de validación",
   PAYMENT_SENT: "Pago enviado",
-  SCHEDULED: "Programado",
+  SCHEDULED: "Reserva sin pago",
   PAID: "Pagado",
   SHIPPED: "Enviado",
   DELIVERED: "Entregado",
@@ -73,12 +74,7 @@ function shippingLabel(shipping: any): string {
 }
 
 function urgencyLabel(order: OrderRow): string | null {
-  if (order.status !== "PENDING_VALIDATION" && order.status !== "PAYMENT_SENT") return null;
-  if (!order.reservedUntilMs) return "Sin TTL";
-  const diffMin = Math.round((order.reservedUntilMs - Date.now()) / 60000);
-  if (diffMin <= 0) return "⚠ Vencido";
-  if (diffMin <= 15) return `⏱ Vence en ${diffMin} min`;
-  return null;
+  return orderReservationNotice(order);
 }
 
 function fmtCreatedAt(ms: number | null): string {
@@ -124,7 +120,7 @@ function Toast({ msg, onClose }: { msg: string; onClose: () => void }) {
         )}
       </span>
       <span className="flex-1">{msg}</span>
-      <button type="button" onClick={onClose} className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+      <button type="button" onClick={onClose} aria-label="Cerrar aviso" className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
     </div>
@@ -183,12 +179,14 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
 
   const flowColumns = useMemo(
     () => [
+      { key: "SCHEDULED", title: "Reservas", hint: "Esperando comprobante" },
       { key: "PENDING_VALIDATION", title: "Validar pago", hint: "Revisar comprobante" },
       { key: "PAYMENT_SENT", title: "Pago enviado", hint: "Confirmar pago" },
       { key: "PAID", title: "Por despachar", hint: "Preparar envio" },
       { key: "SHIPPED", title: "En camino", hint: "Dar seguimiento" },
       { key: "DELIVERED", title: "Entregado", hint: "Cerrado" },
       { key: "CANCELLED", title: "Cancelado", hint: "No operar" },
+      { key: "CANCELLED_EXPIRED", title: "Vencido", hint: "Reserva liberada" },
     ],
     []
   );
@@ -314,10 +312,11 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="admin-page-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Gestión de pedidos</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Valida pagos, actualiza estados y gestiona el flujo de entrega.</p>
+          <p className="admin-eyebrow">VENTAS / ODERA 05</p>
+          <h1>Pedidos</h1>
+          <p className="admin-page-description">Revisa comprobantes, prepara envíos y acompaña cada entrega.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -352,6 +351,8 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
           </button>
         </div>
       </div>
+
+      <p className="admin-scope-note">Se muestran los últimos {orders.length} pedidos cargados, incluida la papelera. La búsqueda y los estados filtran esta lista.</p>
 
       {/* Notificación toast */}
       {msg && <Toast msg={msg} onClose={() => setMsg(null)} />}
@@ -479,7 +480,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: OrderRo
       </details>
 
       {layoutMode === "flow" && viewMode === "active" && (
-        <div className="grid gap-3 xl:grid-cols-3 2xl:grid-cols-6">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {flowColumns.map((col) => {
             const items = visibleOrders.filter((o) => o.status === col.key);
             return (

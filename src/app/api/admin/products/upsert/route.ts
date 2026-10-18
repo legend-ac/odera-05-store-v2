@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const ua = getUserAgent(req);
 
     const now = Timestamp.now();
-    const productRef = adminDb.collection("products").doc(input.slug);
+    const productRef = adminDb.collection("products").doc(input.productId ?? input.slug);
 
     const searchTokens = makeProductSearchTokens({
       slug: input.slug,
@@ -49,25 +49,33 @@ export async function POST(req: Request) {
       category: `${input.category} ${input.productType} ${input.audience}`.trim(),
     });
 
-    await adminDb.runTransaction(async (tx) => {
+    const result = await adminDb.runTransaction(async (tx) => {
       const snap = await tx.get(productRef);
       const exists = snap.exists;
       const before = exists ? (snap.data() as any) : null;
+      if (!input.productId && exists) throw new Error("PRODUCT_ALREADY_EXISTS");
+      if (input.productId && !exists) throw new Error("PRODUCT_NOT_FOUND");
+      if (before?.deletedAt) throw new Error("PRODUCT_IN_TRASH");
+      if (input.productId && before?.slug && before.slug !== input.slug) throw new Error("PRODUCT_SLUG_LOCKED");
+      if (input.expectedUpdatedAtMs !== undefined && before?.updatedAt?.toMillis?.() !== input.expectedUpdatedAtMs) {
+        throw new Error("PRODUCT_CHANGED");
+      }
 
       // Regla de stock:
       // - Si stock total = 0 => archivado automatico (oculto en cliente).
       // - Si estaba archivado automaticamente y vuelve stock > 0 => reactivar.
       // - Si admin archiva manualmente, se respeta.
-      const shouldRespectManualArchive = input.status === "archived";
+      const shouldRespectManualArchive = input.status === "archived" && !before?.autoArchivedByStock;
       const stockDriven = deriveStockDrivenStatus(
-        shouldRespectManualArchive ? "archived" : "active",
+        input.status,
         input.variants,
         shouldRespectManualArchive ? false : Boolean(before?.autoArchivedByStock)
       );
       const inventory = getInventorySummary(input.variants);
 
+      const { productId: _productId, expectedUpdatedAtMs: _expectedUpdatedAtMs, ...productData } = input;
       const doc = {
-        ...input,
+        ...productData,
         status: shouldRespectManualArchive ? "archived" : stockDriven.status,
         autoArchivedByStock: shouldRespectManualArchive ? false : stockDriven.autoArchivedByStock,
         ...inventory,
@@ -90,12 +98,15 @@ export async function POST(req: Request) {
         meta: { ip, userAgent: ua },
         createdAt: new Date(),
       });
+      return { status: doc.status, autoArchivedByStock: doc.autoArchivedByStock };
     });
 
-    return NextResponse.json({ ok: true, productId: input.slug }, { status: 200 });
+    return NextResponse.json({ ok: true, productId: productRef.id, updatedAtMs: now.toMillis(), ...result }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
-    console.error("[admin/products/upsert] error", msg);
-    return NextResponse.json({ error: msg }, { status: msg === "CSRF_FAILED" ? 403 : 500 });
+    const status = msg === "CSRF_FAILED" || msg === "NOT_ADMIN" ? 403 : msg === "AUTH_TOO_OLD" ? 401 : msg === "PRODUCT_NOT_FOUND" ? 404 :
+      ["PRODUCT_ALREADY_EXISTS", "PRODUCT_IN_TRASH", "PRODUCT_SLUG_LOCKED", "PRODUCT_CHANGED"].includes(msg) ? 409 : 500;
+    if (status === 500) console.error("[admin/products/upsert] error", msg);
+    return NextResponse.json({ error: msg }, { status });
   }
 }
