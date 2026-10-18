@@ -8,7 +8,6 @@ import { apiPost } from "@/lib/apiClient";
 import { db } from "@/lib/firebase/client";
 import { buildWhatsAppMessage } from "@/lib/whatsappMessage";
 import { Button } from "@/components/ui/button";
-import styles from "../checkout/purchase-flow.module.css";
 
 type TrackResponse = {
   publicCode: string;
@@ -152,30 +151,26 @@ function ConfirmPageInner() {
   }, [publicCode, trackingToken, trackingShortUrl, trackingUrl]);
 
   return (
-    <div className={styles.page}>
+    <div className="shopping-flow mx-auto max-w-3xl px-4 py-8 flex flex-col gap-5">
       {/* Header */}
-      <header className={styles.heading}>
-        <div>
-        <span className={styles.eyebrow}>Tu compra · Odera 05</span>
-        <div className={styles.confirmHeading}>
-          <div className={styles.successIcon}>
+      <div>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="grid place-items-center h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <div>
-            <h1>{data?.status === "PAYMENT_SENT" || data?.status === "PENDING_VALIDATION" ? "Comprobante recibido" : "Pedido registrado"}</h1>
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-[var(--paper)]">{data?.status === "PAYMENT_SENT" || data?.status === "PENDING_VALIDATION" ? "Comprobante recibido" : "Pedido registrado"}</h1>
           </div>
         </div>
         <p className="text-sm text-[var(--ash)] mt-1">La tienda revisará tu pago. Guarda estos datos para consultar el estado de tu pedido.</p>
-        </div>
-      </header>
+      </div>
 
       {/* Tracking Data */}
-      <div className={styles.confirmLayout}>
-      <div className={styles.trackingCard}>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ash)]">Datos de seguimiento</p>
+      <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] overflow-hidden">
+        <div className="bg-gradient-to-r from-[var(--brand-50)] to-[var(--ink-2)] px-5 py-4 border-b border-[var(--ash-2)]">
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--brand-600)]">Datos de seguimiento</p>
         </div>
         <div className="p-5 flex flex-col gap-4">
           <div>
@@ -216,7 +211,7 @@ function ConfirmPageInner() {
       </div>
 
       {/* Next Steps */}
-      <aside className={styles.nextStep}>
+      <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] p-5 flex flex-col gap-3">
         <div className="flex items-center gap-2.5">
           <div className="grid place-items-center h-8 w-8 rounded-lg bg-amber-50 text-amber-600">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -238,11 +233,10 @@ function ConfirmPageInner() {
         ) : (
           <p className="text-sm text-[var(--ash)]">WhatsApp del negocio no disponible por el momento.</p>
         )}
-      </aside>
       </div>
 
       {/* Continue shopping */}
-      <div className={styles.continue}>
+      <div className="flex justify-center">
         <Link href="/catalog" className="text-sm font-semibold text-[var(--brand-600)] hover:text-[var(--brand-700)] hover:underline transition-colors">
           ← Volver al catálogo
         </Link>
@@ -255,8 +249,8 @@ export default function ConfirmPage() {
   return (
     <Suspense
       fallback={
-        <div className={styles.page}>
-          <div className={styles.notice}>
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] p-5 text-sm text-[var(--ash)] shadow-[var(--shadow-card)]">
             Preparando confirmación del pedido...
           </div>
         </div>

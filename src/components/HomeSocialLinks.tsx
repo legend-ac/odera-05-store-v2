@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import styles from "./HomeStorefront.module.css";
 
-export type SocialLinks = {
+type SocialLinks = {
   instagram?: string;
   tiktok?: string;
   facebook?: string;
@@ -61,14 +60,10 @@ const SOCIALS = [
   },
 ];
 
-export default function HomeSocialLinks({ compact = false, initialLinks }: { compact?: boolean; initialLinks?: SocialLinks }) {
-  const [links, setLinks] = useState<SocialLinks>(initialLinks ?? {});
+export default function HomeSocialLinks({ compact = false }: { compact?: boolean }) {
+  const [links, setLinks] = useState<SocialLinks>({});
 
   useEffect(() => {
-    if (initialLinks) {
-      setLinks(initialLinks);
-      return;
-    }
     let alive = true;
     (async () => {
       try {
@@ -81,7 +76,7 @@ export default function HomeSocialLinks({ compact = false, initialLinks }: { com
       }
     })();
     return () => { alive = false; };
-  }, [initialLinks]);
+  }, []);
 
   const items = useMemo(
     () => SOCIALS.filter((s) => isUrl(links[s.key])).map((s) => ({ ...s, url: links[s.key]! })),
@@ -119,26 +114,28 @@ export default function HomeSocialLinks({ compact = false, initialLinks }: { com
   }
 
   return (
-    <section aria-labelledby="home-social-title" className={`${styles.shell} ${styles.socialSection}`}>
-        <div className={styles.socialHeading}>
-          <h2 id="home-social-title">Sigue el movimiento.</h2>
+    <section aria-labelledby="home-social-title" className="home-social mx-auto max-w-7xl px-5 sm:px-8">
+      <div className="home-social__inner">
+        <div className="home-social__heading">
+          <h2 id="home-social-title">SÍGUENOS EN REDES</h2>
           <p>Novedades, lanzamientos y atención directa.</p>
         </div>
-        <nav aria-label="Redes sociales de ODERA 05" className={styles.socialLinks} style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+        <nav aria-label="Redes sociales de ODERA 05" className="home-social__links">
           {items.map((s) => (
             <a
               key={s.key}
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={styles.socialLink}
+              className="home-social__link"
             >
-              <span className={styles.socialIcon} aria-hidden="true">{s.icon}</span>
-              <span className={styles.socialName}>{s.label}</span>
-              <span className={styles.socialArrow} aria-hidden="true">↗</span>
+              <span className="home-social__icon" aria-hidden="true">{s.icon}</span>
+              <span className="home-social__name">{s.label}</span>
+              <span className="home-social__arrow" aria-hidden="true">↗</span>
             </a>
           ))}
         </nav>
+      </div>
     </section>
   );
 }

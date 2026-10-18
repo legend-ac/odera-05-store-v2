@@ -12,8 +12,6 @@ import { db } from "@/lib/firebase/client";
 import { formatPEN } from "@/lib/money";
 import { checkoutErrorMessage } from "@/lib/checkoutErrors";
 import { shippingCostFor, shippingThreshold } from "@/lib/shipping";
-import styles from "./purchase-flow.module.css";
-import PurchaseSteps from "./purchase-steps";
 
 type ShippingMethod = "LIMA_DELIVERY" | "AGENCIA_PROVINCIA";
 type PayMethod = "YAPE" | "PLIN";
@@ -256,8 +254,8 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label="Ubicación">
+    <div className="shopping-flow checkout-page mx-auto max-w-5xl px-4 py-8 flex flex-col gap-6">
+      <nav className="flex items-center gap-2 text-xs font-medium text-[var(--ash)]">
         <Link href="/" className="hover:text-[var(--paper)] transition-colors">Inicio</Link>
         <span className="text-[var(--ash-2)]">/</span>
         <Link href="/cart" className="hover:text-[var(--paper)] transition-colors">Carrito</Link>
@@ -265,20 +263,14 @@ export default function CheckoutPage() {
         <span className="text-[var(--paper)]">Checkout</span>
       </nav>
 
-      <header className={styles.heading}>
-        <div>
-        <span className={styles.eyebrow}>Tu compra · Odera 05</span>
+      <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-[var(--paper)]">Finalizar compra</h1>
         <p className="text-sm text-[var(--ash)] mt-1">Primero confirmaremos stock y total. Después podrás pagar tu reserva.</p>
-        </div>
-        <PurchaseSteps current="details" />
-      </header>
+      </div>
 
       {!items.length ? (<div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-destructive" role="alert">Tu carrito está vacío.</div>) : null}
 
-      <div className={styles.layout}>
-      <div className={styles.form}>
-      <section className={styles.section} aria-labelledby="checkout-customer-title">
+      <section className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] p-5 grid gap-4" aria-labelledby="checkout-customer-title">
         <h2 id="checkout-customer-title" className="flex items-center gap-2.5 font-semibold text-[var(--paper)]"><span className="grid place-items-center h-7 w-7 rounded-lg bg-[var(--ink-3)] text-xs font-bold text-[var(--ash)]">1</span>Datos personales</h2>
         <div className="grid gap-1"><label htmlFor="checkout-name" className="text-sm font-medium text-[var(--paper-2)]">Nombre completo</label><Input id="checkout-name" value={name} invalid={Boolean(fieldErrors.name)} onChange={(e) => { setName(e.target.value); setFieldErrorAware("name", e.target.value); }} /><ErrorText id="checkout-name-error" message={fieldErrors.name} /></div>
         <div className="grid md:grid-cols-2 gap-3">
@@ -287,12 +279,12 @@ export default function CheckoutPage() {
         </div>
       </section>
 
-      <section className={styles.section} aria-labelledby="checkout-shipping-title">
+      <section className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] p-5 grid gap-4" aria-labelledby="checkout-shipping-title">
         <h2 id="checkout-shipping-title" className="flex items-center gap-2.5 font-semibold text-[var(--paper)]"><span className="grid place-items-center h-7 w-7 rounded-lg bg-[var(--ink-3)] text-xs font-bold text-[var(--ash)]">2</span>Tipo de envío y dirección</h2>
         <fieldset className="grid sm:grid-cols-2 gap-2">
           <legend className="sr-only">Método de envío</legend>
-          <label className={styles.choice}><input id="checkout-shipping-lima" type="radio" checked={shippingMethod === "LIMA_DELIVERY"} onChange={() => setShippingMethod("LIMA_DELIVERY")} className="accent-[var(--vermeil)]" /><div><p className="text-sm font-semibold text-[var(--paper)]">Lima Metropolitana</p><p className="text-xs text-[var(--ash)]">Delivery a domicilio</p></div></label>
-          <label className={styles.choice}><input id="checkout-shipping-agency" type="radio" checked={shippingMethod === "AGENCIA_PROVINCIA"} onChange={() => setShippingMethod("AGENCIA_PROVINCIA")} className="accent-[var(--vermeil)]" /><div><p className="text-sm font-semibold text-[var(--paper)]">Provincia</p><p className="text-xs text-[var(--ash)]">Envío por agencia</p></div></label>
+          <label className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all duration-150 ${shippingMethod === "LIMA_DELIVERY" ? "border-[var(--paper)] bg-[var(--ink-3)] shadow-sm" : "border-[var(--ash-2)] hover:border-[var(--ash)]"}`}><input id="checkout-shipping-lima" type="radio" checked={shippingMethod === "LIMA_DELIVERY"} onChange={() => setShippingMethod("LIMA_DELIVERY")} className="accent-[var(--vermeil)]" /><div><p className="text-sm font-semibold text-[var(--paper)]">Lima Metropolitana</p><p className="text-xs text-[var(--ash)]">Delivery a domicilio</p></div></label>
+          <label className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all duration-150 ${shippingMethod === "AGENCIA_PROVINCIA" ? "border-[var(--paper)] bg-[var(--ink-3)] shadow-sm" : "border-[var(--ash-2)] hover:border-[var(--ash)]"}`}><input id="checkout-shipping-agency" type="radio" checked={shippingMethod === "AGENCIA_PROVINCIA"} onChange={() => setShippingMethod("AGENCIA_PROVINCIA")} className="accent-[var(--vermeil)]" /><div><p className="text-sm font-semibold text-[var(--paper)]">Provincia</p><p className="text-xs text-[var(--ash)]">Envío por agencia</p></div></label>
         </fieldset>
         <div className="grid gap-1"><label htmlFor="checkout-receiverName" className="text-sm font-medium text-[var(--paper-2)]">Nombre de quien recibe o recoge</label><Input id="checkout-receiverName" value={receiverName} invalid={Boolean(fieldErrors.receiverName)} onChange={(e) => { setReceiverName(e.target.value); setFieldErrorAware("receiverName", e.target.value); }} /><ErrorText id="checkout-receiverName-error" message={fieldErrors.receiverName} /></div>
         <div className="grid md:grid-cols-2 gap-3">
@@ -314,20 +306,19 @@ export default function CheckoutPage() {
         </>)}
       </section>
 
-      <section className={styles.section} aria-labelledby="checkout-payment-title">
+      <section className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] p-5 grid gap-4" aria-labelledby="checkout-payment-title">
         <h2 id="checkout-payment-title" className="flex items-center gap-2.5 font-semibold text-[var(--paper)]"><span className="grid place-items-center h-7 w-7 rounded-lg bg-[var(--ink-3)] text-xs font-bold text-[var(--ash)]">3</span>Medio de pago</h2>
         <fieldset className="grid sm:grid-cols-2 gap-2">
           <legend className="sr-only">Método de pago</legend>
-          <label className={styles.choice}><input id="checkout-pay-yape" type="radio" checked={payMethod === "YAPE"} onChange={() => setPayMethod("YAPE")} className="accent-[#6C2D82]" /><p className="text-sm font-semibold text-[var(--paper)]">💜 Yape</p></label>
-          <label className={styles.choice}><input id="checkout-pay-plin" type="radio" checked={payMethod === "PLIN"} onChange={() => setPayMethod("PLIN")} className="accent-emerald-600" /><p className="text-sm font-semibold text-[var(--paper)]">💚 Plin</p></label>
+          <label className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all duration-150 ${payMethod === "YAPE" ? "border-[#6C2D82] bg-purple-500/10 shadow-sm" : "border-[var(--ash-2)] hover:border-[var(--ash)]"}`}><input id="checkout-pay-yape" type="radio" checked={payMethod === "YAPE"} onChange={() => setPayMethod("YAPE")} className="accent-[#6C2D82]" /><p className="text-sm font-semibold text-[var(--paper)]">💜 Yape</p></label>
+          <label className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all duration-150 ${payMethod === "PLIN" ? "border-emerald-600 bg-emerald-500/10 shadow-sm" : "border-[var(--ash-2)] hover:border-[var(--ash)]"}`}><input id="checkout-pay-plin" type="radio" checked={payMethod === "PLIN"} onChange={() => setPayMethod("PLIN")} className="accent-emerald-600" /><p className="text-sm font-semibold text-[var(--paper)]">💚 Plin</p></label>
         </fieldset>
         <p className="text-sm text-[var(--ash)]">Verás el número y el titular para pagar después de confirmar la disponibilidad. La reserva dura 20 minutos.</p>
       </section>
 
-      </div>
-      <aside className={styles.summary} aria-labelledby="checkout-summary-title">
+      <section className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] p-5 grid gap-3" aria-labelledby="checkout-summary-title">
         <h2 id="checkout-summary-title" className="flex items-center gap-2.5 font-semibold text-[var(--paper)]"><span className="grid place-items-center h-7 w-7 rounded-lg bg-[var(--ink-3)] text-xs font-bold text-[var(--ash)]">4</span>Resumen del pedido</h2>
-        <div className={`${styles.summaryList} text-sm`}>
+        <div className="flex flex-col gap-1.5 text-sm">
           {itemsPreview.map((it) => (<div key={`${it.productId}:${it.variantId}`} className="flex items-center justify-between"><span className="text-[var(--paper-2)]">{it.name} x {it.qty}</span><span className="font-medium text-[var(--paper)] tabular-nums">{formatPEN(it.lineTotal)}</span></div>))}
         </div>
         {couponVisible ? (<div className="grid gap-1 pt-2 border-t border-[var(--ash-2)]"><label htmlFor="checkout-coupon" className="text-sm font-medium text-[var(--paper-2)]">Cupón (opcional)</label><Input id="checkout-coupon" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder={promo.couponCode || "CUPON"} uiSize="sm" /></div>) : null}
@@ -335,17 +326,16 @@ export default function CheckoutPage() {
           <div className="flex items-center justify-between"><span className="text-[var(--ash)]">Subtotal</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : formatPEN(subtotal)}</span></div>
           <div className="flex items-center justify-between"><span className="text-[var(--ash)]">Descuento</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : discountAmount > 0 ? `-${formatPEN(discountAmount)}` : formatPEN(0)}</span></div>
           <div className="flex items-center justify-between"><span className="text-[var(--ash)]">Envío</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : shippingCost === 0 ? "Gratis" : formatPEN(shippingCost)}</span></div>
-          <div className={`${styles.total} flex items-center justify-between`}><span>Total estimado</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : formatPEN(totalToPay)}</span></div>
+          <div className="flex items-center justify-between font-bold text-[var(--paper)] text-base pt-1"><span>Total estimado</span><span className="tabular-nums">{loadingTotals ? "Calculando..." : formatPEN(totalToPay)}</span></div>
         </div>
         <p className="text-xs text-[var(--ash)]">Envío S/10 o gratis desde {formatPEN(freeShippingFrom)} de productos antes del descuento. Confirmaremos el importe exacto al reservar.</p>
-      {error ? <div className={styles.alert} role="alert">{error} <a href="/cart" className="font-bold underline">Revisar carrito</a></div> : null}
+      </section>
+
+      {error ? <div className="text-sm text-destructive bg-rose-50 border border-rose-200 rounded-xl px-4 py-3" role="alert">{error} <a href="/cart" className="font-bold underline">Revisar carrito</a></div> : null}
 
       <button type="button" onClick={submit} disabled={busy || loadingTotals || !items.length} className="btn-brand w-full justify-center h-14 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed">
         {busy ? "Confirmando disponibilidad..." : "Reservar y continuar al pago"}
       </button>
-      <Link href="/cart" className="text-center text-xs underline underline-offset-4 text-[var(--ash)]">Volver al carrito</Link>
-      </aside>
-      </div>
     </div>
   );
 }

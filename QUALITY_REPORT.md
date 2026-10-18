@@ -33,7 +33,30 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Seguridad de producción | `npm run audit:production` | 0 críticas, 0 altas; 8 moderadas pendientes |
 | Firestore actualizado | Lectura real de configuración con el SDK cliente y el parche gRPC | Correcta; ninguna escritura |
 
-## Redistribución del frontend público — 18 de octubre de 2026
+## Restauración selectiva del diseño — 18 de octubre de 2026
+
+A petición del usuario, se restaura el diseño del despliegue anterior al
+rediseño general: commit `0f93f5a`, despliegue
+`dpl_5pTEcXfTUPWzat8hrTLDPN8QXsaP`. Se mantienen únicamente la distribución
+aprobada de la ficha de producto y sus estilos: miniaturas laterales en PC,
+galería y compra en paralelo, y guía de talla y detalles debajo. Su posición
+fija se ajusta a la altura de la cabecera anterior.
+
+Inicio, cabecera, pie, catálogo, tarjetas, carrito, checkout, pago, confirmación,
+seguimiento y páginas informativas recuperan exactamente sus archivos de esa
+versión. Se retiran los módulos de estilo introducidos solo para el rediseño
+general. No se cambian fotos, orden de imágenes, precios, stock ni pedidos.
+
+La comparación con Git confirma que todo `src` coincide con `0f93f5a` salvo
+`product-client.tsx` y el bloque CSS de la ficha. Las **18 pruebas E2E pasaron**
+en escritorio y teléfono. La revisión visual de inicio, catálogo, carrito y
+ficha a 393 y 1366 px, con temas claro y oscuro, no mostró desbordamientos ni
+errores JavaScript tras compilar. La ficha conservó seis imágenes, navegación,
+detalles y adición al carrito local. Lint pasó con la advertencia externa de
+fuente ya existente. Las pruebas no crearon pedidos ni enviaron pagos reales.
+La compilación de producción y TypeScript pasaron con `npm run build:verify`.
+
+## Redistribución del frontend público — 18 de octubre de 2026 (histórico)
 
 La aclaración del usuario amplía el trabajo al diseño y la distribución de la
 tienda completa. Se conservaron la paleta crema, tinta y rojo, los temas claro y

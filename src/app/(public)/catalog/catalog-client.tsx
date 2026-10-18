@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { collection, getDocs, limit, query, startAfter, where, type QueryDocumentSnapshot } from "firebase/firestore";
@@ -8,7 +8,6 @@ import { db } from "@/lib/firebase/client";
 import ProductCard, { type ProductCardData } from "@/components/ProductCard";
 import { getSearchTerms, normalizeToken, productMatchesSearch } from "@/lib/searchTokens";
 import { hasStock } from "@/lib/productStock";
-import styles from "./catalog.module.css";
 
 type SortType = "latest" | "price-asc" | "price-desc" | "name";
 type Audience = "hombre" | "mujer" | "ninos" | "todos";
@@ -23,9 +22,9 @@ const AUDIENCE_LABEL: Record<Audience, string> = {
 
 const SORT_OPTIONS: { value: SortType; label: string }[] = [
   { value: "latest", label: "Más recientes" },
-  { value: "price-asc", label: "Precio: menor a mayor" },
-  { value: "price-desc", label: "Precio: mayor a menor" },
-  { value: "name", label: "Nombre: A–Z" },
+  { value: "price-asc", label: "Precio ↑" },
+  { value: "price-desc", label: "Precio ↓" },
+  { value: "name", label: "A–Z" },
 ];
 
 function supportsAudienceFilter(productType: string): boolean {
@@ -81,8 +80,19 @@ export default function CatalogClient({
       : "") as Audience | ""
   );
   const [sortBy, setSortBy] = useState<SortType>("latest");
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<CatalogItem[] | null>(initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!sortOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [sortOpen]);
 
   useEffect(() => { setQText(routeQuery); }, [routeQuery]);
   useEffect(() => { setTypeFilter(routeType.toLowerCase().trim()); }, [routeType]);
@@ -186,148 +196,347 @@ export default function CatalogClient({
     (t) => t.key.toLowerCase() === typeFilter.toLowerCase()
   )?.label ?? null;
 
-  const resetFilters = () => {
-    setQText("");
-    setTypeFilter("");
-    setAudienceFilter("");
-    setSortBy("latest");
-  };
-  const hasFilters = Boolean(terms.length || typeFilter || audienceFilter && audienceFilter !== "todos");
-  const catalogTitle = hasLockedType ? activeCategoryLabel ?? "Catálogo" : "Encuentra tu próximo par.";
-
   return (
-    <div className={styles.catalog}>
-      <div className={styles.container}>
-        <nav className={styles.breadcrumb} aria-label="Ruta de navegación">
-          <Link href="/">Inicio</Link>
-          <span aria-hidden="true">/</span>
-          {hasLockedType && <><Link href="/catalog">Catálogo</Link><span aria-hidden="true">/</span></>}
-          <span aria-current="page">{hasLockedType ? activeCategoryLabel ?? "Catálogo" : "Catálogo"}</span>
-        </nav>
+    <div style={{ minHeight: "100vh", background: "var(--ink)" }}>
 
-        <header className={styles.heading}>
-          <div>
-            <span className={styles.eyebrow}>La selección de Odera 05</span>
-            <h1>{catalogTitle}</h1>
+      {/* ── Header del catálogo ── */}
+      <div style={{ background: "var(--ink-2)", borderBottom: "1px solid var(--ash-2)" }}>
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              {/* Breadcrumb */}
+              <div className="flex items-center gap-2 mb-2">
+                <Link
+                  href="/"
+                  className="transition-colors duration-150 hover:text-[var(--vermeil)]"
+                  style={{ fontSize: "11px", color: "var(--ash)", letterSpacing: "0.06em" }}
+                >
+                  Inicio
+                </Link>
+                <span style={{ color: "var(--ash-2)", fontSize: "11px" }}>›</span>
+                <span style={{ fontSize: "11px", color: "var(--paper)", fontWeight: 600 }}>
+                  {hasLockedType ? activeCategoryLabel : "Catálogo"}
+                </span>
+              </div>
+              <h1
+                className="font-black leading-none"
+                style={{
+                  fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                  fontSize: "clamp(28px, 5vw, 40px)",
+                  letterSpacing: "0.06em",
+                  color: "var(--paper)",
+                }}
+              >
+                {hasLockedType ? activeCategoryLabel : "Catálogo"}
+              </h1>
+              <p style={{ fontSize: "12px", color: "var(--ash)", marginTop: "4px" }}>
+                {hasLockedType
+                  ? `${activeCategoryLabel?.toLowerCase() ?? "productos"} · stock actualizado`
+                  : "Zapatillas, ropa y accesorios · stock actualizado"}
+              </p>
+            </div>
+
+            {/* Contador */}
+            {items && (
+              <div
+                className="shrink-0 text-right pl-5"
+                style={{ borderLeft: "1px solid var(--ash-2)" }}
+              >
+                <span
+                  className="block font-bold uppercase"
+                  style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--ash)" }}
+                >
+                  Disponibles
+                </span>
+                <p
+                  className="font-black tabular-nums mt-1"
+                  style={{
+                    fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                    fontSize: "36px",
+                    color: "var(--vermeil)",
+                    lineHeight: 1,
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  {sortedItems.length}
+                </p>
+                <p style={{ fontSize: "10px", color: "var(--ash)", marginTop: "2px" }}>productos</p>
+              </div>
+            )}
           </div>
-          <p>
-            {hasLockedType
-              ? `Explora nuestra selección de ${activeCategoryLabel?.toLowerCase() ?? "productos"}.`
-              : "Zapatillas, ropa y accesorios originales para tu día a día."}
-            <span>Elige tu estilo. Encuentra tu talla.</span>
-          </p>
-        </header>
+        </div>
+      </div>
 
-        <div className={styles.layout}>
-          <aside className={styles.filters} aria-label="Filtros de productos">
-            <div className={styles.filterHeading}>
-              <span>Filtrar por</span>
-              {hasFilters && (hasLockedType
-                ? <Link href="/catalog">Ver todo</Link>
-                : <button type="button" onClick={resetFilters}>Limpiar</button>)}
-            </div>
+      {/* ── Contenido ── */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
 
+        {/* Barra de filtros */}
+        <div className="py-4" style={{ borderBottom: "1px solid var(--ash-2)" }}>
+          <div className="flex flex-col gap-3">
+
+            {/* Categorías */}
             {!hasLockedType && productTypes.length > 0 && (
-              <fieldset className={styles.filterGroup}>
-                <legend>Categoría</legend>
-                <div className={styles.categories}>
-                  {[{ key: "", label: "Todo el catálogo" }, ...productTypes].map((t) => (
-                    <button
-                      key={t.key}
-                      type="button"
-                      onClick={() => setTypeFilter(t.key)}
-                      aria-pressed={typeFilter === t.key}
-                      className={`${styles.category} ${typeFilter === t.key ? styles.categoryActive : ""}`}
-                    >
-                      <span>{t.label}</span>
-                      <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="m7 4 6 6-6 6" />
-                      </svg>
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-            )}
-
-            {typeFilter && supportsAudienceFilter(typeFilter) && (
-              <fieldset className={styles.filterGroup}>
-                <legend>Para quién</legend>
-                <div className={styles.audiences}>
-                  {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
-                    <button
-                      key={a}
-                      type="button"
-                      onClick={() => setAudienceFilter(a)}
-                      aria-pressed={audienceFilter === a}
-                      className={audienceFilter === a ? styles.audienceActive : ""}
-                    >
-                      {AUDIENCE_LABEL[a]}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-            )}
-
-            <div className={styles.filterNote}>
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M9 3h6l1 4h4v14H4V7h4l1-4Z" /><path d="M8 7h8M9 12v2m6-2v2" />
-              </svg>
-              <div><strong>Tu talla te espera.</strong><p>Revisa las tallas disponibles en cada producto.</p></div>
-            </div>
-          </aside>
-
-          <section className={styles.results} aria-label="Productos del catálogo" aria-busy={!items}>
-            <div className={styles.toolbar}>
-              <div className={styles.resultCount} aria-live="polite">
-                {items ? <><strong>{sortedItems.length}</strong> {sortedItems.length === 1 ? "producto" : "productos"}</> : "Cargando productos…"}
-                {terms.length > 0 && (
-                  <button type="button" className={styles.searchChip} onClick={() => setQText("")} aria-label={`Quitar búsqueda: ${qText.trim()}`}>
-                    <span>“{qText.trim()}”</span><span aria-hidden="true">×</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="font-bold uppercase shrink-0"
+                  style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--ash)" }}
+                >
+                  Cat:
+                </span>
+                {[{ key: "", label: "Todos" }, ...productTypes].map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTypeFilter(t.key)}
+                    className="font-semibold transition-all duration-150 cursor-pointer"
+                    style={{
+                      fontSize: "12px",
+                      letterSpacing: "0.06em",
+                      padding: "4px 10px",
+                      border: "1px solid",
+                      borderRadius: "2px",
+                      borderColor: typeFilter === t.key ? "var(--vermeil)" : "var(--ash-2)",
+                      background: typeFilter === t.key ? "var(--vermeil)" : "transparent",
+                      color: typeFilter === t.key ? "#fff" : "var(--ash)",
+                    }}
+                  >
+                    {t.label}
                   </button>
-                )}
-              </div>
-              <div className={styles.sort}>
-                <label htmlFor="catalog-sort">Ordenar por</label>
-                <div className={styles.selectWrap}>
-                  <select id="catalog-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortType)}>
-                    {SORT_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                  </select>
-                  <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m5 7 5 5 5-5" /></svg>
-                </div>
-              </div>
-            </div>
-
-            {error && <div className={styles.error} role="alert">{error}</div>}
-
-            {!items && !error && (
-              <div className={styles.grid} aria-label="Cargando productos">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div className={styles.skeletonCard} key={i} aria-hidden="true">
-                    <div className="aspect-square skeleton" />
-                    <div className={styles.skeletonInfo}><div className="h-3 w-4/5 skeleton" /><div className="h-3 w-1/2 skeleton" /></div>
-                  </div>
                 ))}
               </div>
             )}
 
-            {items && sortedItems.length > 0 && (
-              <div className={styles.grid}>
-                {sortedItems.map((p, index) => <ProductCard key={p.id} p={p} priority={index < 8} />)}
+            {/* Público */}
+            {typeFilter && supportsAudienceFilter(typeFilter) && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="font-bold uppercase shrink-0"
+                  style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--ash)" }}
+                >
+                  Para:
+                </span>
+                {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => setAudienceFilter(a)}
+                    className="font-semibold transition-all duration-150 cursor-pointer"
+                    style={{
+                      fontSize: "12px",
+                      letterSpacing: "0.06em",
+                      padding: "4px 10px",
+                      border: "1px solid",
+                      borderRadius: "2px",
+                      borderColor: audienceFilter === a ? "var(--vermeil)" : "var(--ash-2)",
+                      background: audienceFilter === a ? "var(--vermeil)" : "transparent",
+                      color: audienceFilter === a ? "#fff" : "var(--ash)",
+                    }}
+                  >
+                    {AUDIENCE_LABEL[a]}
+                  </button>
+                ))}
               </div>
             )}
-
-            {items && !sortedItems.length && (
-              <div className={styles.empty}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
-                <h2>No encontramos resultados.</h2>
-                <p>Prueba otra categoría o elimina los filtros para explorar la selección completa.</p>
-                {hasLockedType
-                  ? <Link href="/catalog" className={styles.reset}>Ver todo el catálogo <span aria-hidden="true">→</span></Link>
-                  : <button type="button" onClick={resetFilters} className={styles.reset}>Ver todo el catálogo <span aria-hidden="true">→</span></button>}
-              </div>
-            )}
-          </section>
+          </div>
         </div>
+
+        {/* Fila: conteo + ordenar */}
+        <div className="flex items-center justify-between gap-3 py-3">
+          {items ? (
+            <p style={{ fontSize: "12px", color: "var(--ash)" }}>
+              <span style={{ fontWeight: 700, color: "var(--paper)" }}>{sortedItems.length}</span>{" "}
+              {sortedItems.length === 1 ? "producto" : "productos"}
+              {terms.length > 0 && (
+                <span style={{ color: "var(--ash)" }}>
+                  {" "}· &ldquo;{qText.trim()}&rdquo;
+                  <button
+                    type="button"
+                    onClick={() => setQText("")}
+                    className="ml-2 hover:underline"
+                    style={{ fontSize: "11px", color: "var(--vermeil)", fontWeight: 600 }}
+                  >
+                    ✕ borrar
+                  </button>
+                </span>
+              )}
+              {!hasLockedType && typeFilter && activeCategoryLabel && (
+                <button
+                  type="button"
+                  onClick={() => { setTypeFilter(""); setAudienceFilter(""); setSortBy("latest"); }}
+                  className="ml-3 hover:underline"
+                  style={{ fontSize: "11px", color: "var(--vermeil)", fontWeight: 600 }}
+                >
+                  ✕ {activeCategoryLabel}
+                </button>
+              )}
+            </p>
+          ) : (
+            <p style={{ fontSize: "12px", color: "var(--ash)" }}>Cargando...</p>
+          )}
+
+          {/* Sort dropdown */}
+          <div ref={sortRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setSortOpen((v) => !v)}
+              className="inline-flex items-center gap-2 font-semibold transition-all duration-150"
+              style={{
+                fontSize: "11px",
+                letterSpacing: "0.06em",
+                padding: "6px 12px",
+                border: "1px solid",
+                borderRadius: "2px",
+                borderColor: sortOpen ? "var(--vermeil)" : "var(--ash-2)",
+                background: "var(--ink-2)",
+                color: "var(--paper)",
+              }}
+            >
+              <svg className="h-3 w-3 shrink-0" style={{ color: "var(--ash)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M7 12h10M11 17h2" />
+              </svg>
+              <span className="hidden sm:inline">{SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? "Ordenar"}</span>
+              <span className="sm:hidden">Ordenar</span>
+              <svg
+                className={`h-3 w-3 shrink-0 transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`}
+                style={{ color: "var(--ash)" }}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {sortOpen && (
+              <div
+                className="absolute right-0 top-full mt-1.5 z-50 min-w-[160px] overflow-hidden"
+                style={{
+                  background: "var(--ink-2)",
+                  border: "1px solid var(--ash-2)",
+                  borderRadius: "2px",
+                  boxShadow: "var(--shadow-elevated)",
+                }}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => { setSortBy(opt.value); setSortOpen(false); }}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-2.5 transition-colors duration-100"
+                    style={{
+                      fontSize: "12px",
+                      background: sortBy === opt.value ? "rgba(232,69,44,0.12)" : "transparent",
+                      color: sortBy === opt.value ? "var(--vermeil)" : "var(--ash)",
+                      fontWeight: sortBy === opt.value ? 700 : 400,
+                      borderBottom: "1px solid var(--ash-2)",
+                    }}
+                  >
+                    {opt.label}
+                    {sortBy === opt.value && (
+                      <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: "var(--vermeil)" }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div
+            className="px-4 py-3 text-sm mb-4"
+            style={{
+              background: "rgba(232,69,44,0.1)",
+              border: "1px solid var(--vermeil)",
+              borderRadius: "2px",
+              color: "var(--vermeil)",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Skeleton cargando */}
+        {!items && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pb-10">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  background: "var(--ink-2)",
+                  border: "1px solid var(--ash-2)",
+                  borderRadius: "2px",
+                  overflow: "hidden",
+                }}
+              >
+                <div className="aspect-[3/4] skeleton" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3 w-4/5 skeleton" style={{ borderRadius: "2px" }} />
+                  <div className="h-3 w-1/2 skeleton" style={{ borderRadius: "2px" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Grid de productos */}
+        {items && sortedItems.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pb-12">
+            {sortedItems.map((p, index) => (
+              <ProductCard key={p.id} p={p} priority={index < 8} />
+            ))}
+          </div>
+        )}
+
+        {/* Estado vacío */}
+        {items && !sortedItems.length && (
+          <div
+            className="flex flex-col items-center justify-center px-6 py-20 text-center mb-12"
+            style={{
+              background: "var(--ink-2)",
+              border: "1px solid var(--ash-2)",
+              borderRadius: "2px",
+            }}
+          >
+            <div
+              className="mb-5 flex items-center justify-center"
+              style={{
+                width: 64,
+                height: 64,
+                background: "var(--ink-3)",
+                border: "1px solid var(--ash-2)",
+                borderRadius: "2px",
+              }}
+            >
+              <svg className="h-7 w-7" style={{ color: "var(--ash)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <p
+              className="font-black"
+              style={{
+                fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
+                fontSize: "22px",
+                letterSpacing: "0.08em",
+                color: "var(--paper)",
+              }}
+            >
+              SIN RESULTADOS
+            </p>
+            <p style={{ fontSize: "13px", color: "var(--ash)", marginTop: "6px", maxWidth: "280px", lineHeight: 1.6 }}>
+              No encontramos productos con ese filtro. Prueba cambiando la categoría.
+            </p>
+            <button
+              type="button"
+              onClick={() => { setQText(""); setTypeFilter(""); setAudienceFilter(""); setSortBy("latest"); }}
+              className="btn-brand mt-6"
+              style={{ fontSize: "12px", padding: "10px 20px" }}
+            >
+              Ver todo
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
