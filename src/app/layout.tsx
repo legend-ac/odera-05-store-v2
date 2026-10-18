@@ -1,22 +1,24 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Roboto, Roboto_Condensed } from "next/font/google";
+import localFont from "next/font/local";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import { getMetadataBaseUrl } from "@/lib/productMetadata";
 
-const display = Roboto_Condensed({
-  subsets: ["latin"],
+const display = localFont({
+  src: "./fonts/roboto-condensed-latin.woff2",
   variable: "--font-display",
-  weight: ["400", "500", "700"],
+  weight: "400 700",
+  style: "normal",
   display: "swap",
 });
 
-const sans = Roboto({
-  subsets: ["latin"],
+const sans = localFont({
+  src: "./fonts/roboto-latin.woff2",
   variable: "--font-sans",
-  weight: ["400", "500", "700"],
+  weight: "400 700",
+  style: "normal",
   display: "swap",
 });
 

@@ -175,6 +175,10 @@ Vercel cuando están disponibles.
 `.vercelignore` excluye credenciales locales, cachés, informes y respaldos del
 paquete enviado por la CLI. Producción utiliza las variables configuradas en Vercel.
 
+Roboto y Roboto Condensed se incluyen en `src/app/fonts` con sus licencias y se
+cargan mediante `next/font/local`; la compilación no necesita descargarlas de
+Google Fonts. Conservan las fuentes y pesos usados por el diseño.
+
 - **Cron:** `.github/workflows/ttl.yml` corre cada 10 minutos. Requiere los secretos
   de GitHub `CRON_URL` —URL base de la tienda— y `CRON_SECRET`. Llama a
   `POST /api/cron/release-expired` con `x-cron-secret`. Libera reservas sin pago
