@@ -6,9 +6,17 @@ on:
     - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
+concurrency:
+  group: release-expired-reservations
+  cancel-in-progress: false
+
 jobs:
   call-cron:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Call release-expired endpoint
         env:
@@ -27,8 +35,9 @@ jobs:
           HTTP_CODE=$(curl -sS -o cron_response.txt -w "%{http_code}" -X POST "${CRON_URL}/api/cron/release-expired" \
             -H "x-cron-secret: ${CRON_SECRET}" \
             -H "content-type: application/json" \
-            --data '{}')
+            --data '{"includeTrashCleanup":false}')
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            node -e 'const r=JSON.parse(require("fs").readFileSync("cron_response.txt","utf8")); if(r.ok!==true || r.trashCleanupEnabled!==false || r.autoTrashedOldCancelled!==0 || r.autoPurgedOrders!==0 || r.autoPurgedProducts!==0) process.exit(1);'
             echo "OK: release-expired returned HTTP ${HTTP_CODE}"
             cat cron_response.txt
             exit 0
