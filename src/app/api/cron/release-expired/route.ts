@@ -24,15 +24,15 @@ async function processExpiredForStatus(status: Extract<OrderStatus, "SCHEDULED" 
   for (const doc of qs.docs) {
     const orderRef = doc.ref;
     try {
-      await adminDb.runTransaction(async (tx) => {
+      const released = await adminDb.runTransaction(async (tx) => {
         const snap = await tx.get(orderRef);
-        if (!snap.exists) return;
+        if (!snap.exists) return false;
 
         const data = snap.data() as any;
-        if (data.status !== status) return;
+        if (data.status !== status) return false;
 
         const reservedUntil = data.reservedUntil as FirebaseFirestore.Timestamp | undefined;
-        if (!reservedUntil || reservedUntil.toMillis() >= now.toMillis()) return;
+        if (!reservedUntil || reservedUntil.toMillis() >= now.toMillis()) return false;
 
         const items = Array.isArray(data.itemsSnapshots) ? data.itemsSnapshots : [];
         const releases: StockRelease[] = items
@@ -115,9 +115,10 @@ async function processExpiredForStatus(status: Extract<OrderStatus, "SCHEDULED" 
           meta: { ip: "cron", userAgent: "cron" },
           createdAt: new Date(),
         });
+        return true;
       });
 
-      processed += 1;
+      if (released) processed += 1;
     } catch (e) {
       console.warn("[cron] failed to process order", doc.id, e);
     }
@@ -220,17 +221,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
     }
 
+    let options: unknown;
+    try {
+      const body = await req.text();
+      options = body.trim() ? JSON.parse(body) : {};
+    } catch {
+      return NextResponse.json({ error: "VALIDATION_ERROR" }, { status: 400 });
+    }
+    if (
+      !options || typeof options !== "object" || Array.isArray(options) ||
+      ("includeTrashCleanup" in options && typeof options.includeTrashCleanup !== "boolean")
+    ) {
+      return NextResponse.json({ error: "VALIDATION_ERROR" }, { status: 400 });
+    }
+    // Scheduled calls release stock only. Removing records requires explicit opt-in.
+    const trashCleanupEnabled = "includeTrashCleanup" in options && options.includeTrashCleanup === true;
     const now = Timestamp.now();
 
     let processed = 0;
     for (const status of EXPIRABLE_ORDER_STATUSES) {
       processed += await processExpiredForStatus(status as "SCHEDULED", now, 50);
     }
-    const d = await autoTrashOldCancelledOrders(now, 90, 100);
-    const e = await autoPurgeTrashOrders(now, 30, 100);
-    const f = await autoPurgeTrashProducts(now, 30, 100);
+    const d = trashCleanupEnabled ? await autoTrashOldCancelledOrders(now, 90, 100) : 0;
+    const e = trashCleanupEnabled ? await autoPurgeTrashOrders(now, 30, 100) : 0;
+    const f = trashCleanupEnabled ? await autoPurgeTrashProducts(now, 30, 100) : 0;
 
-    return NextResponse.json({ ok: true, processed, autoTrashedOldCancelled: d, autoPurgedOrders: e, autoPurgedProducts: f }, { status: 200 });
+    return NextResponse.json({ ok: true, processed, trashCleanupEnabled, autoTrashedOldCancelled: d, autoPurgedOrders: e, autoPurgedProducts: f }, { status: 200 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "UNKNOWN_ERROR";
     console.error("[cron/release-expired] error", msg);

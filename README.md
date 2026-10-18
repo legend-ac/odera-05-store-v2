@@ -184,13 +184,16 @@ Google Fonts. Conservan las fuentes y pesos usados por el diseño.
 - **Cron:** `.github/workflows/ttl.yml` corre cada 10 minutos. Requiere los secretos
   de GitHub `CRON_URL` —URL base de la tienda— y `CRON_SECRET`. Llama a
   `POST /api/cron/release-expired` con `x-cron-secret`. Libera reservas sin pago
-  vencidas; además envía a papelera pedidos cancelados de más de 90 días y purga
-  pedidos y productos que llevan más de 30 días en papelera. La ejecución depende
-  del calendario de GitHub Actions.
+  vencidas con `{"includeTrashCleanup":false}`. No mueve ni elimina registros
+  de la papelera. La limpieza antigua solo se ejecuta con una llamada autenticada
+  que incluya explícitamente `{"includeTrashCleanup":true}`; no está programada.
+  La ejecución depende del calendario de GitHub Actions.
 - **Respaldos:** `.github/workflows/backup.yml` exporta Firestore cada domingo a las
   03:00 UTC. Requiere los secretos de servidor de Firebase y, si corresponde,
-  `FIRESTORE_DATABASE_ID`. Exporta productos, pedidos, ajustes y contadores a
-  `backup/out`; el artefacto de GitHub se conserva 30 días.
+  `FIRESTORE_DATABASE_ID`, además de `BACKUP_ENCRYPTION_KEY` (32 bytes en
+  hexadecimal). Exporta productos, pedidos, ajustes y contadores cifrados con
+  AES-256-GCM; el artefacto `firestore-backup-encrypted` se conserva 30 días.
+  GitHub solo publica archivos `.json.enc` y falla si falta la clave.
 
 Para un respaldo local con el archivo de entorno:
 
@@ -199,8 +202,20 @@ node --env-file=.env.local --import tsx scripts/backup.ts
 ```
 
 `npm run backup:run` está disponible cuando las variables ya están cargadas en el
-proceso, como en el workflow. El respaldo exporta JSON; no incluye una restauración
-automática.
+proceso, como en el workflow. La exportación local es JSON legible salvo que
+también se cargue `BACKUP_ENCRYPTION_KEY`.
+
+La clave de recuperación se conserva localmente en `.env.backup.local`, excluido
+de Git y del despliegue. Conserva una copia segura de ese archivo: GitHub no
+permite recuperar el valor de un secreto. Para recuperar un archivo descargado
+del artefacto:
+
+```bash
+node --env-file=.env.backup.local --import tsx scripts/decrypt-backup.ts backup/out/orders.json.enc backup/out/orders-recovered.json
+```
+
+El comando verifica el cifrado y escribe un JSON nuevo sin sobrescribir archivos.
+No importa datos a Firestore; la restauración de la base de datos es manual.
 
 ## Nota sobre /dashboard
 

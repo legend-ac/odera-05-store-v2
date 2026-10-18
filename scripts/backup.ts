@@ -16,6 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { encryptBackup } from "./lib/backup-encryption";
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -60,6 +61,12 @@ async function exportCollection(db: FirebaseFirestore.Firestore, colName: string
 }
 
 async function main() {
+  const encryptionKey = process.env.BACKUP_ENCRYPTION_KEY;
+  if (process.env.GITHUB_ACTIONS === "true" && !encryptionKey) {
+    throw new Error("BACKUP_ENCRYPTION_KEY is required for GitHub Actions backups");
+  }
+  // Validate the key before reading customer data or creating output files.
+  if (encryptionKey) encryptBackup("", encryptionKey);
   const projectId = requireEnv("FIREBASE_PROJECT_ID");
   const clientEmail = requireEnv("FIREBASE_CLIENT_EMAIL");
   const privateKey = requireEnv("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n");
@@ -94,7 +101,10 @@ async function main() {
 
   for (const c of collections) {
     const data = await exportCollection(db, c);
-    fs.writeFileSync(path.join(outDir, `${c}.json`), JSON.stringify(data, null, 2), "utf-8");
+    const json = JSON.stringify(data, null, 2);
+    const contents = encryptionKey ? encryptBackup(json, encryptionKey) : json;
+    const filename = encryptionKey ? `${c}.json.enc` : `${c}.json`;
+    fs.writeFileSync(path.join(outDir, filename), contents, { encoding: "utf-8", mode: 0o600 });
     console.log(`Exported ${c}: ${data.length} docs`);
   }
 
