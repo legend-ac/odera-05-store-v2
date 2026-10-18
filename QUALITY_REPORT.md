@@ -56,6 +56,14 @@ detalles y adición al carrito local. Lint pasó con la advertencia externa de
 fuente ya existente. Las pruebas no crearon pedidos ni enviaron pagos reales.
 La compilación de producción y TypeScript pasaron con `npm run build:verify`.
 
+Restauración publicada: commit `c056cb8`, despliegue
+`dpl_AWWbuZXAfEN9i3C8ZtQzWquwj4BV` en estado **READY**, servido por
+`https://odera-05-store-v2.vercel.app`. Se comprobó el dominio a 393 y 1366 px
+en ambos temas: inicio y catálogo anteriores, carrito funcional y ficha aprobada
+con miniaturas laterales en PC y detalles debajo. Sin errores JavaScript ni
+desbordamiento horizontal. Se retiraron 311.28 MiB de informes y cachés y los
+17 temporales de esta restauración (3.03 MiB).
+
 ## Redistribución del frontend público — 18 de octubre de 2026 (histórico)
 
 La aclaración del usuario amplía el trabajo al diseño y la distribución de la
