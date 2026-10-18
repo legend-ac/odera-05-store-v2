@@ -135,6 +135,36 @@ visual clara en escritorio y móvil, sin errores JavaScript ni desbordamiento.
 Todas entregaron el atributo de tema en el HTML inicial. La comprobación no
 cambió los ajustes reales: el administrador elige la apariencia al guardar.
 
+## Corrección del acceso al administrador
+
+El flujo anterior dependía de `signInWithRedirect` y permanecía en `/login` sin
+un mensaje cuando `getRedirectResult` no devolvía credenciales. Se reemplazó por
+una ventana de Google abierta desde el clic del usuario. Tras validar el token y
+crear la cookie, se realiza una navegación completa al destino del dashboard
+para evitar reutilizar una redirección de una visita sin sesión. El destino
+queda limitado a `/dashboard` y sus subrutas.
+
+El middleware de entrada se trasladó a `src/middleware.ts`, al mismo nivel que
+`src/app`, para que Next.js lo incluya. Conserva el destino solicitado al enviar
+una visita sin cookie a `/login?next=...`; la comprobación real de permisos y
+revocación permanece en el layout del administrador.
+
+El servidor rechaza una autenticación de más de ocho horas antes de emitir una
+cookie que el panel rechazaría inmediatamente. Se conservan la comprobación de
+administrador, la validación de tokens revocados, CSRF y las cookies HttpOnly,
+Secure en producción y SameSite Strict. Los errores de cuenta no autorizada,
+sesión vencida, cancelación y ventana bloqueada se muestran en español.
+
+Pasaron **203 pruebas unitarias en 28 archivos**, TypeScript y lint (sin errores;
+permanece la advertencia existente de la fuente externa). La prueba de Chrome
+local abrió realmente `accounts.google.com`, cerró la ventana sin usar una
+cuenta y comprobó el mensaje de cancelación, el botón habilitado y cero errores
+JavaScript. No creó sesiones ni cambió usuarios o permisos. El acceso completo
+con la cuenta Google del propietario requiere que este complete la autenticación.
+La prueba E2E nueva pasó en escritorio y móvil: entrar por
+`/dashboard/settings` conserva `next`, y simular una ventana bloqueada muestra
+el aviso y permite reintentar sin solicitar una sesión al servidor.
+
 ## Cómo revisar para la exposición
 
 1. Ejecutar `npm run test:quality` con la tienda local abierta en `http://localhost:3000`.

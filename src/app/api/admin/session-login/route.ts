@@ -48,6 +48,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "NOT_ADMIN" }, { status: 403 });
     }
 
+    // Match the dashboard guard before issuing a cookie, so an old Google
+    // authentication produces a visible error instead of a login loop.
+    const authTime = typeof decoded.auth_time === "number" ? decoded.auth_time : 0;
+    if (!authTime || Math.floor(Date.now() / 1000) - authTime > 8 * 60 * 60) {
+      return NextResponse.json({ error: "AUTH_TOO_OLD" }, { status: 401 });
+    }
+
     const expiresIn = 8 * 60 * 60 * 1000; // 8h
     const sessionCookie = await adminAuth.createSessionCookie(parsed.data.idToken, { expiresIn });
 

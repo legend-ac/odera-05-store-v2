@@ -114,6 +114,13 @@ sin volver a construir toda la web.
 Inicia sesión con Google en `/login`. El acceso requiere el claim `admin: true`
 o un correo incluido en `ADMIN_ALLOWLIST_EMAILS`.
 
+El botón abre una ventana de Google. Al terminar, el servidor valida la cuenta,
+crea la cookie segura y carga el panel con una solicitud nueva. Si el navegador
+bloquea esa ventana, el acceso muestra cómo permitirla; una cancelación o una
+cuenta sin permisos también muestran un mensaje. Se evita el retorno silencioso
+del flujo anterior con redirección entre Firebase y Vercel, siguiendo la
+[alternativa de Firebase para navegadores que bloquean almacenamiento de terceros](https://firebase.google.com/docs/auth/web/redirect-best-practices#popup-sign-in).
+
 Para asignar el claim usando las credenciales locales:
 
 ```bash
@@ -231,7 +238,7 @@ No importa datos a Firestore; la restauración de la base de datos es manual.
 
 ## Nota sobre /dashboard
 
-- `middleware.ts` SOLO verifica **presencia** de cookie.
+- `src/middleware.ts` SOLO verifica **presencia** de cookie y conserva el destino del panel al solicitar acceso.
 - La verificación real (session cookie + claim admin) se hace en `src/app/(admin)/dashboard/layout.tsx` en runtime **nodejs**.
 
 ## Inventario operativo

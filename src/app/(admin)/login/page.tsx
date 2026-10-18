@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { GoogleAuthProvider, getRedirectResult, signInWithRedirect, signOut, type User } from "firebase/auth";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { GoogleAuthProvider, signInWithPopup, signOut, type User } from "firebase/auth";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { auth } from "@/lib/firebase/client";
+import { adminLoginDestination, adminLoginErrorMessage } from "@/lib/adminLogin";
 
 function setCsrfCookieIfMissing(): void {
   const existing = document.cookie.match(new RegExp(`${CSRF_COOKIE_NAME}=([^;]+)`));
@@ -32,38 +33,27 @@ function GoogleIcon() {
   );
 }
 
-function authErrorMessage(error: unknown): string {
-  const code = typeof error === "object" && error && "code" in error ? String((error as { code?: unknown }).code) : "";
-  if (code === "auth/unauthorized-domain") return "Este dominio no está autorizado en Firebase Authentication. Agrega localhost y el dominio de Vercel en Firebase Console > Authentication > Settings > Authorized domains.";
-  if (code === "auth/operation-not-allowed") return "El proveedor Google no está habilitado. Actívalo en Firebase Console > Authentication > Sign-in method.";
-  if (code === "auth/account-exists-with-different-credential") return "Esta cuenta usa otro método de inicio de sesión.";
-  if (code === "NOT_ADMIN") return "Tu cuenta de Google inició sesión, pero no tiene permisos de administrador.";
-  if (code === "CSRF_FAILED") return "No se pudo validar la sesión. Recarga la página e inténtalo nuevamente.";
-  return error instanceof Error ? error.message : "No se pudo iniciar sesión con Google.";
-}
-
 function LoginPageInner() {
-  const router = useRouter();
   const sp = useSearchParams();
-  const next = useMemo(() => {
-    const raw = sp.get("next") ?? "/dashboard";
-    if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
-    return raw;
-  }, [sp]);
+  const next = useMemo(() => adminLoginDestination(sp.get("next")), [sp]);
 
   const [busy, setBusy] = useState(false);
+  const [stage, setStage] = useState<"google" | "session">("google");
   const [err, setErr] = useState<string | null>(null);
 
-  const completeLogin = useCallback(async (user: User) => {
+  async function completeLogin(user: User) {
     try {
+      setStage("session");
       setCsrfCookieIfMissing();
       const idToken = await user.getIdToken(true);
 
       await apiPost<{ ok: boolean }>("/api/admin/session-login", { idToken }, { csrfCookieName: CSRF_COOKIE_NAME });
-      router.push(next);
+      // Read the new HttpOnly session on a fresh server request, without a
+      // previously cached unauthenticated dashboard redirect.
+      window.location.replace(next);
     } catch (e) {
       console.error(e);
-      setErr(authErrorMessage(e));
+      setErr(adminLoginErrorMessage(e));
       try {
         await signOut(auth);
       } catch {
@@ -72,38 +62,21 @@ function LoginPageInner() {
     } finally {
       setBusy(false);
     }
-  }, [next, router]);
-
-  useEffect(() => {
-    let active = true;
-    void getRedirectResult(auth)
-      .then((credential) => {
-        if (credential?.user && active) {
-          setBusy(true);
-          return completeLogin(credential.user);
-        }
-      })
-      .catch((error) => {
-        if (active) {
-          console.error(error);
-          setErr(authErrorMessage(error));
-          setBusy(false);
-        }
-      });
-    return () => { active = false; };
-  }, [completeLogin]);
+  }
 
   async function login() {
     setErr(null);
     setBusy(true);
+    setStage("google");
     try {
       setCsrfCookieIfMissing();
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      await signInWithRedirect(auth, provider);
+      const credential = await signInWithPopup(auth, provider);
+      await completeLogin(credential.user);
     } catch (e) {
       console.error(e);
-      setErr(authErrorMessage(e));
+      setErr(adminLoginErrorMessage(e));
       setBusy(false);
     }
   }
@@ -140,10 +113,11 @@ function LoginPageInner() {
             type="button"
             onClick={login}
             disabled={busy}
+            aria-busy={busy}
             className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-lg border border-[var(--ash-2)] bg-[var(--ink-3)] px-4 text-sm font-black text-[var(--paper)] shadow-sm transition hover:border-[var(--vermeil)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <GoogleIcon />
-            {busy ? "Abriendo Google..." : "Continuar con Google"}
+            {busy ? stage === "session" ? "Validando acceso..." : "Abriendo Google..." : "Continuar con Google"}
           </button>
 
           <div className="flex items-center gap-2.5 text-xs font-medium text-[var(--ash)]">
