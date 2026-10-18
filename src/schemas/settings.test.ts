@@ -9,6 +9,29 @@ const existingSettings = {
   paymentInstructions: {},
 };
 
+describe("store appearance settings", () => {
+  it("preserves compatibility with settings saved before the theme selector", () => {
+    expect(storeSettingsSchema.parse(existingSettings)).not.toHaveProperty("theme");
+  });
+
+  it.each(["dark", "light"] as const)("accepts the %s version without changing other settings", (theme) => {
+    const parsed = storeSettingsSchema.parse({
+      ...existingSettings,
+      theme,
+      homePromo: { couponCode: "ODERA10", freeShippingFrom: 200 },
+    });
+    expect(parsed.theme).toBe(theme);
+    expect(parsed.storeName).toBe(existingSettings.storeName);
+    expect(parsed.homePromo).toEqual({ couponCode: "ODERA10", freeShippingFrom: 200 });
+  });
+
+  it.each(["cream", "LIGHT", "", null, true, 1, {}])("rejects an unsupported theme: %j", (theme) => {
+    const parsed = storeSettingsSchema.safeParse({ ...existingSettings, theme });
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) expect(parsed.error.issues[0]?.path).toEqual(["theme"]);
+  });
+});
+
 describe("store commercial information", () => {
   it("accepts old settings without inventing commercial values", () => {
     const parsed = storeSettingsSchema.parse(existingSettings);

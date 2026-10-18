@@ -43,7 +43,7 @@ export default function ConsumerClaimForm() {
   }
 
   if (code) {
-    return <div className="mt-10 p-6" role="status" style={{ background: "rgba(60,184,120,.09)", border: "1px solid rgba(60,184,120,.45)" }}><p className="font-bold" style={{ color: "#86deb2" }}>Solicitud registrada</p><p className="mt-2" style={{ color: "var(--paper)", fontSize: "15px" }}>Tu código de seguimiento es <strong>{code}</strong>.</p><p className="mt-2" style={{ color: "var(--ash)", fontSize: "13px" }}>Guárdalo para cualquier consulta posterior.</p></div>;
+    return <div className="mt-10 p-6" role="status" style={{ background: "rgba(60,184,120,.09)", border: "1px solid rgba(60,184,120,.45)" }}><p className="font-bold" style={{ color: "var(--success)" }}>Solicitud registrada</p><p className="mt-2" style={{ color: "var(--paper)", fontSize: "15px" }}>Tu código de seguimiento es <strong>{code}</strong>.</p><p className="mt-2" style={{ color: "var(--ash)", fontSize: "13px" }}>Guárdalo para cualquier consulta posterior.</p></div>;
   }
 
   return (
@@ -57,7 +57,7 @@ export default function ConsumerClaimForm() {
       </div>
       <label className="grid gap-2" style={labelStyle}>Código de pedido <span style={{ color: "var(--ash)", fontWeight: 400 }}>(opcional)</span><input value={form.orderCode} onChange={(e) => update("orderCode", e.target.value)} style={inputStyle} className="h-11 px-3" /></label>
       <label className="grid gap-2" style={labelStyle}>Detalle de la solicitud<textarea required minLength={20} rows={6} value={form.detail} onChange={(e) => update("detail", e.target.value)} style={inputStyle} className="resize-y p-3" placeholder="Describe lo ocurrido y lo que solicitas." /></label>
-      {error && <p role="alert" style={{ color: "#ff876e", fontSize: "13px" }}>{error}</p>}
+      {error && <p role="alert" style={{ color: "var(--error)", fontSize: "13px" }}>{error}</p>}
       <button type="submit" disabled={submitting} className="btn-brand w-fit disabled:opacity-60" style={{ fontSize: "12px", padding: "12px 20px" }}>{submitting ? "Registrando…" : "Registrar solicitud"}</button>
     </form>
   );

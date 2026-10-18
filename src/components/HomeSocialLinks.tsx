@@ -87,8 +87,8 @@ export default function HomeSocialLinks({ compact = false }: { compact?: boolean
 
   if (compact) {
     return (
-      <nav aria-label="Redes sociales de ODERA 05" className="border-t border-white/10 pt-6">
-        <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Síguenos</p>
+      <nav aria-label="Redes sociales de ODERA 05" className="border-t border-[var(--ash-2)] pt-6">
+        <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--ash)]">Síguenos</p>
         <div className="flex flex-wrap items-center gap-2.5">
           {items.map((s) => (
             <a
@@ -96,10 +96,10 @@ export default function HomeSocialLinks({ compact = false }: { compact?: boolean
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:border-[var(--vermeil)] hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--vermeil)]"
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--ash-2)] bg-[var(--ink-2)] px-3.5 py-2 text-xs font-semibold text-[var(--paper)] transition-colors hover:border-[var(--vermeil)] hover:bg-[var(--ink-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--vermeil)]"
             >
               <span
-                className={`footer-social__icon ${s.key === "instagram" ? "text-pink-400" : s.key === "whatsapp" ? "text-emerald-400" : s.key === "facebook" ? "text-blue-400" : "text-white"}`}
+                className={`footer-social__icon ${s.key === "instagram" ? "text-pink-500" : s.key === "whatsapp" ? "text-[var(--success)]" : s.key === "facebook" ? "text-blue-500" : "text-[var(--paper)]"}`}
                 aria-hidden="true"
               >
                 {s.icon}

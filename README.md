@@ -134,6 +134,18 @@ El enlace privado permite consultar el seguimiento del pedido.
 En **Dashboard → Ajustes → Tienda** se configuran horarios, plazos de entrega y
 condiciones de cambios. Los campos vacíos indican consultar a la tienda.
 
+## Apariencia clara u oscura
+
+En **Dashboard → Ajustes → Tienda → Apariencia de la tienda** elige **Oscuro** o
+**Claro crema** y pulsa **Guardar configuración**. La selección se guarda para
+toda la tienda: inicio, catálogo, fichas, carrito, pago, seguimiento, información
+y acceso. La versión clara usa fondo crema, tarjetas blancas, texto oscuro y
+acentos rojos. Conserva las fotografías originales y el diseño de cada página.
+
+El servidor entrega el tema guardado en el HTML inicial y actualiza la caché al
+guardar los ajustes. Las tiendas sin un tema configurado conservan el oscuro.
+El panel administrativo mantiene su paleta clara de trabajo.
+
 ## Verificaciones
 
 | Comando | Alcance |

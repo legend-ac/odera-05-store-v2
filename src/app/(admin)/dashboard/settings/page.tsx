@@ -4,6 +4,7 @@ export const maxDuration = 60;
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import SettingsClient from "./settings-client";
 import { normalizeStoreInformation } from "@/lib/storeInformation";
+import { normalizeStoreTheme } from "@/lib/storeTheme";
 
 const DEFAULT_PRODUCT_TYPES = [
   { key: "zapatillas", label: "Zapatillas", subtitle: "Running, urbano y futbol", cta: "Ver zapatillas", enabled: true },
@@ -24,6 +25,7 @@ export default async function SettingsPage() {
   const initial = data
       ? {
           storeName: String(data.storeName ?? "ODERA 05 STORE"),
+          theme: normalizeStoreTheme(data.theme),
           homePromoEnabled: Boolean(data.homePromoEnabled ?? true),
           homePromo: {
             title: String(data.homePromo?.title ?? "Promocion activa"),
@@ -61,6 +63,7 @@ export default async function SettingsPage() {
       }
       : {
           storeName: "ODERA 05 STORE",
+          theme: normalizeStoreTheme(undefined),
           homePromoEnabled: true,
           homePromo: {
             title: "Promocion activa",

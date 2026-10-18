@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Timestamp } from "firebase-admin/firestore";
 import { cookies } from "next/headers";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { storeSettingsSchema } from "@/schemas/settings";
 import { assertCsrfHeader } from "@/lib/server/csrf";
@@ -34,7 +35,9 @@ export async function POST(req: Request) {
     const beforeSnap = await ref.get();
     const before = beforeSnap.exists ? beforeSnap.data() : null;
 
-    await ref.set({ ...parsed.data, updatedAt: now }, { merge: true });
+    const { theme, ...settings } = parsed.data;
+    const update = { ...settings, ...(theme !== undefined ? { theme } : {}), updatedAt: now };
+    await ref.set(update, { merge: true });
 
     await adminDb.collection("auditLogs").add({
       actor: { uid: admin.uid, email: admin.email },
@@ -45,6 +48,9 @@ export async function POST(req: Request) {
       meta: { ip, userAgent: ua },
       createdAt: new Date(),
     });
+
+    revalidateTag("store-theme");
+    revalidatePath("/", "layout");
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (e) {

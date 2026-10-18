@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const storeSettingsSchema = z.object({
   storeName: z.string().min(2).max(80),
+  theme: z.enum(["dark", "light"]).optional(),
   homePromoEnabled: z.boolean().optional(),
   homePromo: z
     .object({

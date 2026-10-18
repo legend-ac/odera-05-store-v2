@@ -100,6 +100,7 @@ export type OrderDoc = {
 
 export type StoreSettingsDoc = {
   storeName: string;
+  theme?: "dark" | "light";
   homePromoEnabled?: boolean;
   homePromo?: {
     title?: string;

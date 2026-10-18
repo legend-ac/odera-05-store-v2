@@ -229,7 +229,7 @@ export default function ProductClient({
 
               <div
                 className="relative flex touch-pan-y cursor-grab select-none items-center justify-center overflow-hidden w-full active:cursor-grabbing"
-                style={{ aspectRatio: "1 / 1", minHeight: "300px", background: "radial-gradient(circle at 50% 45%, #292934 0%, var(--ink-3) 68%)" }}
+                style={{ aspectRatio: "1 / 1", minHeight: "300px", background: "var(--image-surface)" }}
                 onPointerDown={onGalleryPointerDown}
                 onPointerUp={onGalleryPointerUp}
                 onPointerCancel={() => { dragStart.current = null; }}
@@ -258,13 +258,13 @@ export default function ProductClient({
                 <>
                   <button type="button" aria-label="Imagen anterior" onClick={showPreviousImage}
                     className="absolute left-3 top-1/2 hidden -translate-y-1/2 items-center justify-center sm:flex transition-all duration-200"
-                    style={{ width: 36, height: 36, background: "rgba(14,14,18,0.7)", border: "1px solid var(--ash-2)", borderRadius: "2px", color: S.paper }}
+                    style={{ width: 36, height: 36, background: "var(--header-background)", border: "1px solid var(--ash-2)", borderRadius: "2px", color: S.paper }}
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                   </button>
                   <button type="button" aria-label="Siguiente imagen" onClick={showNextImage}
                     className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center justify-center sm:flex transition-all duration-200"
-                    style={{ width: 36, height: 36, background: "rgba(14,14,18,0.7)", border: "1px solid var(--ash-2)", borderRadius: "2px", color: S.paper }}
+                    style={{ width: 36, height: 36, background: "var(--header-background)", border: "1px solid var(--ash-2)", borderRadius: "2px", color: S.paper }}
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </button>
@@ -399,7 +399,7 @@ export default function ProductClient({
                     {variantLabel}
                   </p>
                   {selectedVariant && (
-                    <p style={{ fontSize: "12px", fontWeight: 600, color: selectedVariant.stock > 0 ? "#3CB878" : S.red }}>
+                    <p style={{ fontSize: "12px", fontWeight: 600, color: selectedVariant.stock > 0 ? "var(--success)" : S.red }}>
                       {selectedVariant.stock > 0 ? `Stock: ${selectedVariant.stock}` : "Sin stock"}
                     </p>
                   )}
@@ -505,7 +505,7 @@ export default function ProductClient({
 
               {available > 0 && (
                 <p className="text-center flex items-center justify-center gap-1.5" style={{ fontSize: "11px", color: S.ash }}>
-                  <svg className="h-3 w-3" style={{ color: "#3CB878" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="h-3 w-3" style={{ color: "var(--success)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                   Compra 100% segura · Producto original
@@ -576,14 +576,14 @@ export default function ProductClient({
 
       {/* ══ MODAL CARRITO ══ */}
       {showCartModal && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center p-3 sm:items-center sm:p-6" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}>
+        <div className="fixed inset-0 z-[80] flex items-end justify-center p-3 sm:items-center sm:p-6" style={{ background: "var(--overlay)", backdropFilter: "blur(8px)" }}>
           <div className="w-full max-w-[540px] fade-in-up">
             <div className="max-h-[85dvh] overflow-hidden flex flex-col" style={{ background: S.ink2, border: "1px solid var(--ash-2)", borderRadius: "2px", boxShadow: "var(--shadow-elevated)" }}>
 
               {/* Modal Header */}
               <div className="flex-shrink-0 flex items-start justify-between gap-4 p-5 pb-4" style={{ borderBottom: S.border }}>
                 <div>
-                  <p className="font-bold uppercase mb-1 flex items-center gap-1.5" style={{ fontSize: "10px", letterSpacing: "0.2em", color: "#3CB878" }}>
+                  <p className="font-bold uppercase mb-1 flex items-center gap-1.5" style={{ fontSize: "10px", letterSpacing: "0.2em", color: "var(--success)" }}>
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -626,7 +626,7 @@ export default function ProductClient({
                 </div>
 
                 {recommended.length > 0 && (
-                  <div className="rounded-sm p-3" style={{ background: "rgba(14,14,18,.26)", border: S.border }}>
+                  <div className="rounded-sm p-3" style={{ background: "var(--ink)", border: S.border }}>
                     <h3 className="font-bold uppercase mb-3" style={{ fontSize: "10px", letterSpacing: "0.18em", color: S.ash }}>
                       Relacionados
                     </h3>

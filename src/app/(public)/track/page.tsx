@@ -44,7 +44,7 @@ type TrackResponse = {
 
 const STATUS_STYLE: Record<string, { dot: string; badge: string; label: string }> = {
   PENDING_VALIDATION: { dot: "bg-amber-500", badge: "bg-amber-50 text-amber-700 border-amber-200", label: "Pendiente de validación" },
-  SCHEDULED: { dot: "bg-slate-400", badge: "bg-slate-50 text-slate-700 border-slate-200", label: "Reservado · pendiente de pago" },
+  SCHEDULED: { dot: "bg-slate-400", badge: "bg-[var(--ink-3)] text-[var(--paper-2)] border-[var(--ash-2)]", label: "Reservado · pendiente de pago" },
   PAYMENT_SENT: { dot: "bg-blue-500", badge: "bg-blue-50 text-blue-700 border-blue-200", label: "Pago reportado" },
   PAID: { dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Pago confirmado" },
   PREPARING: { dot: "bg-violet-500", badge: "bg-violet-50 text-violet-700 border-violet-200", label: "Preparando pedido" },
@@ -56,7 +56,7 @@ const STATUS_STYLE: Record<string, { dot: string; badge: string; label: string }
 };
 
 function StatusPill({ status }: { status: string }) {
-  const s = STATUS_STYLE[status] ?? { dot: "bg-slate-400", badge: "bg-slate-50 text-slate-700 border-slate-200", label: status };
+  const s = STATUS_STYLE[status] ?? { dot: "bg-slate-400", badge: "bg-[var(--ink-3)] text-[var(--paper-2)] border-[var(--ash-2)]", label: status };
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${s.badge}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
@@ -229,15 +229,15 @@ function TrackPageInner() {
     <div className="shopping-flow mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">Seguimiento de pedido</h1>
-        <p className="text-sm text-slate-500 mt-1">Consulta el estado de tu compra con tu número de pedido y código de seguimiento.</p>
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-[var(--paper)]">Seguimiento de pedido</h1>
+        <p className="text-sm text-[var(--ash)] mt-1">Consulta el estado de tu compra con tu número de pedido y código de seguimiento.</p>
       </div>
 
       {/* Search Form */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] p-5 flex flex-col gap-4">
+      <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] p-5 flex flex-col gap-4">
         {recent.length ? (
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold uppercase tracking-widest text-slate-500">Pedidos recientes</label>
+            <label className="text-xs font-semibold uppercase tracking-widest text-[var(--ash)]">Pedidos recientes</label>
             <div className="flex flex-wrap gap-2">
               {recent.map((r) => (
                 <button
@@ -248,7 +248,7 @@ function TrackPageInner() {
                     setTrackingToken(r.trackingToken);
                     void load(r.publicCode, r.trackingToken);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-[var(--surface-muted)] text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-[var(--surface-hover)] transition-all duration-150"
+                  className="px-3 py-1.5 rounded-lg border border-[var(--ash-2)] bg-[var(--surface-muted)] text-xs font-semibold text-[var(--paper-2)] hover:border-[var(--ash)] hover:bg-[var(--surface-hover)] transition-all duration-150"
                 >
                   {r.publicCode}
                 </button>
@@ -258,7 +258,7 @@ function TrackPageInner() {
         ) : null}
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-slate-700">Pegar enlace de seguimiento (opcional)</label>
+          <label className="text-sm font-medium text-[var(--paper-2)]">Pegar enlace de seguimiento (opcional)</label>
           <div className="flex gap-2">
             <Input value={trackingUrl} onChange={(e) => setTrackingUrl(e.target.value)} placeholder="https://.../t/OD-0001/código-de-seguimiento" uiSize="sm" />
             <Button type="button" variant="secondary" size="sm" onClick={applyTrackingUrl}>Cargar</Button>
@@ -266,7 +266,7 @@ function TrackPageInner() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-slate-700">Número de pedido (ejemplo: OD-1234)</label>
+          <label className="text-sm font-medium text-[var(--paper-2)]">Número de pedido (ejemplo: OD-1234)</label>
           <div className="flex gap-2">
             <Input value={publicCode} onChange={(e) => setPublicCode(e.target.value)} uiSize="sm" />
             <Button type="button" variant="secondary" size="sm" onClick={() => copyText(publicCode, "Número")}>Copiar</Button>
@@ -274,7 +274,7 @@ function TrackPageInner() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-slate-700">Código de seguimiento</label>
+          <label className="text-sm font-medium text-[var(--paper-2)]">Código de seguimiento</label>
           <div className="flex gap-2">
             <Input value={trackingToken} onChange={(e) => setTrackingToken(e.target.value)} uiSize="sm" className="font-mono" />
             <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingToken, "Código")}>Copiar</Button>
@@ -301,46 +301,46 @@ function TrackPageInner() {
 
       {/* Order Result */}
       {data ? (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] overflow-hidden fade-in-up">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] overflow-hidden fade-in-up">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--ash-2)]">
             <div className="flex items-center gap-2.5">
-              <span className="font-mono text-sm font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">{data.publicCode}</span>
+              <span className="font-mono text-sm font-bold text-[var(--paper)] bg-[var(--ink-3)] px-2.5 py-1 rounded-lg">{data.publicCode}</span>
             </div>
             <StatusPill status={data.status} />
           </div>
 
           <div className="p-5 flex flex-col gap-3">
-            {data.shipping ? <p className="text-sm text-slate-600">Envío: {shippingLabel(data.shipping)}</p> : null}
+            {data.shipping ? <p className="text-sm text-[var(--ash)]">Envío: {shippingLabel(data.shipping)}</p> : null}
 
             {data.reservedUntilMs && (data.status === "SCHEDULED" || data.status === "CANCELLED_EXPIRED") ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-[var(--ash)]">
                 Reserva vigente hasta: {new Date(data.reservedUntilMs).toLocaleString("es-PE", { timeZone: "America/Lima" })}{expired ? " (vencida)" : ""}
               </p>
             ) : null}
 
-            <div className="border-t border-slate-100 pt-3 flex flex-col gap-1.5 text-sm">
+            <div className="border-t border-[var(--ash-2)] pt-3 flex flex-col gap-1.5 text-sm">
               {data.itemsSnapshots?.map((it, idx) => (
                 <div key={idx} className="flex justify-between">
-                  <span className="text-slate-700">{it.nameSnapshot} x {it.qty}</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatPEN(it.unitPriceSnapshot * it.qty)}</span>
+                  <span className="text-[var(--paper-2)]">{it.nameSnapshot} x {it.qty}</span>
+                  <span className="font-medium text-[var(--paper)] tabular-nums">{formatPEN(it.unitPriceSnapshot * it.qty)}</span>
                 </div>
               ))}
             </div>
 
             {data.totals ? (
-              <div className="border-t border-slate-100 pt-3 flex flex-col gap-1 text-sm">
-                <div className="flex justify-between"><span className="text-slate-500">Subtotal</span><span className="tabular-nums">{formatPEN(data.totals.subtotal)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Descuento</span><span className="tabular-nums">{data.totals.discountAmount ? `-${formatPEN(data.totals.discountAmount)}` : formatPEN(0)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Envío</span><span className="tabular-nums">{data.totals.shippingCost ? formatPEN(data.totals.shippingCost) : "Gratis"}</span></div>
-                <div className="flex justify-between font-semibold text-slate-900"><span>Total</span><span className="tabular-nums">{formatPEN(data.totals.totalToPay)}</span></div>
+              <div className="border-t border-[var(--ash-2)] pt-3 flex flex-col gap-1 text-sm">
+                <div className="flex justify-between"><span className="text-[var(--ash)]">Subtotal</span><span className="tabular-nums">{formatPEN(data.totals.subtotal)}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--ash)]">Descuento</span><span className="tabular-nums">{data.totals.discountAmount ? `-${formatPEN(data.totals.discountAmount)}` : formatPEN(0)}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--ash)]">Envío</span><span className="tabular-nums">{data.totals.shippingCost ? formatPEN(data.totals.shippingCost) : "Gratis"}</span></div>
+                <div className="flex justify-between font-semibold text-[var(--paper)]"><span>Total</span><span className="tabular-nums">{formatPEN(data.totals.totalToPay)}</span></div>
                 {data.couponCode ? (
                   <div className="text-xs font-semibold text-emerald-700 mt-1">Cupón aplicado: {data.couponCode}</div>
                 ) : null}
               </div>
             ) : null}
 
-            <div className="border-t border-slate-100 pt-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Notificar por WhatsApp</p>
+            <div className="border-t border-[var(--ash-2)] pt-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ash)] mb-2">Notificar por WhatsApp</p>
               {waHref ? (
                 <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand inline-flex items-center gap-2">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -349,7 +349,7 @@ function TrackPageInner() {
                   Enviar mensaje por WhatsApp
                 </a>
               ) : (
-                <p className="text-xs text-slate-500">WhatsApp no disponible por el momento.</p>
+                <p className="text-xs text-[var(--ash)]">WhatsApp no disponible por el momento.</p>
               )}
             </div>
           </div>
@@ -357,8 +357,8 @@ function TrackPageInner() {
       ) : null}
 
       {data?.status === "SCHEDULED" && !expired ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col gap-3">
-          <p className="text-sm text-slate-600">Tu pedido está reservado. Completa el pago antes de que venza la reserva.</p>
+        <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] p-5 flex flex-col gap-3">
+          <p className="text-sm text-[var(--ash)]">Tu pedido está reservado. Completa el pago antes de que venza la reserva.</p>
           <a
             href={`/checkout/pago?publicCode=${encodeURIComponent(data.publicCode)}&trackingToken=${encodeURIComponent(trackingToken)}`}
             className="btn-brand self-start"
@@ -368,7 +368,7 @@ function TrackPageInner() {
         </div>
       ) : null}
 
-      {data && (data.status === "PAYMENT_SENT" || data.status === "PENDING_VALIDATION") ? <p className="text-sm text-slate-600">Comprobante recibido. Tu pago está pendiente de validación; no necesitas enviarlo otra vez.</p> : null}
+      {data && (data.status === "PAYMENT_SENT" || data.status === "PENDING_VALIDATION") ? <p className="text-sm text-[var(--ash)]">Comprobante recibido. Tu pago está pendiente de validación; no necesitas enviarlo otra vez.</p> : null}
     </div>
   );
 }

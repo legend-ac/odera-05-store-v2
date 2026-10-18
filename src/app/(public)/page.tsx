@@ -93,7 +93,7 @@ export default async function HomePage() {
       {/* ── HERO ── */}
       <section
         className="home-hero relative overflow-hidden"
-        style={{ display: "flex", flexDirection: "column", background: "var(--ink)" }}
+        style={{ display: "flex", flexDirection: "column", background: "var(--hero-gradient)" }}
       >
         {/* Speed lines background */}
         <div
@@ -231,17 +231,17 @@ export default async function HomePage() {
               className="home-hero__media-card relative w-full max-w-[340px] xl:max-w-[380px] h-[440px] xl:h-[490px] rounded overflow-hidden"
               style={{
                 border: "1px solid rgba(232, 69, 44, 0.22)",
-                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(232, 69, 44, 0.08)",
-                background: "radial-gradient(circle at 50% 30%, rgba(232, 69, 44, 0.12), transparent 60%), linear-gradient(180deg, #13131a 0%, #09090d 100%)",
+                boxShadow: "var(--shadow-elevated)",
+                background: "var(--hero-art-surface)",
               }}
             >
               {/* Corner badge top-left */}
               <div
                 className="absolute top-3 left-3 z-10"
                 style={{
-                  background: "rgba(14,14,18,0.75)",
+                  background: "var(--header-background)",
                   backdropFilter: "blur(6px)",
-                  border: "1px solid rgba(90,88,104,0.4)",
+                  border: "1px solid var(--ash-2)",
                   borderRadius: "2px",
                   padding: "3px 8px",
                 }}
@@ -264,21 +264,21 @@ export default async function HomePage() {
               {/* Subtle bottom fade */}
               <div
                 className="absolute inset-0 pointer-events-none"
-                style={{ background: "linear-gradient(to top, rgba(9,9,13,0.85) 0%, transparent 28%)" }}
+                style={{ background: "var(--hero-art-overlay)" }}
               />
 
               {/* Badge bottom-right */}
               <div
                 className="absolute bottom-3 right-3 z-10"
                 style={{
-                  background: "rgba(14,14,18,0.75)",
+                  background: "var(--header-background)",
                   backdropFilter: "blur(6px)",
-                  border: "1px solid rgba(90,88,104,0.4)",
+                  border: "1px solid var(--ash-2)",
                   borderRadius: "2px",
                   padding: "3px 8px",
                 }}
               >
-                <span style={{ fontSize: "9px", letterSpacing: "0.18em", color: "rgba(243,238,228,0.7)", fontWeight: 700, textTransform: "uppercase" }}>
+                <span style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--ash)", fontWeight: 700, textTransform: "uppercase" }}>
                   Selección semanal
                 </span>
               </div>
@@ -500,7 +500,7 @@ export default async function HomePage() {
               className="object-cover"
             />
             <div className="absolute inset-x-0 bottom-0 p-5" style={{ background: "linear-gradient(0deg, rgba(14,14,18,.96), transparent)" }}>
-              <p className="font-black uppercase" style={{ fontSize: "10px", letterSpacing: ".2em", color: "var(--paper)" }}>Tienda física · Lima Norte</p>
+              <p className="font-black uppercase" style={{ fontSize: "10px", letterSpacing: ".2em", color: "var(--inverse-foreground)" }}>Tienda física · Lima Norte</p>
             </div>
           </div>
 

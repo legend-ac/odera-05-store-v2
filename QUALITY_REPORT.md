@@ -108,6 +108,27 @@ Los workflows `ttl.yml` y `backup.yml`, antes desactivados por inactividad, qued
 
 La clave de recuperación está en `.env.backup.local`, excluida de Git y Vercel, y en un secreto de GitHub. El README explica cómo recuperar un archivo sin sobrescribir exportaciones ni escribir en Firestore. La papelera no tiene limpieza programada. Las comprobaciones temporales se retiran con el comando de limpieza; la clave de recuperación se conserva.
 
+## Apariencia clara y oscura
+
+El administrador puede elegir **Oscuro** o **Claro crema** desde Ajustes → Tienda
+y guardar la selección global. La API conserva el tema existente cuando un
+cliente antiguo omite el campo, valida las opciones y mantiene la autenticación
+administrativa y CSRF. Guardar invalida la caché del tema y del layout; el HTML
+inicial y el navegador reciben el mismo valor. El dashboard conserva su paleta
+clara local.
+
+Se adaptaron cabecera, pie, inicio, catálogo y fichas, carrito, checkout y pago,
+confirmación, seguimiento, reclamos y login. Las fotos mantienen sus colores.
+Las comprobaciones locales pasaron **164 pruebas unitarias**, TypeScript,
+compilación de producción y **14 E2E** en Chrome de escritorio y móvil. Lint no
+reporta errores; conserva la advertencia existente de la fuente externa.
+
+La revisión visual local simuló la paleta clara sin escribir ajustes reales:
+10 páginas HTTP 200, fondo crema y texto oscuro, sin errores JavaScript ni
+desbordamiento horizontal a 1366 px, e inicio móvil a 393 px. El guardado del tema,
+la compatibilidad con ajustes anteriores y la carga del valor para SSR se
+verificaron con pruebas unitarias de servidor y API.
+
 ## Cómo revisar para la exposición
 
 1. Ejecutar `npm run test:quality` con la tienda local abierta en `http://localhost:3000`.

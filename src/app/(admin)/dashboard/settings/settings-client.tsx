@@ -1,16 +1,19 @@
 ﻿"use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { Input } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
 import { normalizeStoreInformation, type StoreBusinessInformation } from "@/lib/storeInformation";
+import { normalizeStoreTheme } from "@/lib/storeTheme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Settings = {
   storeName: string;
+  theme?: "dark" | "light";
   homePromoEnabled?: boolean;
   homePromo?: {
     title?: string;
@@ -136,6 +139,7 @@ function StatusBadge({ ok, labelOn, labelOff }: { ok: boolean; labelOn: string; 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SettingsClient({ initial }: { initial: Settings }) {
+  const router = useRouter();
   const [s, setS] = useState<Settings>(initial);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -157,7 +161,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
   function validateInput(data: Settings): string[] {
     const errs: string[] = [];
     if (!(data.storeName ?? "").trim()) errs.push("El nombre de tienda es obligatorio.");
-    if (!(data.publicContactEmail ?? "").includes("@")) errs.push("Correo público inválido.");
+    if ((data.publicContactEmail ?? "").trim() && !data.publicContactEmail.includes("@")) errs.push("Correo público inválido.");
     if (promoEnabled && couponCode && couponCode.length < 4) errs.push("El código de cupón debe tener al menos 4 caracteres.");
     if (promoEnabled && (discountPercent < 0 || discountPercent > 100)) errs.push("El porcentaje de descuento debe estar entre 0 y 100.");
     if (promoEnabled && freeShippingFrom < 0) errs.push("Envío gratis desde no puede ser negativo.");
@@ -183,6 +187,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
     try {
       await apiPost("/api/admin/settings/update", s, { csrfCookieName: CSRF_COOKIE_NAME });
       setMsg("Configuración guardada correctamente.");
+      router.refresh();
     } catch (e) {
       setMsg(`Error: ${e instanceof Error ? e.message : "Error desconocido"}`);
     } finally {
@@ -216,7 +221,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-display font-bold text-slate-900">Configuración de tienda</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Controla datos públicos, redes sociales y medios de pago.</p>
+          <p className="text-sm text-slate-500 mt-0.5">Controla la apariencia, datos públicos, redes sociales y medios de pago.</p>
         </div>
         <Button type="button" onClick={save} disabled={busy} variant="primary" size="md">
           {busy ? "Guardando..." : "Guardar configuración"}
@@ -245,7 +250,7 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
 
       <nav className="admin-settings-nav" aria-label="Secciones de ajustes">
         {[
-          ["store", "Tienda", "Identidad y promoción"],
+          ["store", "Tienda", "Apariencia y promoción"],
           ["payments", "Pagos", "Yape y Plin"],
           ["channels", "Canales", "Contacto y redes"],
           ["catalog", "Catálogo", "Tipos de producto"],
@@ -305,6 +310,51 @@ export default function SettingsClient({ initial }: { initial: Settings }) {
           </ul>
         </div>
       )}
+
+      {activeSection === "store" && <SectionCard
+        title="Apariencia de la tienda"
+        subtitle="Elige la versión que verán todos los clientes en toda la página"
+        icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3a9 9 0 100 18h1.5a2.5 2.5 0 001.768-4.268A1.5 1.5 0 0116.328 14H18a3 3 0 003-3 9 9 0 00-9-8z" /><path strokeLinecap="round" d="M7.5 10h.01M10 6.5h.01M15 6.5h.01M18 10h.01" /></svg>}
+      >
+        <fieldset disabled={busy}>
+          <legend className="sr-only">Versión visual de la tienda</legend>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {([
+              { value: "dark", label: "Oscuro", description: "Fondo oscuro y acentos rojos.", background: "#0E0E12", card: "#1E1E28", foreground: "#F3EEE4", border: "#3A3848" },
+              { value: "light", label: "Claro crema", description: "Fondo crema, tarjetas blancas y texto oscuro.", background: "#F8F5EF", card: "#FFFFFF", foreground: "#24211E", border: "#DDD6CA" },
+            ] as const).map((option) => (
+              <label
+                key={option.value}
+                className={`cursor-pointer rounded-xl border p-3 transition-colors ${normalizeStoreTheme(s.theme) === option.value ? "border-[var(--vermeil)] bg-[var(--brand-50)]" : "border-[var(--ash-2)] bg-[var(--ink-2)]"}`}
+              >
+                <div aria-hidden="true" className="mb-3 overflow-hidden rounded-lg border p-3" style={{ background: option.background, borderColor: option.border }}>
+                  <div className="mb-3 flex items-center justify-between border-b pb-2" style={{ borderColor: option.border }}>
+                    <span className="h-2 w-16 rounded-sm" style={{ background: option.foreground }} />
+                    <span className="h-2 w-7 rounded-sm bg-[#E8452C]" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[0, 1, 2].map((item) => <div key={item} className="h-12 rounded border" style={{ background: option.card, borderColor: option.border }} />)}
+                  </div>
+                </div>
+                <span className="flex items-center gap-2 text-sm font-bold text-[var(--paper)]">
+                  <input
+                    type="radio"
+                    name="store-theme"
+                    value={option.value}
+                    checked={normalizeStoreTheme(s.theme) === option.value}
+                    onChange={() => setS((previous) => ({ ...previous, theme: option.value }))}
+                    aria-describedby={`store-theme-${option.value}-description`}
+                    className="h-4 w-4 accent-[var(--vermeil)]"
+                  />
+                  {option.label}
+                </span>
+                <span id={`store-theme-${option.value}-description`} className="mt-1 block pl-6 text-xs leading-relaxed text-[var(--ash)]">{option.description}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <p className="mt-3 text-xs text-[var(--ash)]">Se aplica al pulsar «Guardar configuración».</p>
+      </SectionCard>}
 
       {/* Sección: Identidad base */}
       {activeSection === "store" && <SectionCard

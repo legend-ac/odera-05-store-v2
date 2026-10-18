@@ -34,7 +34,7 @@ export default function Footer() {
   if (pathname === "/login" || pathname.startsWith("/dashboard")) return null;
 
   return (
-    <footer className={isHome ? "mt-0" : "mt-12"} style={{ background: "#111116", borderTop: "2px solid var(--vermeil)" }}>
+    <footer className={isHome ? "mt-0" : "mt-12"} style={{ background: "var(--footer-background)", borderTop: "2px solid var(--vermeil)" }}>
       <Container className="grid gap-x-10 gap-y-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr_1.15fr] lg:py-14">
         <section aria-label="ODERA 05 Store" className="flex flex-col gap-4">
           <Link href="/" className="flex w-fit items-center gap-3" aria-label="Ir al inicio de ODERA 05 Store">

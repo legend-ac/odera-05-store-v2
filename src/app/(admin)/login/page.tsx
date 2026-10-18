@@ -109,7 +109,7 @@ function LoginPageInner() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[#111827] px-4 py-12">
+    <div className="grid min-h-screen place-items-center bg-[var(--ink)] px-4 py-12 text-[var(--paper)]">
       <div className="w-full max-w-[420px] fade-in-up">
         <div className="mb-7 flex flex-col items-center gap-3">
           <span className="relative grid h-14 w-14 place-items-center rounded-2xl bg-[#ec452e] text-base font-black text-white shadow-[0_12px_30px_rgba(236,69,46,0.25)] ring-1 ring-white/15">
@@ -117,21 +117,21 @@ function LoginPageInner() {
             O5
           </span>
           <div className="text-center">
-            <p className="text-lg font-black tracking-tight text-white">ODERA 05 STORE</p>
-            <p className="mt-1 text-xs font-semibold text-slate-400">Administración comercial</p>
+            <p className="text-lg font-black tracking-tight text-[var(--paper)]">ODERA 05 STORE</p>
+            <p className="mt-1 text-xs font-semibold text-[var(--ash)]">Administración comercial</p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-5 rounded-lg border border-white/10 bg-white/[0.06] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-8">
+        <div className="flex flex-col gap-5 rounded-lg border border-[var(--ash-2)] bg-[var(--ink-2)] p-6 shadow-[var(--shadow-elevated)] sm:p-8">
           <div>
-            <h1 className="text-xl font-black text-white">Ingreso de administrador</h1>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
+            <h1 className="text-xl font-black text-[var(--paper)]">Ingreso de administrador</h1>
+            <p className="mt-1.5 text-sm leading-relaxed text-[var(--ash)]">
               Inicia sesion con Google. Tu cuenta debe tener permisos de administrador.
             </p>
           </div>
 
           {err ? (
-            <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-200">
+            <div className="rounded-lg border border-[var(--vermeil)] bg-[var(--ink-3)] px-4 py-3 text-sm font-semibold text-[var(--paper)]" role="alert">
               {err}
             </div>
           ) : null}
@@ -140,14 +140,14 @@ function LoginPageInner() {
             type="button"
             onClick={login}
             disabled={busy}
-            className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-lg bg-white px-4 text-sm font-black text-slate-900 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-lg border border-[var(--ash-2)] bg-[var(--ink-3)] px-4 text-sm font-black text-[var(--paper)] shadow-sm transition hover:border-[var(--vermeil)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <GoogleIcon />
             {busy ? "Abriendo Google..." : "Continuar con Google"}
           </button>
 
-          <div className="flex items-center gap-2.5 text-xs font-medium text-slate-500">
-            <svg className="h-3.5 w-3.5 shrink-0 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="flex items-center gap-2.5 text-xs font-medium text-[var(--ash)]">
+            <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
             Sesion segura por 8 horas con autenticacion verificada.
@@ -162,8 +162,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="grid min-h-screen place-items-center bg-[#0f172a]">
-          <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-sm text-slate-400 backdrop-blur-xl">
+        <div className="grid min-h-screen place-items-center bg-[var(--ink)]">
+          <div className="rounded-lg border border-[var(--ash-2)] bg-[var(--ink-2)] p-8 text-sm text-[var(--ash)]">
             Preparando acceso seguro...
           </div>
         </div>

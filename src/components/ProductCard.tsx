@@ -47,7 +47,7 @@ export default function ProductCard({ p, priority = false }: { p: ProductCardDat
         style={{
           /* aspect-square: ideal para zapatillas/ropa ya que muestra el producto entero */
           aspectRatio: "1 / 1",
-          background: "var(--ink-3)",
+          background: "var(--image-surface)",
           flexShrink: 0,
         }}
       >

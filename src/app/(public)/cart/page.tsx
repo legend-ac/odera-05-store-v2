@@ -187,7 +187,7 @@ export default function CartPage() {
         )}
 
         {loadError && (
-          <div className="px-4 py-3" role="alert" style={{ background: "rgba(232,69,44,.08)", border: "1px solid rgba(232,69,44,.45)", borderRadius: "2px", color: "#ff9a86", fontSize: "13px" }}>
+          <div className="px-4 py-3" role="alert" style={{ background: "rgba(232,69,44,.08)", border: "1px solid rgba(232,69,44,.45)", borderRadius: "2px", color: "var(--error)", fontSize: "13px" }}>
             {loadError}
           </div>
         )}
@@ -237,7 +237,7 @@ export default function CartPage() {
                           {[v.size && `Talla: ${v.size}`, v.color && `Color: ${v.color}`].filter(Boolean).join(" · ") || v.id}
                         </p>
                       )}
-                      {!loading && (!p || p.status !== "active" || !v || v.stock < it.qty) ? <p className="mt-2 text-xs" style={{color: "#ff9a86"}}>{v && v.stock > 0 && p?.status === "active" ? `Solo quedan ${v.stock}. Reduce la cantidad para continuar.` : "Esta opción ya no está disponible. Retírala del carrito."}</p> : null}
+                      {!loading && (!p || p.status !== "active" || !v || v.stock < it.qty) ? <p className="mt-2 text-xs" style={{color: "var(--error)"}}>{v && v.stock > 0 && p?.status === "active" ? `Solo quedan ${v.stock}. Reduce la cantidad para continuar.` : "Esta opción ya no está disponible. Retírala del carrito."}</p> : null}
                     </div>
                     <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3" style={{ fontSize: "13px" }}>
                       <span style={{ color: S.ash }}>Unitario: <span className="font-semibold" style={{ color: S.paper }}>{formatPEN(unit)}</span></span>

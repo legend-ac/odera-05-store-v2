@@ -161,29 +161,29 @@ function ConfirmPageInner() {
             </svg>
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-900">{data?.status === "PAYMENT_SENT" || data?.status === "PENDING_VALIDATION" ? "Comprobante recibido" : "Pedido registrado"}</h1>
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-[var(--paper)]">{data?.status === "PAYMENT_SENT" || data?.status === "PENDING_VALIDATION" ? "Comprobante recibido" : "Pedido registrado"}</h1>
           </div>
         </div>
-        <p className="text-sm text-slate-500 mt-1">La tienda revisará tu pago. Guarda estos datos para consultar el estado de tu pedido.</p>
+        <p className="text-sm text-[var(--ash)] mt-1">La tienda revisará tu pago. Guarda estos datos para consultar el estado de tu pedido.</p>
       </div>
 
       {/* Tracking Data */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] overflow-hidden">
-        <div className="bg-gradient-to-r from-[var(--brand-50)] to-white px-5 py-4 border-b border-slate-100">
+      <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] overflow-hidden">
+        <div className="bg-gradient-to-r from-[var(--brand-50)] to-[var(--ink-2)] px-5 py-4 border-b border-[var(--ash-2)]">
           <p className="text-xs font-bold uppercase tracking-widest text-[var(--brand-600)]">Datos de seguimiento</p>
         </div>
         <div className="p-5 flex flex-col gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">Número de pedido</p>
-            <p className="text-2xl font-black text-slate-900 font-mono break-all">{publicCode || "-"}</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ash)] mb-1.5">Número de pedido</p>
+            <p className="text-2xl font-black text-[var(--paper)] font-mono break-all">{publicCode || "-"}</p>
             <Button type="button" variant="secondary" size="sm" onClick={() => copyText(publicCode, "Número de pedido")} className="mt-2">
               Copiar número
             </Button>
           </div>
 
-          <div className="border-t border-slate-100 pt-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">Código de seguimiento</p>
-            <div className="font-mono text-sm break-all bg-[var(--surface-muted)] border border-slate-200 rounded-xl px-3 py-2.5">{trackingToken || "-"}</div>
+          <div className="border-t border-[var(--ash-2)] pt-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ash)] mb-1.5">Código de seguimiento</p>
+            <div className="font-mono text-sm break-all bg-[var(--surface-muted)] border border-[var(--ash-2)] rounded-xl px-3 py-2.5">{trackingToken || "-"}</div>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingToken, "Código de seguimiento")}>
                 Copiar código
@@ -211,17 +211,17 @@ function ConfirmPageInner() {
       </div>
 
       {/* Next Steps */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)] p-5 flex flex-col gap-3">
+      <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] p-5 flex flex-col gap-3">
         <div className="flex items-center gap-2.5">
           <div className="grid place-items-center h-8 w-8 rounded-lg bg-amber-50 text-amber-600">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="font-semibold text-slate-900">Siguiente paso</p>
+          <p className="font-semibold text-[var(--paper)]">Siguiente paso</p>
         </div>
-        <p className="text-sm text-slate-600 leading-relaxed">
-          Tu pedido quedó en estado <span className="font-semibold text-slate-900">Pendiente de validación de pago</span>. El botón de WhatsApp incluye toda la información importante para que no pierdas nada.
+        <p className="text-sm text-[var(--ash)] leading-relaxed">
+          Tu pedido quedó en estado <span className="font-semibold text-[var(--paper)]">Pendiente de validación de pago</span>. El botón de WhatsApp incluye toda la información importante para que no pierdas nada.
         </p>
         {waHref ? (
           <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand inline-flex items-center gap-2 self-start">
@@ -231,7 +231,7 @@ function ConfirmPageInner() {
             Enviar mensaje por WhatsApp
           </a>
         ) : (
-          <p className="text-sm text-slate-500">WhatsApp del negocio no disponible por el momento.</p>
+          <p className="text-sm text-[var(--ash)]">WhatsApp del negocio no disponible por el momento.</p>
         )}
       </div>
 
@@ -250,7 +250,7 @@ export default function ConfirmPage() {
     <Suspense
       fallback={
         <div className="mx-auto max-w-3xl px-4 py-8">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-[var(--shadow-card)]">
+          <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] p-5 text-sm text-[var(--ash)] shadow-[var(--shadow-card)]">
             Preparando confirmación del pedido...
           </div>
         </div>

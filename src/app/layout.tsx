@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import { getMetadataBaseUrl } from "@/lib/productMetadata";
+import { getStoreTheme } from "@/lib/server/storeTheme";
 
 const display = localFont({
   src: "./fonts/roboto-condensed-latin.woff2",
@@ -54,9 +55,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const theme = await getStoreTheme();
   return (
-    <html lang="es" className={`${sans.variable} ${display.variable}`}>
+    <html lang="es" data-theme={theme} className={`${sans.variable} ${display.variable}`}>
       <head>
         {/* Bebas Neue — fuente display manga/anime */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -76,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           fontFamily: "var(--font-sans), Roboto, 'Segoe UI', sans-serif",
         }}
       >
-        <Providers>
+        <Providers theme={theme}>
           <div className="min-h-dvh flex flex-col">
             <Header />
             <main className="flex-1">{children}</main>
