@@ -98,6 +98,8 @@ El dominio de producción es [odera-05-store-v2.vercel.app](https://odera-05-sto
 
 La versión de aplicación `253d813` quedó publicada en Vercel con estado `READY`. Contra el dominio público pasaron los **14 E2E**, sin crear pedidos reales. La revisión adicional comprobó **13 páginas HTTP 200**, el título, imagen y canonical de un producto, ambas fuentes locales HTTP 200 y el inicio en **1366 px** y **393 px**, sin errores JavaScript ni desbordamiento horizontal.
 
+App Check conserva una clave de prueba en producción: el navegador no obtiene un token válido y continúa sin él. Se comprobó que la verificación del servidor está desactivada (`ENABLE_APP_CHECK_VERIFY` no es `true`), por lo que esta configuración no impide llamar a las API. Firestore y los tres enlaces sociales cargaron correctamente. Queda pendiente configurar una clave real antes de activar esa protección; no se cambiaron claves ni se desactivaron protecciones durante el despliegue.
+
 GitHub informa que los workflows `ttl.yml` y `backup.yml` están desactivados por inactividad (`disabled_inactivity`), aunque están presentes los nombres de los secretos requeridos. Por tanto, la liberación programada de reservas y los respaldos semanales requieren reactivación. No se ejecutó el cron durante la verificación: además de liberar reservas, mueve pedidos cancelados antiguos a la papelera y elimina permanentemente pedidos y productos que llevan más de 30 días en ella.
 
 ## Cómo revisar para la exposición
