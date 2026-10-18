@@ -161,6 +161,8 @@ ejecutar sus comprobaciones y se retiran con el comando de limpieza.
 
 ## Producción y automatización
 
+Tienda publicada: [odera-05-store-v2.vercel.app](https://odera-05-store-v2.vercel.app).
+
 Con las variables de producción configuradas:
 
 ```bash

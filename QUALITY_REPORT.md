@@ -18,7 +18,7 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | --- | --- | --- |
 | Reglas y esquemas | Stock, envíos, idempotencia, búsqueda, seguimiento, metadatos, configuración comercial, CSRF y entrega de correo | 82 pruebas unitarias |
 | Rutas y páginas de servidor | Reservas, comprobantes, carrito, Libro de Reclamaciones y metadatos de producto | 32 pruebas unitarias |
-| Recorrido público E2E | Catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 12 pruebas en Chrome de escritorio y móvil |
+| Recorrido público E2E | Inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 14 pruebas en Chrome de escritorio y móvil |
 | Tipado | Compilación estática TypeScript | Sin errores |
 | Revisión de código | `npm run lint` | Sin errores; una advertencia existente de fuente externa |
 | Producción | Compilación aislada con `npm run build:verify` | Correcta |
@@ -67,6 +67,8 @@ La reserva sin pago dura 20 minutos. Un comprobante recibido conserva el stock h
 
 Las pruebas de imágenes fuerzan fallos de todas las fotos y comprueban el respaldo en tarjetas, galería y carrito. También verifican que una imagen nueva vuelva a mostrarse aunque la lista conserve el mismo número de fotos. El carrito móvil se comprobó sin desbordamiento horizontal y con el botón de cantidad dentro de la pantalla.
 
+Se agregó una comprobación de hidratación del inicio y navegación al carrito y de regreso. Detecta errores JavaScript y verifica que las redes no se dupliquen en el pie del inicio. El pie mantiene la misma estructura durante SSR y la primera renderización del navegador, y después aplica la variante de la ruta. Se corrigió así la diferencia observada en la página publicada. En la ejecución local más reciente pasaron 13 casos; el restante, que observó una solicitud duplicada de imagen en desarrollo, pasó al repetirlo después de terminar la compilación.
+
 Después de actualizar las dependencias, se capturó el inicio en anchos de **1366 px** y **393 px**: sin errores JavaScript ni desbordamiento horizontal. La foto real del local cargó al desplazarse hasta su sección. Las capturas temporales se retiraron durante la limpieza del proyecto.
 
 ## Comprobación de integraciones
@@ -89,6 +91,12 @@ El sitio ofrece enlaces visibles a términos y condiciones, privacidad, envíos,
 En **Ajustes → Tienda** se pueden completar horarios, plazos para Lima y provincias y condiciones de cambios. Los datos se muestran en las páginas correspondientes cuando están configurados; los campos vacíos indican consultar a la tienda. No se publicaron horarios ni plazos inventados. Guardar estos campos preserva las imágenes de categorías.
 
 Las fichas generan título, descripción, Open Graph y Twitter a partir del producto real. Se comprobó un producto público: nombre correcto, foto presente, marca una sola vez y canonical correspondiente. La URL base se obtiene de `NEXT_PUBLIC_SITE_URL`/`SITE_URL` o de las variables de despliegue Vercel; en desarrollo usa localhost. `.env.example` documenta el campo opcional.
+
+## Despliegue y tareas programadas
+
+El dominio de producción es [odera-05-store-v2.vercel.app](https://odera-05-store-v2.vercel.app). Roboto y Roboto Condensed se empaquetan con sus licencias en `src/app/fonts`, evitando que el build dependa de la descarga de esas fuentes. `.vercelignore` excluye archivos de entorno, compilaciones, cachés e informes del paquete de despliegue.
+
+GitHub informa que los workflows `ttl.yml` y `backup.yml` están desactivados por inactividad (`disabled_inactivity`), aunque están presentes los nombres de los secretos requeridos. Por tanto, la liberación programada de reservas y los respaldos semanales requieren reactivación. No se ejecutó el cron durante la verificación: además de liberar reservas, mueve pedidos cancelados antiguos a la papelera y elimina permanentemente pedidos y productos que llevan más de 30 días en ella.
 
 ## Cómo revisar para la exposición
 

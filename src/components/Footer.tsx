@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Container } from "@/components/ui/layout";
 import HomeSocialLinks from "@/components/HomeSocialLinks";
 
@@ -23,10 +24,17 @@ const footerLink: React.CSSProperties = {
 
 export default function Footer() {
   const pathname = usePathname();
+  // Static/ISR rendering can resolve the pathname after the initial HTML.
+  // Keep the home-specific branch identical until hydration has completed.
+  const [isHome, setIsHome] = useState(false);
+  useEffect(() => {
+    setIsHome(pathname === "/");
+  }, [pathname]);
+
   if (pathname === "/login" || pathname.startsWith("/dashboard")) return null;
 
   return (
-    <footer className={pathname === "/" ? "mt-0" : "mt-12"} style={{ background: "#111116", borderTop: "2px solid var(--vermeil)" }}>
+    <footer className={isHome ? "mt-0" : "mt-12"} style={{ background: "#111116", borderTop: "2px solid var(--vermeil)" }}>
       <Container className="grid gap-x-10 gap-y-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr_1.15fr] lg:py-14">
         <section aria-label="ODERA 05 Store" className="flex flex-col gap-4">
           <Link href="/" className="flex w-fit items-center gap-3" aria-label="Ir al inicio de ODERA 05 Store">
@@ -68,7 +76,7 @@ export default function Footer() {
         </section>
       </Container>
 
-      {pathname !== "/" && (
+      {!isHome && (
         <Container className="pb-12">
           <HomeSocialLinks compact />
         </Container>
