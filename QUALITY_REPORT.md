@@ -50,6 +50,13 @@ Chrome de escritorio y teléfono: **8 E2E correctos**. La suite unitaria pasa
 carrito durante esta revisión solo modifica el almacenamiento del navegador;
 no se crean pedidos, se reservan unidades ni se suben imágenes.
 
+Publicación móvil comprobada: commit `c6de8db`, despliegue
+`dpl_3G3y6fmFqe1HRXJZrtmpuQwqrJ3W` en estado **READY**. En el dominio de
+producción, la ficha de Adidas pasó la revisión de 360 y 393 px: galería
+interactiva, botón de compra habilitado, tallas antes de la compra, sin errores
+JavaScript ni desbordamiento horizontal. Se retiraron las capturas temporales y
+282.10 MiB de informes y cachés de esta revisión.
+
 ## Revisión del administrador — 18 de octubre de 2026
 
 El panel comparte la paleta crema, tinta y rojo, la tipografía de marca y los
