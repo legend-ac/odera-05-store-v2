@@ -75,6 +75,18 @@ búsqueda conserva la categoría de la URL y el menú móvil navega correctament
 Orden por precio y filtros de categoría y público conservaron sus resultados.
 La compilación final de producción y TypeScript pasaron con `npm run build:verify`.
 
+Publicación comprobada: commit `e134e51`, despliegue
+`dpl_FQpCQmMd7NXYSqKDWFZe5XEtaM32` en estado **READY**, asignado a
+`https://odera-05-store-v2.vercel.app`. La comprobación del dominio cubrió las
+14 páginas anteriores a 393 y 1366 px en ambos temas, con búsqueda y menú móvil
+funcionales, foto principal original, redes disponibles, sin desbordamientos ni
+errores JavaScript. Las cinco pantallas de compra usaron datos ficticios y API
+de escritura bloqueadas: no se crearon pedidos ni se enviaron pagos.
+
+Se detuvo la vista de prueba, se retiraron 337.72 MiB de cachés e informes y
+100 temporales de esta revisión (22.64 MiB). El código, las fotos originales,
+dependencias y archivos de configuración privados se conservaron.
+
 ## Ficha de producto en PC y celular — 18 de octubre de 2026
 
 La galería conserva las fotos completas y sitúa las flechas y el contador fuera
