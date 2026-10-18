@@ -895,6 +895,42 @@ a:hover { text-decoration: none; }
   .category-card__arrow { flex-basis: 28px; width: 28px; height: 28px; font-size: 17px; }
 }
 
+/* Product detail: compact purchase flow on phones. */
+.product-gallery__image { min-height: 300px; }
+.product-gallery__count { padding: 5px 9px; border: 1px solid var(--ash-2); border-radius: 2px; background: var(--header-background); color: var(--paper); font-size: 11px; line-height: 1.4; font-weight: 600; font-variant-numeric: tabular-nums; }
+.product-quantity__stepper button:disabled { opacity: .35; cursor: not-allowed; }
+.product-variant { min-height: 44px; }
+
+@media (max-width: 639px) {
+  .product-page { --product-title-size: 26px; --product-price-size: 30px; --product-thumbnail-size: 48px; --product-image-padding: 0px; --product-gallery-border: 0; --product-cta-size: 12px; --product-cta-tracking: .035em; --product-cta-shadow: none; }
+  .product-breadcrumb { padding-top: 10px; padding-bottom: 10px; }
+  .product-breadcrumb nav { font-size: 11px !important; }
+  .product-breadcrumb nav > :last-child { max-width: none; min-width: 0; }
+  .product-layout { padding-top: 14px; padding-bottom: 24px; }
+  .product-gallery { gap: 8px; }
+  .product-gallery__image { min-height: 0; }
+  .product-gallery__corner, .product-gallery__badges > :first-child { display: none; }
+  .product-gallery__badges { padding: 8px; }
+  .product-gallery__thumbnails { gap: 7px; padding-bottom: 0; scrollbar-width: thin; scrollbar-color: var(--ash-2) transparent; }
+  .product-gallery__thumbnail { min-width: 48px; }
+  .product-info { margin-top: 16px; gap: 14px; }
+  .product-heading > p { margin-bottom: 5px; }
+  .product-title { letter-spacing: .025em !important; line-height: 1.12; }
+  .product-price { gap: 12px; padding-bottom: 13px; }
+  .product-price > span { letter-spacing: .01em !important; }
+  .product-variants { gap: 9px; }
+  .product-purchase { gap: 8px; margin-top: 0; padding: 10px 0; border-top: 1px solid var(--ash-2); background: var(--ink); }
+  .product-buy-row { display: grid; grid-template-columns: 100px minmax(0,1fr); align-items: end; gap: 10px; }
+  .product-quantity { flex-direction: column; align-items: flex-start; gap: 5px; }
+  .product-quantity > p { font-size: 9px !important; }
+  .product-quantity__stepper { width: 100% !important; height: 48px !important; }
+  .product-add-to-cart { min-width: 0; height: 48px !important; gap: 7px; padding: 0 9px; }
+  .product-add-to-cart > svg { flex-shrink: 0; }
+  .product-purchase > p { font-size: 10px !important; }
+  .product-trust { gap: 7px; padding-top: 14px; }
+  .product-trust > div { gap: 7px; padding: 10px 8px; }
+}
+
 /* Admin workspace: the store's cream, ink and vermilion palette, with
    compact controls and clear data hierarchy for day-to-day operations. */
 .admin-shell {

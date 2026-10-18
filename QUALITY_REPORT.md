@@ -21,8 +21,9 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Automatizaciones y respaldo | Autenticación del cron, limpieza explícita, liberación por talla, pago recibido, cifrado y rechazo de claves/datos alterados | 25 pruebas adicionales |
 | Apariencia global | Selección clara/oscura, compatibilidad con ajustes antiguos, carga inicial e invalidación de caché | 25 pruebas adicionales |
 | Acceso al administrador | Sesión, permisos, CSRF, cookies seguras, antigüedad de autenticación, destinos y errores | 39 pruebas adicionales |
-| Gestión administrativa | Paginación de inventario, cantidades, conflictos de edición, creación sin sobrescritura, variantes, imágenes, archivo automático y operaciones masivas | 45 pruebas adicionales; 248 unitarias en 33 archivos en total |
-| Recorrido público E2E | Acceso protegido, inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 16 pruebas en Chrome de escritorio y móvil |
+| Gestión administrativa | Paginación de inventario, cantidades, conflictos de edición, creación sin sobrescritura, variantes, imágenes, archivo automático y operaciones masivas | 45 pruebas adicionales |
+| Selección de producto | Talla disponible, límite de cantidad y cambio a una talla con menos stock | 7 pruebas adicionales; 255 unitarias en 34 archivos en total |
+| Recorrido público E2E | Acceso protegido, inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 18 casos mantenidos; en la última revisión pasaron los 8 relacionados con ficha, imágenes y compra |
 | Tipado | Compilación estática TypeScript | Sin errores |
 | Revisión de código | `npm run lint` | Sin errores; una advertencia existente de fuente externa |
 | Producción | Compilación aislada con `npm run build:verify` | Correcta |
@@ -31,6 +32,23 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Cloudinary configurado | Carga real de PNG de prueba y lectura desde CDN | Correcto |
 | Seguridad de producción | `npm run audit:production` | 0 críticas, 0 altas; 8 moderadas pendientes |
 | Firestore actualizado | Lectura real de configuración con el SDK cliente y el parche gRPC | Correcta; ninguna escritura |
+
+## Ficha de producto en teléfono — 18 de octubre de 2026
+
+Se compactaron la galería, las miniaturas, el título y el precio en teléfonos.
+Un contador de fotos reemplaza los indicadores diminutos duplicados y se retiran
+la esquina decorativa y el marco adicional de la imagen en ese tamaño. Las fotos
+conservan su proporción y contenido completo. Talla, cantidad y carrito aparecen
+antes de la guía y los detalles, con controles de compra que no se superponen.
+
+La selección inicial evita tallas agotadas cuando hay otras disponibles. La
+cantidad se reduce al cambiar a una talla con menos stock y respeta el máximo
+de 50 unidades. Se verificaron galería, selección y recorrido hasta checkout en
+Chrome de escritorio y teléfono: **8 E2E correctos**. La suite unitaria pasa
+**255 casos**. La ficha real de Adidas Predator League se revisó en 360, 393,
+768 y 1440 px, sin errores JavaScript ni desbordamiento horizontal. Añadir al
+carrito durante esta revisión solo modifica el almacenamiento del navegador;
+no se crean pedidos, se reservan unidades ni se suben imágenes.
 
 ## Revisión del administrador — 18 de octubre de 2026
 

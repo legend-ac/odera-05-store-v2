@@ -12,6 +12,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductImage, { ProductImagePlaceholder, useProductImages } from "@/components/ProductImage";
 import { optimizedProductImage } from "@/lib/image";
 import SizeGuide from "@/components/SizeGuide";
+import { clampProductQuantity, initialProductVariant } from "@/lib/productSelection";
 
 type Variant = { id: string; size?: string; color?: string; sku?: string; stock: number };
 type Img = { url: string; alt?: string; isMain: boolean; order: number };
@@ -58,7 +59,8 @@ export default function ProductClient({
       setData(initialProduct);
       setLoading(false);
       const variants = Array.isArray(initialProduct.variants) ? (initialProduct.variants as Variant[]) : [];
-      if (variants[0]?.id) setVariantId(String(variants[0].id));
+      setVariantId(initialProductVariant(variants));
+      setQty(1);
       return () => { mounted = false; };
     }
     setLoading(true);
@@ -70,7 +72,10 @@ export default function ProductClient({
         const d = snap.data();
         if (mounted) setData({ id: snap.id, ...d });
         const variants = Array.isArray(d.variants) ? (d.variants as Variant[]) : [];
-        if (variants[0]?.id && mounted) setVariantId(String(variants[0].id));
+        if (mounted) {
+          setVariantId(initialProductVariant(variants));
+          setQty(1);
+        }
       } catch (e) {
         console.error(e);
         if (mounted) setError("No pudimos cargar este producto.");
@@ -133,6 +138,7 @@ export default function ProductClient({
   const availableGalleryUrls = gallery.availableUrls;
   const mainImgSrc = optimizedProductImage(mainImg, 1200);
   const available = selectedVariant ? selectedVariant.stock : 0;
+  const purchaseQty = clampProductQuantity(qty, available);
   const modalSubtotal = useMemo(() => unitPrice * addedQty, [unitPrice, addedQty]);
   const variantLabel = variants[0]?.size ? "Talla" : variants[0]?.color ? "Color" : "Opción";
 
@@ -188,8 +194,8 @@ export default function ProductClient({
 
         {/* ── Breadcrumb ── */}
         <div style={{ background: S.ink2, borderBottom: S.border }}>
-          <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
-            <nav className="flex items-center gap-2" style={{ fontSize: "12px", color: S.ash }}>
+          <div className="product-breadcrumb mx-auto max-w-7xl px-4 py-3 sm:px-6">
+            <nav aria-label="Ruta del producto" className="flex min-w-0 items-center gap-2" style={{ fontSize: "12px", color: S.ash }}>
               <Link href="/" className="hover:text-[var(--vermeil)] transition-colors">Inicio</Link>
               <span style={{ color: S.ash2 }}>›</span>
               <Link href="/catalog" className="hover:text-[var(--vermeil)] transition-colors">Catálogo</Link>
@@ -202,19 +208,19 @@ export default function ProductClient({
         </div>
 
         {/* ── Layout principal ── */}
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:grid lg:grid-cols-[1fr_1fr] lg:gap-10 lg:items-start">
+        <div className="product-layout mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:grid lg:grid-cols-[1fr_1fr] lg:gap-10 lg:items-start">
 
           {/* ══ GALERÍA ══ */}
-          <div className="flex flex-col gap-3 lg:sticky lg:top-20">
+          <div className="product-gallery flex min-w-0 flex-col gap-3 lg:sticky lg:top-20">
 
             {/* Imagen principal */}
             <div
-              className="relative overflow-hidden"
-              style={{ background: S.ink3, border: S.border, borderRadius: "2px" }}
+              className="product-gallery__frame relative overflow-hidden"
+              style={{ background: S.ink3, border: "var(--product-gallery-border, 1px solid var(--ash-2))", borderRadius: "2px" }}
             >
               {/* Badges */}
               {hasDiscount && (
-                <div className="absolute left-0 top-0 z-10 flex gap-1.5 p-3">
+                <div className="product-gallery__badges absolute left-0 top-0 z-10 flex gap-1.5 p-3">
                   <span className="font-black text-white" style={{ background: S.red, fontSize: "11px", padding: "3px 8px", letterSpacing: "0.06em" }}>
                     Oferta
                   </span>
@@ -225,11 +231,11 @@ export default function ProductClient({
               )}
 
               {/* Vermeil corner */}
-              <div className="absolute top-0 right-0 z-10" style={{ width: 48, height: 48, background: S.red, clipPath: "polygon(100% 0, 100% 100%, 0 0)" }} />
+              <div className="product-gallery__corner absolute top-0 right-0 z-10" style={{ width: 48, height: 48, background: S.red, clipPath: "polygon(100% 0, 100% 100%, 0 0)" }} />
 
               <div
-                className="relative flex touch-pan-y cursor-grab select-none items-center justify-center overflow-hidden w-full active:cursor-grabbing"
-                style={{ aspectRatio: "1 / 1", minHeight: "300px", background: "var(--image-surface)" }}
+                className="product-gallery__image relative flex touch-pan-y cursor-grab select-none items-center justify-center overflow-hidden w-full active:cursor-grabbing"
+                style={{ aspectRatio: "1 / 1", background: "var(--image-surface)" }}
                 onPointerDown={onGalleryPointerDown}
                 onPointerUp={onGalleryPointerUp}
                 onPointerCancel={() => { dragStart.current = null; }}
@@ -245,7 +251,7 @@ export default function ProductClient({
                     draggable={false}
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-contain transition-transform duration-700 ease-out hover:scale-[1.025]"
-                    style={{ padding: "clamp(8px, 2.25%, 22px)" }}
+                    style={{ padding: "var(--product-image-padding, clamp(8px, 2.25%, 22px))" }}
                     onError={() => gallery.reportFailure(mainImg)}
                   />
                 ) : (
@@ -268,36 +274,30 @@ export default function ProductClient({
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </button>
-                  {/* Dots mobile */}
-                  <div className="absolute bottom-3 left-0 right-0 lg:hidden flex justify-center gap-1.5 z-10">
-                    {availableGalleryUrls.map((url, i) => (
-                      <button key={url} type="button" onClick={() => gallery.select(url)} aria-label={`Ver imagen ${i + 1}`}
-                        className="block transition-all duration-300"
-                        style={{ width: url === mainImg ? 20 : 6, height: 4, background: url === mainImg ? S.red : S.ash2, borderRadius: "1px" }}
-                      />
-                    ))}
-                  </div>
+                  <span className="product-gallery__count absolute bottom-2 right-2 z-10 lg:hidden" aria-live="polite" aria-label={`Imagen ${availableGalleryUrls.indexOf(mainImg) + 1} de ${availableGalleryUrls.length}`}>
+                    {availableGalleryUrls.indexOf(mainImg) + 1} / {availableGalleryUrls.length}
+                  </span>
                 </>
               )}
             </div>
 
             {/* Thumbnails */}
             {availableGalleryUrls.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="product-gallery__thumbnails flex gap-2 overflow-x-auto pb-1" aria-label="Fotos del producto">
                 {availableGalleryUrls.slice(0, 8).map((url, i) => (
                   <button
                     key={`${url}-${i}`}
                     type="button"
                     onClick={() => gallery.select(url)}
                     aria-label={`Ver imagen ${i + 1} de ${data.name ?? "producto"}`}
-                    className="relative shrink-0 overflow-hidden transition-all duration-200"
+                    aria-pressed={url === mainImg}
+                    className="product-gallery__thumbnail relative shrink-0 overflow-hidden transition-all duration-200"
                     style={{
-                      width: 64, height: 64,
+                      width: "var(--product-thumbnail-size, 64px)", height: "var(--product-thumbnail-size, 64px)",
                       background: S.ink3,
                       border: url === mainImg ? `2px solid var(--vermeil)` : `1px solid var(--ash-2)`,
                       borderRadius: "2px",
-                      opacity: url === mainImg ? 1 : 0.55,
-                      boxShadow: url === mainImg ? "0 0 8px rgba(232,69,44,0.3)" : "none",
+                      opacity: url === mainImg ? 1 : 0.8,
                     }}
                   >
                     <Image
@@ -315,20 +315,20 @@ export default function ProductClient({
           </div>
 
           {/* ══ PANEL INFO ══ */}
-          <div className="mt-6 flex flex-col gap-5 lg:mt-0 lg:py-2">
+          <div className="product-info mt-6 flex min-w-0 flex-col gap-5 lg:mt-0 lg:py-2">
 
             {/* Marca + Nombre */}
-            <div>
+            <div className="product-heading">
               {data.brand && (
                 <p className="font-bold uppercase mb-2" style={{ fontSize: "10px", letterSpacing: "0.28em", color: S.red }}>
                   {String(data.brand)}
                 </p>
               )}
               <h1
-                className="font-black leading-tight"
+                className="product-title font-black leading-tight"
                 style={{
                   fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
-                  fontSize: "clamp(28px, 5vw, 42px)",
+                  fontSize: "var(--product-title-size, clamp(28px, 5vw, 42px))",
                   letterSpacing: "0.04em",
                   color: S.paper,
                 }}
@@ -338,12 +338,12 @@ export default function ProductClient({
             </div>
 
             {/* Precio */}
-            <div className="flex items-end gap-4 pb-5" style={{ borderBottom: S.border }}>
+            <div className="product-price flex flex-wrap items-end gap-4 pb-5" style={{ borderBottom: S.border }}>
               <span
                 className="font-black leading-none tabular-nums"
                 style={{
                   fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
-                  fontSize: "clamp(32px, 6vw, 48px)",
+                  fontSize: "var(--product-price-size, clamp(32px, 6vw, 48px))",
                   letterSpacing: "0.04em",
                   color: hasDiscount ? S.red : S.paper,
                 }}
@@ -362,38 +362,9 @@ export default function ProductClient({
               )}
             </div>
 
-            {/* Especificaciones */}
-            {specsText && (
-              <div style={{ border: S.border, borderRadius: "2px", overflow: "hidden" }}>
-                <button
-                  type="button"
-                  onClick={() => setShowSpecs((v) => !v)}
-                  className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors"
-                  style={{ background: showSpecs ? S.ink3 : "transparent" }}
-                >
-                  <span className="font-bold uppercase" style={{ fontSize: "10px", letterSpacing: "0.2em", color: S.paper }}>
-                    Especificaciones
-                  </span>
-                  <svg
-                    className={`h-4 w-4 transition-transform duration-300 ${showSpecs ? "rotate-180" : ""}`}
-                    style={{ color: S.ash }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showSpecs && (
-                  <div className="px-4 pb-4 pt-3" style={{ background: S.ink3, borderTop: S.border }}>
-                    <p className="whitespace-pre-wrap leading-relaxed" style={{ fontSize: "13px", color: S.ash }}>
-                      {specsText}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Variantes / Tallas */}
             {variants.length > 0 && (
-              <div className="flex flex-col gap-3">
+              <div className="product-variants flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <p className="font-bold uppercase" style={{ fontSize: "10px", letterSpacing: "0.2em", color: S.ash }}>
                     {variantLabel}
@@ -414,8 +385,10 @@ export default function ProductClient({
                         key={v.id}
                         type="button"
                         disabled={outOfStock}
-                        onClick={() => setVariantId(v.id)}
-                        className="relative font-bold transition-all duration-150 text-center"
+                        onClick={() => { setVariantId(v.id); setQty((current) => clampProductQuantity(current, v.stock)); }}
+                        aria-pressed={active}
+                        aria-label={`${variantLabel} ${[v.size, v.color].filter(Boolean).join(" · ") || v.id}${outOfStock ? ", agotado" : ""}`}
+                        className="product-variant relative font-bold transition-all duration-150 text-center"
                         style={{
                           minWidth: "3.5rem",
                           padding: "8px 16px",
@@ -430,33 +403,33 @@ export default function ProductClient({
                           textDecoration: outOfStock ? "line-through" : "none",
                         }}
                       >
-                        {label}
+                        {label}{v.size && v.color && <span className="block text-[10px] font-normal tracking-normal">{v.color}</span>}
                       </button>
                     );
                   })}
                 </div>
-                {data.productType === "zapatillas" && variants.some((v) => v.size) && <SizeGuide />}
               </div>
             )}
 
             {/* Cantidad + CTA */}
-            <div className="flex flex-col gap-3">
+            <div className="product-purchase flex flex-col gap-3">
+              <div className="product-buy-row flex flex-col gap-3">
               {/* Cantidad */}
-              <div className="flex items-center gap-4">
+              <div className="product-quantity flex items-center gap-4">
                 <p className="font-bold uppercase flex-1" style={{ fontSize: "10px", letterSpacing: "0.2em", color: S.ash }}>
                   Cantidad
                 </p>
-                <div className="inline-flex items-center overflow-hidden" style={{ border: S.border, borderRadius: "2px", height: 40, width: 112 }}>
-                  <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))}
+                <div className="product-quantity__stepper inline-flex items-center overflow-hidden" style={{ border: S.border, borderRadius: "2px", height: 44, width: 112 }}>
+                  <button type="button" aria-label="Reducir cantidad" disabled={purchaseQty <= 1} onClick={() => setQty(Math.max(1, purchaseQty - 1))}
                     className="flex-1 h-full flex items-center justify-center text-lg transition-colors"
                     style={{ color: S.ash, background: "transparent" }}
                     onMouseEnter={(e) => { (e.target as HTMLElement).style.background = S.ink3; }}
                     onMouseLeave={(e) => { (e.target as HTMLElement).style.background = "transparent"; }}
                   >−</button>
                   <span className="h-7 min-w-[32px] flex items-center justify-center tabular-nums font-bold" style={{ borderLeft: S.border, borderRight: S.border, color: S.paper, fontSize: "14px" }}>
-                    {Math.min(50, Math.max(1, Math.floor(qty || 1)))}
+                    {purchaseQty}
                   </span>
-                  <button type="button" onClick={() => setQty((q) => Math.min(Math.min(50, Math.max(1, available)), q + 1))}
+                  <button type="button" aria-label="Aumentar cantidad" disabled={purchaseQty >= Math.min(50, available)} onClick={() => setQty(Math.min(50, available, purchaseQty + 1))}
                     className="flex-1 h-full flex items-center justify-center text-lg transition-colors"
                     style={{ color: S.ash, background: "transparent" }}
                     onMouseEnter={(e) => { (e.target as HTMLElement).style.background = S.ink3; }}
@@ -470,18 +443,18 @@ export default function ProductClient({
                 type="button"
                 disabled={!variantId || available <= 0}
                 onClick={() => {
-                  const safeQty = Math.min(50, Math.max(1, Math.floor(qty || 1)));
+                  const safeQty = purchaseQty;
                   addItem({ productId: data.id, variantId, qty: safeQty });
                   setAddedQty(safeQty);
                   setShowCartModal(true);
                 }}
-                className="w-full flex items-center justify-center gap-2.5 font-black uppercase tracking-widest text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="product-add-to-cart w-full flex items-center justify-center gap-2.5 font-black uppercase tracking-widest text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
                   height: 52,
-                  fontSize: "14px",
-                  letterSpacing: "0.1em",
+                  fontSize: "var(--product-cta-size, 14px)",
+                  letterSpacing: "var(--product-cta-tracking, 0.1em)",
                   background: "linear-gradient(135deg, var(--vermeil-2) 0%, var(--vermeil) 100%)",
-                  boxShadow: "0 6px 24px rgba(232,69,44,0.35)",
+                  boxShadow: "var(--product-cta-shadow, 0 6px 24px rgba(232,69,44,0.35))",
                   borderRadius: "2px",
                   clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
                 }}
@@ -502,6 +475,7 @@ export default function ProductClient({
                   </>
                 )}
               </button>
+              </div>
 
               {available > 0 && (
                 <p className="text-center flex items-center justify-center gap-1.5" style={{ fontSize: "11px", color: S.ash }}>
@@ -513,8 +487,20 @@ export default function ProductClient({
               )}
             </div>
 
+            {data.productType === "zapatillas" && variants.some((v) => v.size) && <SizeGuide />}
+
+            {specsText && (
+              <div className="product-specifications" style={{ border: S.border, borderRadius: "2px", overflow: "hidden" }}>
+                <button type="button" aria-expanded={showSpecs} aria-controls="product-specifications" onClick={() => setShowSpecs((value) => !value)} className="flex min-h-11 w-full items-center justify-between px-4 py-3 text-left transition-colors" style={{ background: showSpecs ? S.ink3 : "transparent" }}>
+                  <span className="font-bold uppercase" style={{ fontSize: "11px", letterSpacing: "0.12em", color: S.paper }}>Detalles del producto</span>
+                  <svg aria-hidden="true" className={`h-4 w-4 transition-transform duration-300 ${showSpecs ? "rotate-180" : ""}`} style={{ color: S.ash }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {showSpecs && <div id="product-specifications" className="px-4 pb-4 pt-3" style={{ background: S.ink3, borderTop: S.border }}><p className="whitespace-pre-wrap leading-relaxed" style={{ fontSize: "13px", color: S.ash }}>{specsText}</p></div>}
+              </div>
+            )}
+
             {/* Trust badges */}
-            <div className="grid grid-cols-2 gap-2 pt-2" style={{ borderTop: S.border }}>
+            <div className="product-trust grid grid-cols-2 gap-2 pt-2" style={{ borderTop: S.border }}>
               {[
                 { icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z", t: "Pago seguro", d: "Comprobante verificado" },
                 { icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", t: "Envío directo", d: "Consulta el estado del pedido" },
