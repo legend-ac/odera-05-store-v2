@@ -119,7 +119,7 @@ crea la cookie segura y carga el panel con una solicitud nueva. Si el navegador
 bloquea esa ventana, el acceso muestra cómo permitirla; una cancelación o una
 cuenta sin permisos también muestran un mensaje. Se evita el retorno silencioso
 del flujo anterior con redirección entre Firebase y Vercel, siguiendo la
-[alternativa de Firebase para navegadores que bloquean almacenamiento de terceros](https://firebase.google.com/docs/auth/web/redirect-best-practices#popup-sign-in).
+[alternativa de Firebase para navegadores que bloquean almacenamiento de terceros](https://firebase.google.com/docs/auth/web/redirect-best-practices).
 
 Para asignar el claim usando las credenciales locales:
 

@@ -1,6 +1,6 @@
 # Evidencia de calidad — ODERA 05 STORE
 
-Última verificación: 17 de octubre de 2026.
+Última verificación: 18 de octubre de 2026.
 
 ## Puerta de calidad
 
@@ -18,8 +18,10 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | --- | --- | --- |
 | Reglas y esquemas | Stock, envíos, idempotencia, búsqueda, seguimiento, metadatos, configuración comercial, CSRF y entrega de correo | 82 pruebas unitarias |
 | Rutas y páginas de servidor | Reservas, comprobantes, carrito, Libro de Reclamaciones y metadatos de producto | 32 pruebas unitarias |
-| Automatizaciones y respaldo | Autenticación del cron, limpieza explícita, liberación por talla, pago recibido, cifrado y rechazo de claves/datos alterados | 25 pruebas adicionales; 139 unitarias en total |
-| Recorrido público E2E | Inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 14 pruebas en Chrome de escritorio y móvil |
+| Automatizaciones y respaldo | Autenticación del cron, limpieza explícita, liberación por talla, pago recibido, cifrado y rechazo de claves/datos alterados | 25 pruebas adicionales |
+| Apariencia global | Selección clara/oscura, compatibilidad con ajustes antiguos, carga inicial e invalidación de caché | 25 pruebas adicionales |
+| Acceso al administrador | Sesión, permisos, CSRF, cookies seguras, antigüedad de autenticación, destinos y errores | 39 pruebas adicionales; 203 unitarias en total |
+| Recorrido público E2E | Acceso protegido, inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 16 pruebas en Chrome de escritorio y móvil |
 | Tipado | Compilación estática TypeScript | Sin errores |
 | Revisión de código | `npm run lint` | Sin errores; una advertencia existente de fuente externa |
 | Producción | Compilación aislada con `npm run build:verify` | Correcta |
@@ -164,6 +166,12 @@ con la cuenta Google del propietario requiere que este complete la autenticació
 La prueba E2E nueva pasó en escritorio y móvil: entrar por
 `/dashboard/settings` conserva `next`, y simular una ventana bloqueada muestra
 el aviso y permite reintentar sin solicitar una sesión al servidor.
+
+La aplicación `4bdf9ac` se publicó en Vercel con estado `READY`. En el dominio
+público se comprobó la apertura real de `accounts.google.com`, la cancelación
+visible y el reintento habilitado, sin errores JavaScript y sin crear sesiones.
+La suite completa pasó **16 E2E contra producción**, con las escrituras de
+pedidos y comprobantes simuladas. No se modificaron los permisos de acceso.
 
 ## Cómo revisar para la exposición
 
