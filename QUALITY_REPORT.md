@@ -33,6 +33,48 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Seguridad de producción | `npm run audit:production` | 0 críticas, 0 altas; 8 moderadas pendientes |
 | Firestore actualizado | Lectura real de configuración con el SDK cliente y el parche gRPC | Correcta; ninguna escritura |
 
+## Redistribución del frontend público — 18 de octubre de 2026
+
+La aclaración del usuario amplía el trabajo al diseño y la distribución de la
+tienda completa. Se conservaron la paleta crema, tinta y rojo, los temas claro y
+oscuro y la tipografía de marca. El panel administrativo no forma parte de esta
+redistribución.
+
+- Cabecera con búsqueda central, acceso a pedidos y carrito y navegación por
+  categorías; menú y búsqueda desplegables en celular, con controles de 44 px.
+- Inicio con portada en dos paneles, categorías compactas en celular, novedades,
+  guía de compra, local real y redes integradas al cierre, sin repetir llamadas.
+- Catálogo con filtros laterales en PC y superiores en celular, orden nativo
+  etiquetado y tarjetas con jerarquía clara de foto, nombre y precios.
+- Ficha con miniaturas laterales en PC y horizontales en celular; compra junto
+  a la galería y guía de talla y detalles agrupados debajo.
+- Carrito con lista continua y resumen lateral; checkout con formulario y resumen
+  separados; pago, confirmación y seguimiento con distribución común.
+- Información de compra y reclamos con título lateral y contenido legible;
+  ubicación con fotografía y datos del local juntos; pie reorganizado.
+
+Las fotos y su orden original se conservan. Se restauró expresamente la foto
+principal original de Adidas tras la aclaración del usuario; la restauración
+quedó auditada. No se cambiaron precios, tallas, stock ni pedidos.
+
+La lectura inicial de redes se sirve desde el servidor para evitar que el pie
+aparezca incompleto mientras Firestore cliente conecta; conserva respaldo cliente
+si falla la lectura opcional e invalidación con los ajustes del administrador.
+
+Validación: **255 pruebas unitarias correctas**. Los 18 casos E2E se verificaron:
+17 pasaron inicialmente y el caso de redes móvil se corrigió y volvió a pasar
+en ambos tamaños (2/2). Galería, filtros, búsqueda, carrito y reserva/pago
+simulados conservaron su comportamiento. Lint pasó con la advertencia de fuente
+externa existente.
+
+La inspección integrada cubrió inicio, catálogo, ficha, local, las cuatro páginas
+de información y reclamos en 320, 393, 768 y 1366 px con ambos temas. Se verificó
+también carrito, checkout, pago, confirmación y seguimiento en esos cuatro anchos
+con respuestas ficticias. No hubo desbordamientos ni errores JavaScript. La
+búsqueda conserva la categoría de la URL y el menú móvil navega correctamente.
+Orden por precio y filtros de categoría y público conservaron sus resultados.
+La compilación final de producción y TypeScript pasaron con `npm run build:verify`.
+
 ## Ficha de producto en PC y celular — 18 de octubre de 2026
 
 La galería conserva las fotos completas y sitúa las flechas y el contador fuera
@@ -41,10 +83,11 @@ cantidad y carrito comparten una fila en escritorio y teléfono. Los detalles se
 agrupan en una lista y dos datos de pago y entrega reemplazan las cuatro tarjetas
 repetidas. Se retiró la altura mínima que dejaba un vacío antes del pie.
 
-Por elección autorizada del usuario, la foto limpia de Adidas Predator League
-pasó a ser la principal. Se conservaron sus seis imágenes y el anuncio como foto
-secundaria. La transacción solo cambió la marca de imagen principal y su fecha,
-con registro de auditoría; no se cambiaron precios, tallas, stock ni pedidos.
+Durante esta revisión previa se eligió una foto limpia de Adidas como principal.
+Tras aclarar el usuario que pedía redistribuir el diseño, se restauró la selección
+original, conservando las seis imágenes. Ambas transacciones solo cambiaron la
+marca de imagen principal y su fecha, con auditoría; no cambiaron precios,
+tallas, stock ni pedidos.
 
 Los **8 E2E de ficha, recuperación de imágenes y compra** pasaron en escritorio
 y teléfono. La revisión visual cubrió 320, 393, 768 y 1366 px en temas claro y

@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import styles from "./HomeStorefront.module.css";
 
-type SocialLinks = {
+export type SocialLinks = {
   instagram?: string;
   tiktok?: string;
   facebook?: string;
@@ -60,10 +61,14 @@ const SOCIALS = [
   },
 ];
 
-export default function HomeSocialLinks({ compact = false }: { compact?: boolean }) {
-  const [links, setLinks] = useState<SocialLinks>({});
+export default function HomeSocialLinks({ compact = false, initialLinks }: { compact?: boolean; initialLinks?: SocialLinks }) {
+  const [links, setLinks] = useState<SocialLinks>(initialLinks ?? {});
 
   useEffect(() => {
+    if (initialLinks) {
+      setLinks(initialLinks);
+      return;
+    }
     let alive = true;
     (async () => {
       try {
@@ -76,7 +81,7 @@ export default function HomeSocialLinks({ compact = false }: { compact?: boolean
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [initialLinks]);
 
   const items = useMemo(
     () => SOCIALS.filter((s) => isUrl(links[s.key])).map((s) => ({ ...s, url: links[s.key]! })),
@@ -114,28 +119,26 @@ export default function HomeSocialLinks({ compact = false }: { compact?: boolean
   }
 
   return (
-    <section aria-labelledby="home-social-title" className="home-social mx-auto max-w-7xl px-5 sm:px-8">
-      <div className="home-social__inner">
-        <div className="home-social__heading">
-          <h2 id="home-social-title">SÍGUENOS EN REDES</h2>
+    <section aria-labelledby="home-social-title" className={`${styles.shell} ${styles.socialSection}`}>
+        <div className={styles.socialHeading}>
+          <h2 id="home-social-title">Sigue el movimiento.</h2>
           <p>Novedades, lanzamientos y atención directa.</p>
         </div>
-        <nav aria-label="Redes sociales de ODERA 05" className="home-social__links">
+        <nav aria-label="Redes sociales de ODERA 05" className={styles.socialLinks} style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
           {items.map((s) => (
             <a
               key={s.key}
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="home-social__link"
+              className={styles.socialLink}
             >
-              <span className="home-social__icon" aria-hidden="true">{s.icon}</span>
-              <span className="home-social__name">{s.label}</span>
-              <span className="home-social__arrow" aria-hidden="true">↗</span>
+              <span className={styles.socialIcon} aria-hidden="true">{s.icon}</span>
+              <span className={styles.socialName}>{s.label}</span>
+              <span className={styles.socialArrow} aria-hidden="true">↗</span>
             </a>
           ))}
         </nav>
-      </div>
     </section>
   );
 }

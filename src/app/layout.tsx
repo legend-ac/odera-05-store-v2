@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import { getMetadataBaseUrl } from "@/lib/productMetadata";
-import { getStoreTheme } from "@/lib/server/storeTheme";
+import { getStoreSocialLinks, getStoreTheme } from "@/lib/server/storeTheme";
 
 const display = localFont({
   src: "./fonts/roboto-condensed-latin.woff2",
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const theme = await getStoreTheme();
+  const [theme, socialLinks] = await Promise.all([getStoreTheme(), getStoreSocialLinks()]);
   return (
     <html lang="es" data-theme={theme} className={`${sans.variable} ${display.variable}`}>
       <head>
@@ -82,7 +82,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="min-h-dvh flex flex-col">
             <Header />
             <main className="flex-1">{children}</main>
-            <Footer />
+            <Footer initialLinks={socialLinks ?? undefined} />
           </div>
         </Providers>
       </body>

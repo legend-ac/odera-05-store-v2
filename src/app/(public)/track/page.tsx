@@ -8,6 +8,7 @@ import { db } from "@/lib/firebase/client";
 import { Input } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
 import { parseTrackingUrl } from "@/lib/trackingUrl";
+import styles from "../checkout/purchase-flow.module.css";
 
 type TrackResponse = {
   orderId: string;
@@ -226,15 +227,19 @@ function TrackPageInner() {
   }, [businessWhatsapp, waText]);
 
   return (
-    <div className="shopping-flow mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
+    <div className={styles.page}>
       {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-[var(--paper)]">Seguimiento de pedido</h1>
+      <header className={styles.heading}>
+        <div>
+        <span className={styles.eyebrow}>Tu compra · Odera 05</span>
+        <h1>Seguimiento de pedido</h1>
         <p className="text-sm text-[var(--ash)] mt-1">Consulta el estado de tu compra con tu número de pedido y código de seguimiento.</p>
-      </div>
+        </div>
+      </header>
 
+      <div className={styles.trackingLayout}>
       {/* Search Form */}
-      <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] p-5 flex flex-col gap-4">
+      <section className={styles.trackingForm} aria-label="Consultar pedido">
         {recent.length ? (
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-widest text-[var(--ash)]">Pedidos recientes</label>
@@ -258,25 +263,25 @@ function TrackPageInner() {
         ) : null}
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--paper-2)]">Pegar enlace de seguimiento (opcional)</label>
+          <label htmlFor="tracking-url" className="text-sm font-medium text-[var(--paper-2)]">Pegar enlace de seguimiento (opcional)</label>
           <div className="flex gap-2">
-            <Input value={trackingUrl} onChange={(e) => setTrackingUrl(e.target.value)} placeholder="https://.../t/OD-0001/código-de-seguimiento" uiSize="sm" />
+            <Input id="tracking-url" value={trackingUrl} onChange={(e) => setTrackingUrl(e.target.value)} placeholder="https://.../t/OD-0001/código-de-seguimiento" uiSize="sm" />
             <Button type="button" variant="secondary" size="sm" onClick={applyTrackingUrl}>Cargar</Button>
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--paper-2)]">Número de pedido (ejemplo: OD-1234)</label>
+          <label htmlFor="tracking-public-code" className="text-sm font-medium text-[var(--paper-2)]">Número de pedido (ejemplo: OD-1234)</label>
           <div className="flex gap-2">
-            <Input value={publicCode} onChange={(e) => setPublicCode(e.target.value)} uiSize="sm" />
+            <Input id="tracking-public-code" value={publicCode} onChange={(e) => setPublicCode(e.target.value)} uiSize="sm" />
             <Button type="button" variant="secondary" size="sm" onClick={() => copyText(publicCode, "Número")}>Copiar</Button>
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--paper-2)]">Código de seguimiento</label>
+          <label htmlFor="tracking-token" className="text-sm font-medium text-[var(--paper-2)]">Código de seguimiento</label>
           <div className="flex gap-2">
-            <Input value={trackingToken} onChange={(e) => setTrackingToken(e.target.value)} uiSize="sm" className="font-mono" />
+            <Input id="tracking-token" value={trackingToken} onChange={(e) => setTrackingToken(e.target.value)} uiSize="sm" className="font-mono" />
             <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingToken, "Código")}>Copiar</Button>
           </div>
         </div>
@@ -292,16 +297,27 @@ function TrackPageInner() {
           </div>
         ) : null}
         {error ? (
-          <div className="flex items-center gap-2 text-sm text-destructive bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5">
+          <div className={`${styles.alert} flex items-center gap-2`} role="alert">
             <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             {error}
           </div>
         ) : null}
-      </div>
+      </section>
 
+      <div>
+      {!data ? <aside className={styles.trackingHint}>
+        <span className={styles.eyebrow}>De nuestra tienda a tus manos</span>
+        <h2>Tu pedido, paso a paso.</h2>
+        <p>Aquí encontrarás la confirmación del pago y las novedades de tu entrega en un mismo lugar.</p>
+        <ol className={styles.hintList}>
+          <li><span>01</span><p>Pega el enlace que recibiste al finalizar tu compra.</p></li>
+          <li><span>02</span><p>También puedes usar tu número de pedido y código de seguimiento.</p></li>
+          <li><span>03</span><p>Revisa el estado de tu pedido y retoma el pago si tu reserva sigue vigente.</p></li>
+        </ol>
+      </aside> : null}
       {/* Order Result */}
       {data ? (
-        <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] overflow-hidden fade-in-up">
+        <div className={styles.trackingResult}>
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--ash-2)]">
             <div className="flex items-center gap-2.5">
               <span className="font-mono text-sm font-bold text-[var(--paper)] bg-[var(--ink-3)] px-2.5 py-1 rounded-lg">{data.publicCode}</span>
@@ -357,7 +373,7 @@ function TrackPageInner() {
       ) : null}
 
       {data?.status === "SCHEDULED" && !expired ? (
-        <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] p-5 flex flex-col gap-3">
+        <div className={styles.trackingFollowup}>
           <p className="text-sm text-[var(--ash)]">Tu pedido está reservado. Completa el pago antes de que venza la reserva.</p>
           <a
             href={`/checkout/pago?publicCode=${encodeURIComponent(data.publicCode)}&trackingToken=${encodeURIComponent(trackingToken)}`}
@@ -369,6 +385,8 @@ function TrackPageInner() {
       ) : null}
 
       {data && (data.status === "PAYMENT_SENT" || data.status === "PENDING_VALIDATION") ? <p className="text-sm text-[var(--ash)]">Comprobante recibido. Tu pago está pendiente de validación; no necesitas enviarlo otra vez.</p> : null}
+      </div>
+      </div>
     </div>
   );
 }

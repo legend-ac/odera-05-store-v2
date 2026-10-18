@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import styles from "./HomeStorefront.module.css";
 
 type Category = {
   key: string;
@@ -19,32 +20,29 @@ function categoryImage(category: Category, index: number): string {
 
 export default function CategoryGrid({ categories }: { categories: Category[] }) {
   return (
-    <div className="category-grid">
+    <div className={styles.categories}>
       {categories.map((category, index) => (
         <Link
           key={category.key}
           href={`/catalog?type=${encodeURIComponent(category.key)}`}
-          className="category-card group"
+          className={styles.category}
           aria-label={`${category.cta}: ${category.label}`}
         >
-          <div className="category-card__media">
+          <div className={styles.categoryMedia}>
             <Image
               src={categoryImage(category, index)}
               alt=""
               fill
-              sizes="(max-width: 639px) 36vw, (max-width: 1023px) 33vw, 30vw"
-              className="category-card__image"
+              sizes="(max-width: 639px) 116px, (max-width: 1023px) 33vw, 390px"
+              className={styles.categoryImage}
             />
           </div>
-          <div className="category-card__shade" />
-          <span className="category-card__number">{String(index + 1).padStart(2, "0")}</span>
-          <div className="category-card__content">
+          <div className={styles.categoryCopy}>
             <div>
-              <span className="category-card__eyebrow">EXPLORAR COLECCIÓN</span>
-              <h3 className="category-card__title">{category.label}</h3>
-              <p className="category-card__subtitle">{category.subtitle}</p>
+              <h3>{category.label}</h3>
+              <p>{category.subtitle}</p>
             </div>
-            <span className="category-card__arrow" aria-hidden="true">↗</span>
+            <span className={styles.categoryArrow} aria-hidden="true">↗</span>
           </div>
         </Link>
       ))}

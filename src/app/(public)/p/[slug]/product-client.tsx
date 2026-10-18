@@ -439,20 +439,6 @@ export default function ProductClient({
 
             </div>
 
-            <div className="product-details">
-            {data.productType === "zapatillas" && variants.some((v) => v.size) && <SizeGuide />}
-
-            {specsText && (
-              <div className="product-specifications">
-                <button type="button" aria-expanded={showSpecs} aria-controls="product-specifications" onClick={() => setShowSpecs((value) => !value)} className="flex min-h-11 w-full items-center justify-between px-4 py-3 text-left transition-colors" style={{ background: showSpecs ? S.ink3 : "transparent" }}>
-                  <span className="font-bold uppercase" style={{ fontSize: "11px", letterSpacing: "0.12em", color: S.paper }}>Detalles del producto</span>
-                  <svg aria-hidden="true" className={`h-4 w-4 transition-transform duration-300 ${showSpecs ? "rotate-180" : ""}`} style={{ color: S.ash }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                </button>
-                {showSpecs && <div id="product-specifications" className="px-4 pb-4 pt-3" style={{ background: S.ink3, borderTop: S.border }}><p className="whitespace-pre-wrap leading-relaxed" style={{ fontSize: "13px", color: S.ash }}>{specsText}</p></div>}
-              </div>
-            )}
-            </div>
-
             <div className="product-services" aria-label="Pago y entrega">
               <div className="product-service">
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18v13H3V7Zm0 0 14-4v4m-1 6h5m-4 3h.01" /></svg>
@@ -468,6 +454,22 @@ export default function ProductClient({
               <Link href="/informacion/cambios-devoluciones" className="underline underline-offset-4 hover:text-[var(--paper)]">Cambios y devoluciones</Link>
             </nav>
           </div>
+        </div>
+
+        <div className="product-extras mx-auto px-4 sm:px-6">
+          <div className="product-details">
+            {data.productType === "zapatillas" && variants.some((v) => v.size) && <SizeGuide />}
+
+            {specsText && (
+              <div className="product-specifications">
+                <button type="button" aria-expanded={showSpecs} aria-controls="product-specifications" onClick={() => setShowSpecs((value) => !value)} className="flex min-h-11 w-full items-center justify-between px-4 py-3 text-left transition-colors" style={{ background: showSpecs ? S.ink3 : "transparent" }}>
+                  <span className="font-bold uppercase" style={{ fontSize: "11px", letterSpacing: "0.12em", color: S.paper }}>Detalles del producto</span>
+                  <svg aria-hidden="true" className={`h-4 w-4 transition-transform duration-300 ${showSpecs ? "rotate-180" : ""}`} style={{ color: S.ash }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {showSpecs && <div id="product-specifications" className="px-4 pb-4 pt-3" style={{ background: S.ink3, borderTop: S.border }}><p className="whitespace-pre-wrap leading-relaxed" style={{ fontSize: "13px", color: S.ash }}>{specsText}</p></div>}
+              </div>
+            )}
+            </div>
         </div>
 
         {/* ── Productos recomendados ── */}

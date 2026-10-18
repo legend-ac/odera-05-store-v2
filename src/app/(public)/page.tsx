@@ -3,9 +3,10 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import CategoryGrid from "@/components/CategoryGrid";
-import HomeSocialLinks from "@/components/HomeSocialLinks";
+import HomeSocialLinks, { type SocialLinks } from "@/components/HomeSocialLinks";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { normalizeStoreInformation } from "@/lib/storeInformation";
+import styles from "@/components/HomeStorefront.module.css";
 
 export const revalidate = 60;
 
@@ -25,6 +26,7 @@ const DEFAULT_CATEGORIES: Category[] = [
 export default async function HomePage() {
   let categories = DEFAULT_CATEGORIES;
   let storeHours = "";
+  let socialLinks: SocialLinks | undefined;
   let promo = { enabled: true, message: "Envío gratis desde S/ 200", couponCode: "" };
 
   try {
@@ -32,6 +34,7 @@ export default async function HomePage() {
     if (snapshot.exists) {
       const data = snapshot.data() as any;
       storeHours = normalizeStoreInformation(data?.businessInformation).storeHours;
+      socialLinks = data?.socialLinks && typeof data.socialLinks === "object" ? data.socialLinks : {};
       promo = {
         enabled: Boolean(data?.homePromoEnabled ?? true),
         message: String(data?.homePromo?.message ?? promo.message),
@@ -52,21 +55,13 @@ export default async function HomePage() {
       }
     }
   } catch {
-    // storefront stays with defaults
+    // The storefront remains available with its configured defaults.
   }
 
   return (
-    <div style={{ background: "var(--ink)", color: "var(--paper)" }}>
-
-      {/* ── Promo Banner ── */}
+    <div className={styles.home}>
       {promo.enabled && (
-        <div
-          className="promo-banner"
-          style={{
-            background: "var(--vermeil)",
-            borderBottom: "1px solid var(--vermeil-2)",
-          }}
-        >
+        <div className={`promo-banner ${styles.promo}`}>
           <p className="sr-only">
             {promo.couponCode ? `${promo.couponCode} · ` : ""}{promo.message} · ODERA 05
           </p>
@@ -76,12 +71,10 @@ export default async function HomePage() {
                 {Array.from({ length: 8 }, (_, repeat) => (
                   <span className="promo-banner__item" key={repeat}>
                     <span className="promo-banner__star">★</span>
-                    {promo.couponCode && (
-                      <span className="promo-banner__coupon">{promo.couponCode}</span>
-                    )}
+                    {promo.couponCode && <span className="promo-banner__coupon">{promo.couponCode}</span>}
                     <span>{promo.message}</span>
                     <span className="promo-banner__star">★</span>
-                    <span>ODERA 05 · ペルー</span>
+                    <span>ODERA 05 · PERÚ</span>
                   </span>
                 ))}
               </div>
@@ -90,516 +83,94 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* ── HERO ── */}
-      <section
-        className="home-hero relative overflow-hidden"
-        style={{ display: "flex", flexDirection: "column", background: "var(--hero-gradient)" }}
-      >
-        {/* Speed lines background */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `repeating-linear-gradient(
-              -15deg,
-              transparent,
-              transparent 40px,
-              rgba(232,69,44,0.025) 40px,
-              rgba(232,69,44,0.025) 41px
-            )`,
-          }}
-        />
-
-        <div className="home-hero__shell relative z-10 mx-auto grid w-full lg:grid-cols-12 items-center">
-
-          {/* Left — Text panel (col-span-7 on desktop, full width on mobile) */}
-          <div className="home-hero__copy flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 lg:col-span-7">
-            {/* Eyebrow */}
-            <div className="flex items-center gap-3 mb-4">
-              <span className="h-px w-12" style={{ background: "var(--vermeil)" }} />
-              <span
-                className="font-black"
-                style={{
-                  fontSize: "10px",
-                  letterSpacing: "0.28em",
-                  color: "var(--vermeil)",
-                  textTransform: "uppercase",
-                }}
-              >
-                ODERA 05 · Perú
-              </span>
-            </div>
-
-            {/* Main headline */}
-            <h1
-              className="leading-none"
-              style={{
-                fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
-                fontSize: "clamp(52px, 6.2vw, 96px)",
-                letterSpacing: "0.04em",
-                color: "var(--paper)",
-              }}
-            >
-              <span className="block">MUÉVETE</span>
-              <span
-                className="block"
-                style={{
-                  WebkitTextStroke: "2px var(--paper)",
-                  color: "transparent",
-                }}
-              >
-                A TU
-              </span>
-              <span
-                className="block"
-                style={{
-                  background: "linear-gradient(135deg, var(--vermeil) 0%, var(--gold) 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                MANERA.
-              </span>
+      <section className={styles.hero} aria-labelledby="home-title">
+        <div className={`${styles.shell} ${styles.heroLayout}`}>
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>ODERA 05 STORE · PERÚ</p>
+            <h1 id="home-title" className={styles.heroTitle}>
+              MUÉVETE <br />A TU <span>MANERA.</span>
             </h1>
-
-            {/* Subtitle japonés */}
-            <p
-              className="mt-3 mb-4"
-              style={{ fontSize: "12px", letterSpacing: "0.14em", color: "var(--ash)" }}
-            >
-              ザパティージャス・ロパ ——{" "}
-              <span style={{ color: "var(--paper)" }}>毎日のために厳選</span>
-            </p>
-
-            <p
-              className="max-w-md mb-6"
-              style={{ fontSize: "15px", color: "var(--ash)", lineHeight: "1.6" }}
-            >
+            <p className={styles.heroDescription}>
               Zapatillas, ropa y accesorios seleccionados para todos los días.
             </p>
-
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-3">
-              <Link href="/catalog" className="btn-brand" style={{ fontSize: "13px", padding: "12px 26px" }}>
-                Comprar ahora →
-              </Link>
-              <Link href="/track" className="btn-soft" style={{ fontSize: "13px", padding: "12px 24px" }}>
-                Seguir pedido
-              </Link>
+            <div className={styles.heroActions}>
+              <Link href="/catalog" className={styles.primaryLink}>Explorar catálogo <span aria-hidden="true">↗</span></Link>
+              <Link href="#categorias" className={styles.secondaryLink}>Elegir categoría <span aria-hidden="true">↓</span></Link>
             </div>
-
-            {/* Stats */}
-            <div
-              className="mt-8 pt-5 grid grid-cols-3 gap-4 max-w-md"
-              style={{ borderTop: "1px solid var(--ash-2)" }}
-            >
-              {[
-                { num: "100%", label: "Original" },
-                { num: "24h", label: "Respuesta" },
-                { num: "Lima+", label: "Despacho" },
-              ].map(({ num, label }) => (
-                <div key={label} className="flex flex-col gap-1">
-                  <span
-                    className="font-black"
-                    style={{
-                      fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
-                      fontSize: "26px",
-                      color: "var(--paper)",
-                      letterSpacing: "0.04em",
-                    }}
-                  >
-                    {num}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      letterSpacing: "0.18em",
-                      color: "var(--ash)",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {label}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <Link href="/track" className={styles.trackingLink}>¿Ya compraste? Sigue tu pedido <span aria-hidden="true">→</span></Link>
           </div>
-
-          {/* Right — Character card: Hidden on mobile (conversion-first UX), sleek compact card on desktop */}
-          <div className="hidden lg:flex lg:col-span-5 items-center justify-center p-6 lg:p-8">
-            <div
-              className="home-hero__media-card relative w-full max-w-[340px] xl:max-w-[380px] h-[440px] xl:h-[490px] rounded overflow-hidden"
-              style={{
-                border: "1px solid rgba(232, 69, 44, 0.22)",
-                boxShadow: "var(--shadow-elevated)",
-                background: "var(--hero-art-surface)",
-              }}
-            >
-              {/* Corner badge top-left */}
-              <div
-                className="absolute top-3 left-3 z-10"
-                style={{
-                  background: "var(--header-background)",
-                  backdropFilter: "blur(6px)",
-                  border: "1px solid var(--ash-2)",
-                  borderRadius: "2px",
-                  padding: "3px 8px",
-                }}
-              >
-                <span style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--vermeil)", fontWeight: 800 }}>
-                  05 · EDITION
-                </span>
-              </div>
-
-              <Image
-                src="/brand/hero-mascot-v2.png"
-                alt="Colección ODERA 05"
-                fill
-                priority
-                sizes="400px"
-                className="object-contain"
-                style={{ objectPosition: "center bottom" }}
-              />
-
-              {/* Subtle bottom fade */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{ background: "var(--hero-art-overlay)" }}
-              />
-
-              {/* Badge bottom-right */}
-              <div
-                className="absolute bottom-3 right-3 z-10"
-                style={{
-                  background: "var(--header-background)",
-                  backdropFilter: "blur(6px)",
-                  border: "1px solid var(--ash-2)",
-                  borderRadius: "2px",
-                  padding: "3px 8px",
-                }}
-              >
-                <span style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--ash)", fontWeight: 700, textTransform: "uppercase" }}>
-                  Selección semanal
-                </span>
-              </div>
-            </div>
+          <div className={styles.heroArt}>
+            <span className={styles.artNumber} aria-hidden="true">05</span>
+            <Image
+              src="/brand/hero-mascot-v2.png"
+              alt="Colección ODERA 05"
+              fill
+              priority
+              sizes="(max-width: 639px) 100vw, (max-width: 1023px) 45vw, 520px"
+              className={styles.mascot}
+            />
+            <div className={styles.artCaption}><span>ODERA ORIGINALS</span><span>ESTILO EN MOVIMIENTO ↗</span></div>
           </div>
+        </div>
+        <div className={`${styles.shell} ${styles.benefits}`}>
+          <div><span aria-hidden="true">✓</span><p>Productos originales</p></div>
+          <div><span aria-hidden="true">↗</span><p>Envíos a Lima y provincias</p></div>
+          <div><span aria-hidden="true">○</span><p>Pagos con Yape y Plin</p></div>
         </div>
       </section>
 
-      {/* ── Feature strip ── */}
-      <section
-        style={{
-          borderTop: "1px solid var(--ash-2)",
-          borderBottom: "1px solid var(--ash-2)",
-          background: "var(--ink-2)",
-        }}
-      >
-        <div
-          className="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-3"
-          style={{ borderColor: "var(--ash-2)" }}
-        >
-          {[
-            { num: "01", label: "Productos originales" },
-            { num: "02", label: "Envíos a Lima y provincias" },
-            { num: "03", label: "Pagos con Yape y Plin" },
-          ].map(({ num, label }, i) => (
-            <div
-              key={label}
-              className="flex items-center gap-4 px-6 py-5"
-              style={{
-                borderRight: i < 2 ? "1px solid var(--ash-2)" : "none",
-                borderBottom: "none",
-              }}
-            >
-              <span
-                className="font-black tabular-nums"
-                style={{
-                  fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
-                  fontSize: "24px",
-                  color: "var(--vermeil)",
-                  letterSpacing: "0.04em",
-                  lineHeight: 1,
-                }}
-              >
-                {num}
-              </span>
-              <span
-                className="font-semibold"
-                style={{ fontSize: "13px", color: "var(--paper)", letterSpacing: "0.02em" }}
-              >
-                {label}
-              </span>
-            </div>
-          ))}
+      <section id="categorias" className={`${styles.shell} ${styles.section}`} aria-labelledby="categories-title">
+        <div className={styles.sectionHeader}>
+          <div><p className={styles.eyebrow}>ENCUENTRA LO TUYO</p><h2 id="categories-title">Compra por categoría</h2></div>
+          <Link href="/catalog" className={styles.textLink}>Ver todo <span aria-hidden="true">↗</span></Link>
         </div>
-      </section>
-
-      {/* ── Categorías ── */}
-      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
-        <div className="mb-8 flex items-end justify-between pb-4" style={{ borderBottom: "1px solid var(--ash-2)" }}>
-          <div>
-            <p
-              className="font-black"
-              style={{
-                fontSize: "10px",
-                letterSpacing: "0.28em",
-                color: "var(--vermeil)",
-                textTransform: "uppercase",
-                marginBottom: "6px",
-              }}
-            >
-              探索 · Explora
-            </p>
-            <h2
-              className="font-black"
-              style={{
-                fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
-                fontSize: "clamp(28px, 5vw, 42px)",
-                letterSpacing: "0.06em",
-                color: "var(--paper)",
-              }}
-            >
-              COMPRA POR CATEGORÍA
-            </h2>
-          </div>
-          <Link
-            href="/catalog"
-            className="hidden sm:flex items-center gap-2 font-bold uppercase transition-colors duration-150 hover:text-[var(--vermeil)]"
-            style={{ fontSize: "12px", letterSpacing: "0.1em", color: "var(--paper)" }}
-          >
-            Ver todo →
-          </Link>
-        </div>
-
-        {/* Client component con hover interactivo */}
         <CategoryGrid categories={categories} />
       </section>
 
-      {/* ── Novedades ── */}
-      <section className="py-12 sm:py-16" style={{ background: "var(--ink-2)" }}>
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="mb-8 flex items-end justify-between pb-4" style={{ borderBottom: "1px solid var(--ash-2)" }}>
-            <div>
-              <p
-                className="font-black"
-                style={{
-                  fontSize: "10px",
-                  letterSpacing: "0.28em",
-                  color: "var(--vermeil)",
-                  textTransform: "uppercase",
-                  marginBottom: "6px",
-                }}
-              >
-                新着 · Recién llegado
-              </p>
-              <h2
-                className="font-black"
-                style={{
-                  fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
-                  fontSize: "clamp(28px, 5vw, 42px)",
-                  letterSpacing: "0.06em",
-                  color: "var(--paper)",
-                }}
-              >
-                NOVEDADES
-              </h2>
-            </div>
-            <Link
-              href="/catalog"
-              className="flex items-center gap-2 font-bold uppercase transition-colors duration-150 hover:text-[var(--vermeil)]"
-              style={{ fontSize: "12px", letterSpacing: "0.1em", color: "var(--ash)" }}
-            >
-              Ver catálogo →
-            </Link>
+      <section className={styles.featuredSection} aria-labelledby="featured-title">
+        <div className={`${styles.shell} ${styles.section}`}>
+          <div className={styles.sectionHeader}>
+            <div><p className={styles.eyebrow}>EXPLORA LA SELECCIÓN</p><h2 id="featured-title">Novedades</h2></div>
+            <Link href="/catalog" className={styles.textLink}>Ver catálogo <span aria-hidden="true">↗</span></Link>
           </div>
           <FeaturedProducts />
         </div>
       </section>
 
-      {/* ── Cómo funciona ── */}
-      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
-        <div className="grid gap-6 sm:grid-cols-[0.8fr_1.2fr] sm:gap-10">
-          <div>
-            <p
-              className="font-black"
-              style={{
-                fontSize: "10px",
-                letterSpacing: "0.28em",
-                color: "var(--vermeil)",
-                textTransform: "uppercase",
-                marginBottom: "12px",
-              }}
-            >
-              シンプル · Compra simple
-            </p>
-            <h2
-              className="font-black leading-tight"
-              style={{
-                fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
-                fontSize: "clamp(32px, 6vw, 52px)",
-                letterSpacing: "0.06em",
-                color: "var(--paper)",
-              }}
-            >
-              SIN PASOS<br />CONFUSOS.
-            </h2>
-          </div>
-
-          <ol>
-            {[
-              { step: "01", text: "Elige talla y agrega al carrito." },
-              { step: "02", text: "Confirma tu reserva y paga con Yape o Plin." },
-              { step: "03", text: "Envía tu comprobante y sigue tu pedido." },
-            ].map(({ step, text }) => (
-              <li
-                key={step}
-                className="flex items-start gap-5 py-5"
-                style={{ borderBottom: "1px solid var(--ash-2)" }}
-              >
-                <span
-                  className="font-black shrink-0"
-                  style={{
-                    fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
-                    fontSize: "32px",
-                    color: "var(--vermeil)",
-                    letterSpacing: "0.04em",
-                    lineHeight: 1,
-                    minWidth: "3ch",
-                  }}
-                >
-                  {step}
-                </span>
-                <p
-                  className="font-semibold leading-relaxed"
-                  style={{ fontSize: "15px", color: "var(--paper)", paddingTop: "6px" }}
-                >
-                  {text}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </div>
+      <section className={`${styles.shell} ${styles.shoppingGuide}`} aria-labelledby="shopping-title">
+        <div className={styles.guideIntro}><p className={styles.eyebrow}>DE LA TIENDA A TI</p><h2 id="shopping-title">Así de simple.</h2><Link href="/track" className={styles.textLink}>Seguir mi pedido <span aria-hidden="true">↗</span></Link></div>
+        <ol className={styles.steps}>
+          {[
+            { title: "Elige tu producto", text: "Selecciona tu talla y agrégalo al carrito." },
+            { title: "Confirma y paga", text: "Reserva tu pedido y paga con Yape o Plin." },
+            { title: "Sigue tu pedido", text: "Envía tu comprobante y revisa el estado de tu compra." },
+          ].map((step, index) => (
+            <li key={step.title}><span className={styles.stepNumber}>0{index + 1}</span><div><h3>{step.title}</h3><p>{step.text}</p></div></li>
+          ))}
+        </ol>
       </section>
 
-      <HomeSocialLinks />
-
-      {/* ── Tienda física ── */}
-      <section
-        id="ubicacion"
-        className="relative overflow-hidden"
-        style={{ background: "var(--ink-2)", borderTop: "1px solid var(--ash-2)", borderBottom: "1px solid var(--ash-2)" }}
-      >
-        <div className="mx-auto grid max-w-7xl gap-8 px-5 py-12 sm:px-8 sm:py-16 md:grid-cols-[1.06fr_0.94fr] md:items-center">
-          <div className="relative overflow-hidden" style={{ border: "1px solid var(--ash-2)", minHeight: "320px" }}>
-            <Image
-              src="/brand/storefront-odera-05.png"
-              alt="Frontis de ODERA 05 STORE en Independencia, Lima"
-              fill
-              sizes="(max-width: 1024px) 100vw, 55vw"
-              className="object-cover"
-            />
-            <div className="absolute inset-x-0 bottom-0 p-5" style={{ background: "linear-gradient(0deg, rgba(14,14,18,.96), transparent)" }}>
-              <p className="font-black uppercase" style={{ fontSize: "10px", letterSpacing: ".2em", color: "var(--inverse-foreground)" }}>Tienda física · Lima Norte</p>
-            </div>
+      <section id="ubicacion" className={styles.storeSection} aria-labelledby="store-title">
+        <div className={`${styles.shell} ${styles.storeLayout}`}>
+          <div className={styles.storeImage}>
+            <Image src="/brand/storefront-odera-05.png" alt="Frontis de ODERA 05 STORE en Independencia, Lima" fill sizes="(max-width: 767px) 100vw, 50vw" className="object-cover" />
+            <span>Tienda física · Lima Norte</span>
           </div>
-
-          <div className="flex flex-col gap-5 lg:pl-4">
-            <div>
-              <p className="font-black uppercase mb-2" style={{ fontSize: "10px", letterSpacing: ".28em", color: "var(--vermeil)" }}>Encuéntranos</p>
-              <h2 className="font-black leading-none" style={{ fontFamily: "'Bebas Neue', var(--font-display), sans-serif", fontSize: "clamp(34px, 5vw, 52px)", letterSpacing: ".06em", color: "var(--paper)" }}>
-                VISITA LA<br />TIENDA
-              </h2>
+          <div className={styles.storeCopy}>
+            <p className={styles.eyebrow}>TAMBIÉN NOS ENCUENTRAS AQUÍ</p>
+            <h2 id="store-title">Pasa por <br />la tienda.</h2>
+            <p className={styles.storeDescription}>Conoce zapatillas, ropa y accesorios en persona. Te ayudamos a encontrar la talla y el estilo que buscas.</p>
+            <address className={styles.storeAddress}><strong>Ollantaytambo 608</strong><span>Tahuantinsuyo, Independencia · Lima, Perú</span></address>
+            <div className={styles.storeHours}><strong>{storeHours ? "Horario de atención" : "Atención directa"}</strong><p>{storeHours || "Consulta horarios y disponibilidad por WhatsApp."}</p></div>
+            <div className={styles.storeActions}>
+              <a href="https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA" target="_blank" rel="noreferrer" className={styles.primaryLink}>Cómo llegar <span aria-hidden="true">↗</span></a>
+              <Link href="/nosotros" className={styles.textLink}>Conoce ODERA <span aria-hidden="true">→</span></Link>
             </div>
-            <p className="max-w-md" style={{ fontSize: "15px", color: "var(--ash)", lineHeight: "1.7" }}>
-              Conoce zapatillas, ropa y accesorios en persona. Nuestro equipo te ayuda a encontrar la talla y el estilo que buscas.
-            </p>
-            <div className="grid gap-3" style={{ borderTop: "1px solid var(--ash-2)", paddingTop: "16px" }}>
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,.12)", color: "var(--vermeil)" }}>⌖</span>
-                <div><p className="font-bold" style={{ fontSize: "14px", color: "var(--paper)" }}>Ollantaytambo 608</p><p style={{ fontSize: "13px", color: "var(--ash)", marginTop: "2px", lineHeight: "1.5" }}>Tahuantinsuyo, Independencia · Lima, Perú</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,.12)", color: "var(--vermeil)" }}>◷</span>
-                <div><p className="font-bold" style={{ fontSize: "14px", color: "var(--paper)" }}>{storeHours ? "Horario de atención" : "Atención directa"}</p><p className="whitespace-pre-line" style={{ fontSize: "13px", color: "var(--ash)", marginTop: "2px", lineHeight: "1.5" }}>{storeHours || "Consulta horarios y disponibilidad por WhatsApp."}</p></div>
-              </div>
-            </div>
-            <a
-              href="https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA"
-              target="_blank"
-              rel="noreferrer"
-              className="btn-brand w-fit"
-              style={{ fontSize: "12px", padding: "11px 20px" }}
-            >
-              Abrir en Google Maps →
-            </a>
-            <Link href="/nosotros" className="w-fit text-xs font-bold uppercase tracking-wider hover:text-[var(--vermeil)]">
-              Conoce nuestra tienda ↗
-            </Link>
           </div>
         </div>
       </section>
 
-      {/* ── CTA Final ── */}
-      <section
-        className="relative overflow-hidden"
-        style={{ background: "var(--ink-2)", borderTop: "1px solid var(--ash-2)" }}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `repeating-linear-gradient(
-              -15deg,
-              transparent,
-              transparent 30px,
-              rgba(232,69,44,0.03) 30px,
-              rgba(232,69,44,0.03) 31px
-            )`,
-          }}
-        />
-        <div className="relative z-10 mx-auto max-w-4xl px-5 py-12 sm:px-8 sm:py-16 text-center">
-          <p
-            className="font-black mb-4"
-            style={{
-              fontSize: "10px",
-              letterSpacing: "0.28em",
-              color: "var(--vermeil)",
-              textTransform: "uppercase",
-            }}
-          >
-            ★ ODERA 05 STORE ★
-          </p>
-          <h2
-            className="font-black leading-tight mb-8"
-            style={{
-              fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
-              fontSize: "clamp(36px, 8vw, 72px)",
-              letterSpacing: "0.04em",
-              color: "var(--paper)",
-            }}
-          >
-            EMPIEZA A EXPLORAR<br />
-            <span
-              style={{
-                background: "linear-gradient(135deg, var(--vermeil) 0%, var(--gold) 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              TU ESTILO.
-            </span>
-          </h2>
-          <Link
-            href="/catalog"
-            className="btn-brand inline-flex"
-            style={{ fontSize: "14px", padding: "14px 36px" }}
-          >
-            Ver catálogo completo →
-          </Link>
-        </div>
-      </section>
-
+      <HomeSocialLinks initialLinks={socialLinks} />
     </div>
   );
 }

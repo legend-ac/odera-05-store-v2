@@ -3,90 +3,60 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Container } from "@/components/ui/layout";
-import HomeSocialLinks from "@/components/HomeSocialLinks";
+import HomeSocialLinks, { type SocialLinks } from "@/components/HomeSocialLinks";
+import styles from "./StoreChrome.module.css";
 
-const mapsUrl =
-  "https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA";
+const mapsUrl = "https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA";
 
-const footerHeading: React.CSSProperties = {
-  fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
-  fontSize: "15px",
-  letterSpacing: ".14em",
-  color: "var(--paper)",
-};
-
-const footerLink: React.CSSProperties = {
-  color: "var(--ash)",
-  fontSize: "14px",
-  lineHeight: "1.5",
-};
-
-export default function Footer() {
+export default function Footer({ initialLinks }: { initialLinks?: SocialLinks }) {
   const pathname = usePathname();
-  // Static/ISR rendering can resolve the pathname after the initial HTML.
-  // Keep the home-specific branch identical until hydration has completed.
   const [isHome, setIsHome] = useState(false);
-  useEffect(() => {
-    setIsHome(pathname === "/");
-  }, [pathname]);
-
+  useEffect(() => { setIsHome(pathname === "/"); }, [pathname]);
   if (pathname === "/login" || pathname.startsWith("/dashboard")) return null;
 
   return (
-    <footer className={isHome ? "mt-0" : "mt-12"} style={{ background: "var(--footer-background)", borderTop: "2px solid var(--vermeil)" }}>
-      <Container className="grid gap-x-10 gap-y-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr_1.15fr] lg:py-14">
-        <section aria-label="ODERA 05 Store" className="flex flex-col gap-4">
-          <Link href="/" className="flex w-fit items-center gap-3" aria-label="Ir al inicio de ODERA 05 Store">
-            <span className="grid place-items-center font-black text-white" style={{ width: 42, height: 42, background: "var(--vermeil)", fontSize: "12px", clipPath: "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}>05</span>
-            <span>
-              <span className="block font-black" style={{ fontFamily: "'Bebas Neue', var(--font-display), sans-serif", fontSize: "20px", letterSpacing: ".1em", color: "var(--paper)" }}>ODERA 05 STORE</span>
-              <span className="block uppercase" style={{ fontSize: "10px", letterSpacing: ".15em", color: "var(--ash)" }}>Zapatillas · Ropa · Accesorios</span>
-            </span>
+    <footer className={isHome ? "mt-0" : "mt-12"} style={{ background: "var(--footer-background)", borderTop: "1px solid var(--ash-2)" }}>
+      <div className={styles.footerInner}>
+        <section aria-label="ODERA 05 Store" className={styles.footerBrand}>
+          <Link href="/" className={styles.brand} aria-label="Ir al inicio de ODERA 05 Store">
+            <span className={styles.mark}>05</span>
+            <span className={styles.brandCopy}><strong>ODERA 05 STORE</strong><span>Zapatillas · Ropa · Accesorios</span></span>
           </Link>
-          <p style={{ maxWidth: "27ch", fontSize: "14px", lineHeight: "1.65", color: "var(--ash)" }}>Compra online con información clara, seguimiento de pedido y atención por canales oficiales.</p>
-          <Link href="/nosotros" className="w-fit font-bold uppercase hover:text-[var(--vermeil)]" style={{ fontSize: "11px", letterSpacing: ".12em", color: "var(--paper)" }}>Conoce nuestra tienda →</Link>
+          <p>Tu próximo par, tu siguiente movimiento. Encuentra zapatillas, ropa y accesorios en nuestra tienda.</p>
+          <Link href="/nosotros" className={styles.footerAction}>Conoce ODERA 05 <span aria-hidden="true">&nbsp;↗</span></Link>
         </section>
 
-        <nav aria-label="Información de compra" className="flex flex-col gap-3">
-          <p style={footerHeading}>INFORMACIÓN</p>
-          <Link href="/informacion/terminos" className="hover:text-[var(--vermeil)]" style={footerLink}>Términos y condiciones</Link>
-          <Link href="/informacion/privacidad" className="hover:text-[var(--vermeil)]" style={footerLink}>Política de privacidad</Link>
-          <Link href="/informacion/envios" className="hover:text-[var(--vermeil)]" style={footerLink}>Envíos y entregas</Link>
-          <Link href="/informacion/cambios-devoluciones" className="hover:text-[var(--vermeil)]" style={footerLink}>Cambios y devoluciones</Link>
+        <nav aria-label="Información de compra" className={styles.footerNav}>
+          <h2>INFORMACIÓN</h2>
+          <Link href="/informacion/envios">Envíos y entregas</Link>
+          <Link href="/informacion/cambios-devoluciones">Cambios y devoluciones</Link>
+          <Link href="/informacion/terminos">Términos y condiciones</Link>
+          <Link href="/informacion/privacidad">Política de privacidad</Link>
         </nav>
 
-        <nav aria-label="Atención al cliente" className="flex flex-col gap-3">
-          <p style={footerHeading}>ATENCIÓN</p>
-          <Link href="/track" className="hover:text-[var(--vermeil)]" style={footerLink}>Seguimiento de pedido</Link>
-          <Link href="/cart" className="hover:text-[var(--vermeil)]" style={footerLink}>Mi carrito</Link>
-          <Link href="/libro-reclamaciones" className="font-semibold hover:text-[var(--vermeil)]" style={{ ...footerLink, color: "var(--paper)" }}>Libro de Reclamaciones</Link>
-          <p style={{ ...footerLink, paddingTop: "4px" }}>Respuesta a reclamos en hasta 15 días hábiles.</p>
+        <nav aria-label="Atención al cliente" className={styles.footerNav}>
+          <h2>TE AYUDAMOS</h2>
+          <Link href="/track">Seguimiento de pedido</Link>
+          <Link href="/cart">Mi carrito</Link>
+          <Link href="/libro-reclamaciones">Libro de Reclamaciones</Link>
+          <p>Atención de reclamos en hasta 15 días hábiles.</p>
         </nav>
 
-        <section aria-label="Ubicación de la tienda" className="flex flex-col gap-3">
-          <p style={footerHeading}>VISÍTANOS</p>
-          <address className="not-italic" style={{ ...footerLink, lineHeight: "1.65" }}>
-            <strong style={{ color: "var(--paper)" }}>Ollantaytambo 608</strong><br />
-            Tahuantinsuyo, Independencia<br />
-            Lima, Perú
-          </address>
-          <a href={mapsUrl} target="_blank" rel="noreferrer" className="w-fit font-bold uppercase hover:text-[var(--vermeil)]" style={{ fontSize: "11px", letterSpacing: ".12em", color: "var(--paper)" }}>Ver cómo llegar ↗</a>
-          <Link href="/nosotros" className="w-fit hover:text-[var(--vermeil)]" style={footerLink}>Frontis y ubicación de la tienda</Link>
+        <section aria-label="Ubicación de la tienda" className={styles.footerNav}>
+          <h2>VEN A CONOCERNOS</h2>
+          <address><strong>Ollantaytambo 608</strong><br />Tahuantinsuyo, Independencia<br />Lima, Perú</address>
+          <a href={mapsUrl} target="_blank" rel="noreferrer" className={styles.footerAction}>Cómo llegar <span aria-hidden="true">&nbsp;↗</span></a>
+          <Link href="/nosotros">Ubicación y horario de atención</Link>
         </section>
-      </Container>
+      </div>
 
-      {!isHome && (
-        <Container className="pb-12">
-          <HomeSocialLinks compact />
-        </Container>
-      )}
+      {!isHome && <div className={styles.footerSocials}><HomeSocialLinks compact initialLinks={initialLinks} /></div>}
 
       <div style={{ borderTop: "1px solid var(--ash-2)" }}>
-        <Container className="flex flex-col gap-2 py-5 text-[13px] md:flex-row md:items-center md:justify-between" style={{ color: "var(--ash)" }}>
+        <div className={styles.footerBottom}>
           <p>© {new Date().getFullYear()} ODERA 05 STORE. Todos los derechos reservados.</p>
-          <p>Información de compra y canales de atención visibles para el consumidor.</p>
-        </Container>
+          <p>Hecho para moverte. Desde Lima, Perú.</p>
+        </div>
       </div>
     </footer>
   );

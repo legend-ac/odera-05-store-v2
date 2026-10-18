@@ -6,6 +6,8 @@ import { useCart } from "@/components/cart/CartProvider";
 import { formatPEN } from "@/lib/money";
 import ProductImage from "@/components/ProductImage";
 import { DEFAULT_FREE_SHIPPING_FROM, shippingCostFor } from "@/lib/shipping";
+import styles from "../checkout/purchase-flow.module.css";
+import PurchaseSteps from "../checkout/purchase-steps";
 
 /* ── Style tokens ── */
 const S = {
@@ -91,32 +93,22 @@ export default function CartPage() {
   const invalidItems = lines.some(({it, p, v}) => !p || p.status !== "active" || !v || v.stock < it.qty);
 
   return (
-    <div style={{ background: S.ink, minHeight: "100vh" }}>
+    <div className={styles.page}>
 
       {/* ── Breadcrumb ── */}
-      <div style={{ background: S.ink2, borderBottom: S.border }}>
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
-          <nav className="flex items-center gap-2" style={{ fontSize: "12px", color: S.ash }}>
+          <nav className={styles.breadcrumb} aria-label="Ubicación">
             <Link href="/" className="hover:text-[var(--vermeil)] transition-colors">Inicio</Link>
             <span style={{ color: S.ash2 }}>›</span>
             <span style={{ color: S.paper, fontWeight: 600 }}>Carrito</span>
           </nav>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 flex flex-col gap-6">
+      <div>
 
         {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <header className={styles.heading}>
           <div>
+            <span className={styles.eyebrow}>Tu selección · Odera 05</span>
             <h1
               className="font-black leading-none"
-              style={{
-                fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
-                fontSize: "clamp(32px, 6vw, 48px)",
-                letterSpacing: "0.06em",
-                color: S.paper,
-              }}
             >
               CARRITO DE COMPRAS
             </h1>
@@ -126,7 +118,10 @@ export default function CartPage() {
                 : "Tu carrito está vacío por ahora."}
             </p>
           </div>
-          {items.length > 0 && (
+          <PurchaseSteps current="cart" />
+        </header>
+        {items.length > 0 && (
+          <div className="flex justify-end mb-3">
             <button
               type="button"
               onClick={clear}
@@ -134,23 +129,20 @@ export default function CartPage() {
               style={{
                 fontSize: "11px",
                 letterSpacing: "0.12em",
-                padding: "8px 16px",
-                border: S.border,
-                borderRadius: "2px",
+                padding: "8px 0 8px 16px",
                 color: S.ash,
                 background: "transparent",
               }}
             >
               Vaciar carrito
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Carrito vacío */}
         {!items.length && (
           <div
-            className="flex flex-col items-center justify-center text-center py-20"
-            style={{ background: S.ink2, border: S.border, borderRadius: "2px" }}
+            className={styles.empty}
           >
             <div
               className="flex items-center justify-center mb-5"
@@ -193,14 +185,14 @@ export default function CartPage() {
         )}
 
         {items.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
+          <div className={styles.cartLayout}>
 
             {/* ── Lista de productos ── */}
-            <div className="flex flex-col gap-3">
+            <div className={styles.cartList}>
               {lines.map(({ it, p, v, unit, subtotal, imageUrls }, i) => (
                 <div
                   key={`${it.productId}:${it.variantId}`}
-                  className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 p-4 sm:flex sm:gap-4"
+                  className={styles.cartItem}
                   style={{
                     background: S.ink2,
                     border: S.border,
@@ -210,7 +202,7 @@ export default function CartPage() {
                 >
                   {/* Imagen */}
                   <div
-                    className="relative h-[72px] w-[72px] shrink-0 overflow-hidden sm:h-[88px] sm:w-[88px]"
+                    className={`${styles.cartImage} relative shrink-0 overflow-hidden`}
                     style={{ background: S.ink3, border: S.border, borderRadius: "2px" }}
                   >
                       <ProductImage
@@ -227,7 +219,7 @@ export default function CartPage() {
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
+                  <div className={styles.cartInfo}>
                     <div>
                       <p className="font-semibold truncate" style={{ fontSize: "14px", color: S.paper }}>
                         {p?.name ?? it.productId}
@@ -242,14 +234,14 @@ export default function CartPage() {
                     <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3" style={{ fontSize: "13px" }}>
                       <span style={{ color: S.ash }}>Unitario: <span className="font-semibold" style={{ color: S.paper }}>{formatPEN(unit)}</span></span>
                       <span className="hidden sm:inline" style={{ color: "var(--ash-2)" }}>·</span>
-                      <span className="font-black tabular-nums" style={{ color: "var(--vermeil)", fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif", fontSize: "18px", letterSpacing: "0.04em" }}>
+                      <span className={`${styles.cartPrice} tabular-nums`}>
                         {formatPEN(subtotal)}
                       </span>
                     </div>
                   </div>
 
                   {/* Controles */}
-                  <div className="col-span-2 flex items-center justify-between gap-2 sm:shrink-0 sm:flex-col sm:items-end">
+                  <div className={styles.cartControls}>
                     {/* Qty */}
                     <div className="inline-flex items-center overflow-hidden" style={{ border: S.border, borderRadius: "2px", height: 32 }}>
                       <button
@@ -291,12 +283,9 @@ export default function CartPage() {
             </div>
 
             {/* ── Resumen ── */}
-            <div
-              className="flex flex-col gap-4 p-5 lg:sticky lg:top-20"
-              style={{ background: S.ink2, border: S.border, borderRadius: "2px" }}
-            >
+            <aside className={styles.summary}>
               <p
-                className="font-black"
+                className={styles.cartSummaryTitle}
                 style={{
                   fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
                   fontSize: "22px",
@@ -321,7 +310,7 @@ export default function CartPage() {
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: "13px", color: S.ash }}>Total sin cupón</span>
                 <span
-                  className="font-black tabular-nums"
+                  className={`${styles.cartTotal} tabular-nums`}
                   style={{
                     fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
                     fontSize: "28px",
@@ -354,10 +343,7 @@ export default function CartPage() {
               </Link>
 
               {/* Trust strip — tema oscuro */}
-              <div
-                className="flex items-start gap-2.5 p-3"
-                style={{ background: S.ink3, border: S.border, borderRadius: "2px" }}
-              >
+              <div className={styles.note}>
                 <svg className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "var(--vermeil)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
@@ -365,7 +351,7 @@ export default function CartPage() {
                   Compra protegida · pedido registrado, validación de pago manual y seguimiento por número de pedido.
                 </p>
               </div>
-            </div>
+            </aside>
           </div>
         )}
       </div>

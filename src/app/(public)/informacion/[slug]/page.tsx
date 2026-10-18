@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { formatPEN } from "@/lib/money";
 import { normalizeStoreInformation } from "@/lib/storeInformation";
+import styles from "../../PublicInformation.module.css";
 
 export const revalidate = 60;
 
@@ -100,22 +101,26 @@ export default async function InformacionPage({ params }: { params: Promise<{ sl
 
   return (
     <div style={{ background: "var(--ink)", color: "var(--paper)" }}>
-      <article className="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
-        <Link href="/" className="font-bold uppercase hover:text-[var(--vermeil)]" style={{ color: "var(--ash)", fontSize: "10px", letterSpacing: ".15em" }}>← Volver a la tienda</Link>
-        <p className="mt-8 font-black uppercase" style={{ color: "var(--vermeil)", fontSize: "10px", letterSpacing: ".25em" }}>Información para el consumidor</p>
-        <h1 className="mt-3 leading-none" style={{ fontFamily: "'Bebas Neue', var(--font-display), sans-serif", fontSize: "clamp(40px, 7vw, 68px)", letterSpacing: ".04em" }}>{page.title}</h1>
-        <p className="mt-5 max-w-2xl" style={{ color: "var(--ash)", fontSize: "16px", lineHeight: "1.75" }}>{slug === "cambios-devoluciones" && (businessInformation.exchangePeriod || businessInformation.exchangeConditions) ? "Revisa los plazos y condiciones de la tienda antes de comprar. Si ya compraste, sigue estos pasos para solicitar atención." : page.intro}</p>
-        <div className="mt-10 grid gap-0" style={{ borderTop: "1px solid var(--ash-2)" }}>
+      <article className={styles.page}>
+        <Link href="/" className={styles.back}>← Volver a la tienda</Link>
+        <div className={styles.layout}>
+        <header className={styles.heading}>
+        <p className={styles.eyebrow}>Información para comprar</p>
+        <h1 className={styles.title}>{page.title}</h1>
+        <p className={styles.intro}>{slug === "cambios-devoluciones" && (businessInformation.exchangePeriod || businessInformation.exchangeConditions) ? "Revisa los plazos y condiciones de la tienda antes de comprar. Si ya compraste, sigue estos pasos para solicitar atención." : page.intro}</p>
+        <nav className={styles.sideLinks} aria-label="Más información">
+          <Link href="/libro-reclamaciones">Libro de Reclamaciones ↗</Link>
+          <Link href="/nosotros">Ubicación de la tienda ↗</Link>
+        </nav>
+        </header>
+        <div className={styles.sections}>
           {sections.map(([heading, text], index) => (
-            <section key={heading} className="grid gap-3 py-6 sm:grid-cols-[50px_1fr]" style={{ borderBottom: "1px solid var(--ash-2)" }}>
-              <span style={{ color: "var(--vermeil)", fontFamily: "'Bebas Neue', var(--font-display), sans-serif", fontSize: "22px" }}>0{index + 1}</span>
-              <div><h2 className="font-bold" style={{ fontSize: "16px" }}>{heading}</h2><p className="mt-2 whitespace-pre-line" style={{ color: "var(--ash)", fontSize: "14px", lineHeight: "1.7" }}>{text}</p></div>
+            <section key={heading}>
+              <span className={styles.number}>0{index + 1}</span>
+              <div><h2>{heading}</h2><p>{text}</p></div>
             </section>
           ))}
         </div>
-        <div className="mt-10 flex flex-wrap gap-3">
-          <Link href="/libro-reclamaciones" className="btn-brand" style={{ fontSize: "12px", padding: "11px 18px" }}>Libro de Reclamaciones</Link>
-          <Link href="/nosotros" className="btn-soft" style={{ fontSize: "12px", padding: "11px 18px" }}>Ubicación de la tienda</Link>
         </div>
       </article>
     </div>

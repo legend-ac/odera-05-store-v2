@@ -1,6 +1,7 @@
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import ProductCard, { type ProductCardData } from "@/components/ProductCard";
 import { hasStock } from "@/lib/productStock";
+import styles from "./HomeStorefront.module.css";
 
 export const revalidate = 60;
 
@@ -60,21 +61,13 @@ export default async function FeaturedProducts() {
     const items = await loadFeatured();
     if (!items.length) {
       return (
-        <div
-          className="px-4 py-8 text-center text-sm"
-          style={{
-            background: "var(--ink-2)",
-            border: "1px solid var(--ash-2)",
-            borderRadius: "2px",
-            color: "var(--ash)",
-          }}
-        >
+        <div className={styles.emptyProducts}>
           Pronto publicaremos nuevos productos destacados.
         </div>
       );
     }
     return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+      <div className={styles.featuredGrid}>
         {items.map((p, index) => (
           <ProductCard key={p.id} p={p} priority={index < 3} />
         ))}
@@ -82,6 +75,6 @@ export default async function FeaturedProducts() {
     );
   } catch (e) {
     console.error("[FeaturedProducts] load failed", e);
-    return <div className="text-sm" style={{ color: "var(--ash)" }}>No pudimos cargar los productos destacados.</div>;
+    return <div className={styles.emptyProducts}>No pudimos cargar los productos destacados.</div>;
   }
 }
