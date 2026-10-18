@@ -190,7 +190,7 @@ export default function ProductClient({
 
   return (
     <>
-      <div className="product-page" style={{ background: S.ink, minHeight: "100vh" }}>
+      <div className="product-page" style={{ background: S.ink }}>
 
         {/* ── Breadcrumb ── */}
         <div style={{ background: S.ink2, borderBottom: S.border }}>
@@ -208,7 +208,7 @@ export default function ProductClient({
         </div>
 
         {/* ── Layout principal ── */}
-        <div className="product-layout mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:grid lg:grid-cols-[1fr_1fr] lg:gap-10 lg:items-start">
+        <div className="product-layout mx-auto px-4 sm:px-6">
 
           {/* ══ GALERÍA ══ */}
           <div className="product-gallery flex min-w-0 flex-col gap-3 lg:sticky lg:top-20">
@@ -216,23 +216,7 @@ export default function ProductClient({
             {/* Imagen principal */}
             <div
               className="product-gallery__frame relative overflow-hidden"
-              style={{ background: S.ink3, border: "var(--product-gallery-border, 1px solid var(--ash-2))", borderRadius: "2px" }}
             >
-              {/* Badges */}
-              {hasDiscount && (
-                <div className="product-gallery__badges absolute left-0 top-0 z-10 flex gap-1.5 p-3">
-                  <span className="font-black text-white" style={{ background: S.red, fontSize: "11px", padding: "3px 8px", letterSpacing: "0.06em" }}>
-                    Oferta
-                  </span>
-                  <span className="font-black text-white" style={{ background: "rgba(14,14,18,0.85)", fontSize: "11px", padding: "3px 8px", letterSpacing: "0.06em" }}>
-                    -{discountPct}%
-                  </span>
-                </div>
-              )}
-
-              {/* Vermeil corner */}
-              <div className="product-gallery__corner absolute top-0 right-0 z-10" style={{ width: 48, height: 48, background: S.red, clipPath: "polygon(100% 0, 100% 100%, 0 0)" }} />
-
               <div
                 className="product-gallery__image relative flex touch-pan-y cursor-grab select-none items-center justify-center overflow-hidden w-full active:cursor-grabbing"
                 style={{ aspectRatio: "1 / 1", background: "var(--image-surface)" }}
@@ -250,8 +234,7 @@ export default function ProductClient({
                     unoptimized
                     draggable={false}
                     sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-contain transition-transform duration-700 ease-out hover:scale-[1.025]"
-                    style={{ padding: "var(--product-image-padding, clamp(8px, 2.25%, 22px))" }}
+                    className="object-contain"
                     onError={() => gallery.reportFailure(mainImg)}
                   />
                 ) : (
@@ -259,32 +242,28 @@ export default function ProductClient({
                 )}
               </div>
 
-              {/* Flechas */}
-              {availableGalleryUrls.length > 1 && (
-                <>
+            </div>
+
+            {availableGalleryUrls.length > 1 && <div className="product-gallery__navigation" aria-label="Controles de fotos">
                   <button type="button" aria-label="Imagen anterior" onClick={showPreviousImage}
-                    className="absolute left-3 top-1/2 hidden -translate-y-1/2 items-center justify-center sm:flex transition-all duration-200"
-                    style={{ width: 36, height: 36, background: "var(--header-background)", border: "1px solid var(--ash-2)", borderRadius: "2px", color: S.paper }}
+                    className="product-gallery__arrow"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                   </button>
+                  <span className="product-gallery__count" aria-live="polite" aria-label={`Imagen ${availableGalleryUrls.indexOf(mainImg) + 1} de ${availableGalleryUrls.length}`}>
+                    {availableGalleryUrls.indexOf(mainImg) + 1} / {availableGalleryUrls.length}
+                  </span>
                   <button type="button" aria-label="Siguiente imagen" onClick={showNextImage}
-                    className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center justify-center sm:flex transition-all duration-200"
-                    style={{ width: 36, height: 36, background: "var(--header-background)", border: "1px solid var(--ash-2)", borderRadius: "2px", color: S.paper }}
+                    className="product-gallery__arrow"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </button>
-                  <span className="product-gallery__count absolute bottom-2 right-2 z-10 lg:hidden" aria-live="polite" aria-label={`Imagen ${availableGalleryUrls.indexOf(mainImg) + 1} de ${availableGalleryUrls.length}`}>
-                    {availableGalleryUrls.indexOf(mainImg) + 1} / {availableGalleryUrls.length}
-                  </span>
-                </>
-              )}
-            </div>
+              </div>}
 
             {/* Thumbnails */}
             {availableGalleryUrls.length > 1 && (
               <div className="product-gallery__thumbnails flex gap-2 overflow-x-auto pb-1" aria-label="Fotos del producto">
-                {availableGalleryUrls.slice(0, 8).map((url, i) => (
+                {availableGalleryUrls.map((url, i) => (
                   <button
                     key={`${url}-${i}`}
                     type="button"
@@ -294,7 +273,7 @@ export default function ProductClient({
                     className="product-gallery__thumbnail relative shrink-0 overflow-hidden transition-all duration-200"
                     style={{
                       width: "var(--product-thumbnail-size, 64px)", height: "var(--product-thumbnail-size, 64px)",
-                      background: S.ink3,
+                      background: "var(--image-surface)",
                       border: url === mainImg ? `2px solid var(--vermeil)` : `1px solid var(--ash-2)`,
                       borderRadius: "2px",
                       opacity: url === mainImg ? 1 : 0.8,
@@ -339,26 +318,16 @@ export default function ProductClient({
 
             {/* Precio */}
             <div className="product-price flex flex-wrap items-end gap-4 pb-5" style={{ borderBottom: S.border }}>
-              <span
-                className="font-black leading-none tabular-nums"
-                style={{
-                  fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif",
-                  fontSize: "var(--product-price-size, clamp(32px, 6vw, 48px))",
-                  letterSpacing: "0.04em",
-                  color: hasDiscount ? S.red : S.paper,
-                }}
-              >
+              <span className="product-price__current" style={{ color: hasDiscount ? S.red : S.paper }}>
                 {formatPEN(unitPrice)}
               </span>
               {hasDiscount && (
-                <div className="flex flex-col mb-1 gap-0.5">
-                  <span className="line-through tabular-nums leading-none" style={{ fontSize: "14px", color: S.ash }}>
+                <>
+                  <span className="product-price__original">
                     {formatPEN(data.price)}
                   </span>
-                  <span className="font-bold leading-none" style={{ fontSize: "11px", color: S.red }}>
-                    Ahorras {discountPct}%
-                  </span>
-                </div>
+                  <span className="product-discount">−{discountPct}%</span>
+                </>
               )}
             </div>
 
@@ -413,7 +382,7 @@ export default function ProductClient({
 
             {/* Cantidad + CTA */}
             <div className="product-purchase flex flex-col gap-3">
-              <div className="product-buy-row flex flex-col gap-3">
+              <div className="product-buy-row">
               {/* Cantidad */}
               <div className="product-quantity flex items-center gap-4">
                 <p className="font-bold uppercase flex-1" style={{ fontSize: "10px", letterSpacing: "0.2em", color: S.ash }}>
@@ -449,15 +418,6 @@ export default function ProductClient({
                   setShowCartModal(true);
                 }}
                 className="product-add-to-cart w-full flex items-center justify-center gap-2.5 font-black uppercase tracking-widest text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  height: 52,
-                  fontSize: "var(--product-cta-size, 14px)",
-                  letterSpacing: "var(--product-cta-tracking, 0.1em)",
-                  background: "linear-gradient(135deg, var(--vermeil-2) 0%, var(--vermeil) 100%)",
-                  boxShadow: "var(--product-cta-shadow, 0 6px 24px rgba(232,69,44,0.35))",
-                  borderRadius: "2px",
-                  clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
-                }}
               >
                 {available <= 0 ? (
                   <>
@@ -477,20 +437,13 @@ export default function ProductClient({
               </button>
               </div>
 
-              {available > 0 && (
-                <p className="text-center flex items-center justify-center gap-1.5" style={{ fontSize: "11px", color: S.ash }}>
-                  <svg className="h-3 w-3" style={{ color: "var(--success)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  Compra 100% segura · Producto original
-                </p>
-              )}
             </div>
 
+            <div className="product-details">
             {data.productType === "zapatillas" && variants.some((v) => v.size) && <SizeGuide />}
 
             {specsText && (
-              <div className="product-specifications" style={{ border: S.border, borderRadius: "2px", overflow: "hidden" }}>
+              <div className="product-specifications">
                 <button type="button" aria-expanded={showSpecs} aria-controls="product-specifications" onClick={() => setShowSpecs((value) => !value)} className="flex min-h-11 w-full items-center justify-between px-4 py-3 text-left transition-colors" style={{ background: showSpecs ? S.ink3 : "transparent" }}>
                   <span className="font-bold uppercase" style={{ fontSize: "11px", letterSpacing: "0.12em", color: S.paper }}>Detalles del producto</span>
                   <svg aria-hidden="true" className={`h-4 w-4 transition-transform duration-300 ${showSpecs ? "rotate-180" : ""}`} style={{ color: S.ash }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -498,31 +451,19 @@ export default function ProductClient({
                 {showSpecs && <div id="product-specifications" className="px-4 pb-4 pt-3" style={{ background: S.ink3, borderTop: S.border }}><p className="whitespace-pre-wrap leading-relaxed" style={{ fontSize: "13px", color: S.ash }}>{specsText}</p></div>}
               </div>
             )}
-
-            {/* Trust badges */}
-            <div className="product-trust grid grid-cols-2 gap-2 pt-2" style={{ borderTop: S.border }}>
-              {[
-                { icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z", t: "Pago seguro", d: "Comprobante verificado" },
-                { icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", t: "Envío directo", d: "Consulta el estado del pedido" },
-                { icon: "M5 13l4 4L19 7", t: "100% Original", d: "Garantía de autenticidad" },
-                { icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", t: "Atención directa", d: "Soporte por WhatsApp" },
-              ].map(b => (
-                <div key={b.t} className="flex items-center gap-2.5 px-3 py-2.5 transition-all duration-200"
-                  style={{ background: S.ink3, border: S.border, borderRadius: "2px" }}
-                >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,0.12)", borderRadius: "1px" }}>
-                    <svg className="h-3.5 w-3.5" style={{ color: S.red }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d={b.icon} />
-                    </svg>
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-bold leading-tight" style={{ fontSize: "11px", color: S.paper }}>{b.t}</p>
-                    <p className="leading-tight mt-0.5" style={{ fontSize: "10px", color: S.ash }}>{b.d}</p>
-                  </div>
-                </div>
-              ))}
             </div>
-            <nav aria-label="Información antes de comprar" className="flex flex-wrap gap-x-4 gap-y-2 text-xs" style={{ color: S.ash }}>
+
+            <div className="product-services" aria-label="Pago y entrega">
+              <div className="product-service">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18v13H3V7Zm0 0 14-4v4m-1 6h5m-4 3h.01" /></svg>
+                <div><p>Yape y Plin</p><span>Revisamos tu comprobante de pago.</span></div>
+              </div>
+              <div className="product-service">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="m3 7 9-4 9 4-9 4-9-4Zm0 0v10l9 4 9-4V7M12 11v10" /></svg>
+                <div><p>Lima y provincias</p><span>Consulta las opciones de entrega.</span></div>
+              </div>
+            </div>
+            <nav aria-label="Información antes de comprar" className="product-policies" style={{ color: S.ash }}>
               <Link href="/informacion/envios" className="underline underline-offset-4 hover:text-[var(--paper)]">Envíos y entregas</Link>
               <Link href="/informacion/cambios-devoluciones" className="underline underline-offset-4 hover:text-[var(--paper)]">Cambios y devoluciones</Link>
             </nav>
@@ -531,13 +472,13 @@ export default function ProductClient({
 
         {/* ── Productos recomendados ── */}
         {recommended.length > 0 && (
-          <div className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <div className="product-related mx-auto max-w-7xl px-4 pb-14 sm:px-6">
             <div className="flex items-center justify-between pb-4 mb-6" style={{ borderBottom: S.border }}>
               <div>
                 <p className="font-black uppercase mb-1" style={{ fontSize: "10px", letterSpacing: "0.28em", color: S.red }}>
                   Descubre más
                 </p>
-                <h2 className="font-black" style={{ fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif", fontSize: "clamp(22px, 4vw, 32px)", letterSpacing: "0.06em", color: S.paper }}>
+                <h2 className="font-black" style={{ fontFamily: "'Bebas Neue', 'Roboto Condensed', sans-serif", color: S.paper }}>
                   TAMBIÉN TE PUEDE GUSTAR
                 </h2>
               </div>

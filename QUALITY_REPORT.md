@@ -33,6 +33,28 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Seguridad de producción | `npm run audit:production` | 0 críticas, 0 altas; 8 moderadas pendientes |
 | Firestore actualizado | Lectura real de configuración con el SDK cliente y el parche gRPC | Correcta; ninguna escritura |
 
+## Ficha de producto en PC y celular — 18 de octubre de 2026
+
+La galería conserva las fotos completas y sitúa las flechas y el contador fuera
+de la imagen. El precio usa una tipografía de lectura y un tamaño proporcionado;
+cantidad y carrito comparten una fila en escritorio y teléfono. Los detalles se
+agrupan en una lista y dos datos de pago y entrega reemplazan las cuatro tarjetas
+repetidas. Se retiró la altura mínima que dejaba un vacío antes del pie.
+
+Por elección autorizada del usuario, la foto limpia de Adidas Predator League
+pasó a ser la principal. Se conservaron sus seis imágenes y el anuncio como foto
+secundaria. La transacción solo cambió la marca de imagen principal y su fecha,
+con registro de auditoría; no se cambiaron precios, tallas, stock ni pedidos.
+
+Los **8 E2E de ficha, recuperación de imágenes y compra** pasaron en escritorio
+y teléfono. La revisión visual cubrió 320, 393, 768 y 1366 px en temas claro y
+oscuro: sin errores JavaScript ni desbordamiento, galería y detalles funcionales,
+y controles de compra alineados. El carrito de prueba fue local al navegador;
+no se crearon pedidos, se reservaron unidades ni se subieron imágenes.
+
+`npm run build:verify` completó la compilación de producción y el tipado sin
+errores. Lint pasó con la advertencia de fuente externa ya existente.
+
 ## Redes sociales del pie — 18 de octubre de 2026
 
 Los enlaces compactos usan columnas del mismo ancho: icono y nombre en línea
@@ -41,6 +63,12 @@ el bloque del inicio no se duplica en el pie. Revisión visual en 320, 393, 768 
 1440 px, con ambos temas y simulación de cuatro redes: una sola fila, objetivos
 táctiles de al menos 44 px y sin desbordamiento. Los dos E2E de hidratación y
 navegación del pie pasaron con comprobación de alineación y anchos iguales.
+
+Publicación verificada: commit `f6a7e2f`, despliegue
+`dpl_6s7Ca54sGjJZreUgPmJo63fbD6Sn` en estado **READY**. El dominio pasó la
+revisión del bloque a 393 y 1440 px en ambos temas, con tres enlaces alineados
+y sin errores JavaScript. Se retiraron los archivos temporales y 260.08 MiB de
+informes y cachés generados.
 
 ## Ficha de producto en teléfono — 18 de octubre de 2026
 

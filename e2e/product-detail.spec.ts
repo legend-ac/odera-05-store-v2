@@ -16,6 +16,10 @@ test("la ficha permite elegir fotos y talla sin solapar los controles de compra"
     await thumbs.nth(1).click();
     await expect(thumbs.nth(1)).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".product-gallery__count")).toHaveText(/^2 \/ /);
+    await page.getByRole("button", { name: "Imagen anterior", exact: true }).click();
+    await expect(page.locator(".product-gallery__count")).toHaveText(/^1 \/ /);
+    await page.getByRole("button", { name: "Siguiente imagen", exact: true }).click();
+    await expect(page.locator(".product-gallery__count")).toHaveText(/^2 \/ /);
   }
 
   const quantity = page.locator(".product-quantity__stepper span");
@@ -27,11 +31,14 @@ test("la ficha permite elegir fotos y talla sin solapar los controles de compra"
     const variants = document.querySelector(".product-variants")!.getBoundingClientRect();
     const purchase = document.querySelector(".product-purchase")!.getBoundingClientRect();
     const details = document.querySelector(".product-specifications")?.getBoundingClientRect();
+    const quantity = document.querySelector(".product-quantity__stepper")!.getBoundingClientRect();
+    const add = document.querySelector(".product-add-to-cart")!.getBoundingClientRect();
     return {
       overflow: document.documentElement.scrollWidth > window.innerWidth,
       purchaseFollowsSizes: purchase.top >= variants.bottom,
       detailsFollowPurchase: !details || details.top >= purchase.bottom,
+      purchaseIsOneRow: quantity.right <= add.left && Math.abs(quantity.bottom - add.bottom) < 1,
     };
   });
-  expect(layout).toEqual({ overflow: false, purchaseFollowsSizes: true, detailsFollowPurchase: true });
+  expect(layout).toEqual({ overflow: false, purchaseFollowsSizes: true, detailsFollowPurchase: true, purchaseIsOneRow: true });
 });
