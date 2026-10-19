@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import CategoryGrid from "@/components/CategoryGrid";
 import HomeSocialLinks from "@/components/HomeSocialLinks";
+import styles from "@/components/HomeSections.module.css";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { normalizeStoreInformation } from "@/lib/storeInformation";
 
@@ -109,7 +110,7 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="home-hero__shell relative z-10 mx-auto grid w-full lg:grid-cols-12 items-center">
+        <div className={`${styles.heroShell} home-hero__shell relative z-10 mx-auto grid w-full lg:grid-cols-12 items-center`}>
 
           {/* Left — Text panel (col-span-7 on desktop, full width on mobile) */}
           <div className="home-hero__copy flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 lg:col-span-7">
@@ -225,10 +226,10 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Right — Character card: Hidden on mobile (conversion-first UX), sleek compact card on desktop */}
-          <div className="hidden lg:flex lg:col-span-5 items-center justify-center p-6 lg:p-8">
+          {/* Right — Character card, visible at every screen width */}
+          <div className={`${styles.heroMedia} flex lg:col-span-5 items-center justify-center p-6 lg:p-8`}>
             <div
-              className="home-hero__media-card relative w-full max-w-[340px] xl:max-w-[380px] h-[440px] xl:h-[490px] rounded overflow-hidden"
+              className={`${styles.heroCard} home-hero__media-card relative w-full max-w-[340px] xl:max-w-[380px] h-[440px] xl:h-[490px] rounded overflow-hidden`}
               style={{
                 border: "1px solid rgba(232, 69, 44, 0.22)",
                 boxShadow: "var(--shadow-elevated)",
@@ -256,7 +257,7 @@ export default async function HomePage() {
                 alt="Colección ODERA 05"
                 fill
                 priority
-                sizes="400px"
+                sizes="(max-width: 639px) 280px, (max-width: 1023px) 40vw, 400px"
                 className="object-contain"
                 style={{ objectPosition: "center bottom" }}
               />
@@ -485,57 +486,24 @@ export default async function HomePage() {
       <HomeSocialLinks />
 
       {/* ── Tienda física ── */}
-      <section
-        id="ubicacion"
-        className="relative overflow-hidden"
-        style={{ background: "var(--ink-2)", borderTop: "1px solid var(--ash-2)", borderBottom: "1px solid var(--ash-2)" }}
-      >
-        <div className="mx-auto grid max-w-7xl gap-8 px-5 py-12 sm:px-8 sm:py-16 md:grid-cols-[1.06fr_0.94fr] md:items-center">
-          <div className="relative overflow-hidden" style={{ border: "1px solid var(--ash-2)", minHeight: "320px" }}>
-            <Image
-              src="/brand/storefront-odera-05.png"
-              alt="Frontis de ODERA 05 STORE en Independencia, Lima"
-              fill
-              sizes="(max-width: 1024px) 100vw, 55vw"
-              className="object-cover"
-            />
-            <div className="absolute inset-x-0 bottom-0 p-5" style={{ background: "linear-gradient(0deg, rgba(14,14,18,.96), transparent)" }}>
-              <p className="font-black uppercase" style={{ fontSize: "10px", letterSpacing: ".2em", color: "var(--inverse-foreground)" }}>Tienda física · Lima Norte</p>
-            </div>
+      <section id="ubicacion" className={styles.store} aria-labelledby="store-title">
+        <div className={`${styles.shell} ${styles.storeInner}`}>
+          <div className={styles.storeImage}>
+            <Image src="/brand/storefront-odera-05.png" alt="Frontis de ODERA 05 STORE en Independencia, Lima" fill sizes="(max-width: 767px) 100vw, 50vw" className={styles.storePhoto} />
+            <p>Tienda física · Lima Norte</p>
           </div>
-
-          <div className="flex flex-col gap-5 lg:pl-4">
-            <div>
-              <p className="font-black uppercase mb-2" style={{ fontSize: "10px", letterSpacing: ".28em", color: "var(--vermeil)" }}>Encuéntranos</p>
-              <h2 className="font-black leading-none" style={{ fontFamily: "'Bebas Neue', var(--font-display), sans-serif", fontSize: "clamp(34px, 5vw, 52px)", letterSpacing: ".06em", color: "var(--paper)" }}>
-                VISITA LA<br />TIENDA
-              </h2>
+          <div className={styles.storeCopy}>
+            <p className={styles.kicker}>Encuéntranos</p>
+            <h2 id="store-title">VISITA LA TIENDA</h2>
+            <p className={styles.storeDescription}>Conoce zapatillas, ropa y accesorios en persona. Nuestro equipo te ayuda a encontrar la talla y el estilo que buscas.</p>
+            <dl className={styles.storeDetails}>
+              <div><dt>Dirección</dt><dd>Ollantaytambo 608<span>Tahuantinsuyo, Independencia · Lima, Perú</span></dd></div>
+              <div><dt>{storeHours ? "Horario" : "Atención"}</dt><dd className="whitespace-pre-line">{storeHours || "Consulta horarios y disponibilidad por WhatsApp."}</dd></div>
+            </dl>
+            <div className={styles.storeActions}>
+              <a href="https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA" target="_blank" rel="noreferrer" className="btn-brand">Cómo llegar <span aria-hidden="true">↗</span></a>
+              <Link href="/nosotros" className={styles.secondaryLink}>Conoce la tienda <span aria-hidden="true">→</span></Link>
             </div>
-            <p className="max-w-md" style={{ fontSize: "15px", color: "var(--ash)", lineHeight: "1.7" }}>
-              Conoce zapatillas, ropa y accesorios en persona. Nuestro equipo te ayuda a encontrar la talla y el estilo que buscas.
-            </p>
-            <div className="grid gap-3" style={{ borderTop: "1px solid var(--ash-2)", paddingTop: "16px" }}>
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,.12)", color: "var(--vermeil)" }}>⌖</span>
-                <div><p className="font-bold" style={{ fontSize: "14px", color: "var(--paper)" }}>Ollantaytambo 608</p><p style={{ fontSize: "13px", color: "var(--ash)", marginTop: "2px", lineHeight: "1.5" }}>Tahuantinsuyo, Independencia · Lima, Perú</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: "rgba(232,69,44,.12)", color: "var(--vermeil)" }}>◷</span>
-                <div><p className="font-bold" style={{ fontSize: "14px", color: "var(--paper)" }}>{storeHours ? "Horario de atención" : "Atención directa"}</p><p className="whitespace-pre-line" style={{ fontSize: "13px", color: "var(--ash)", marginTop: "2px", lineHeight: "1.5" }}>{storeHours || "Consulta horarios y disponibilidad por WhatsApp."}</p></div>
-              </div>
-            </div>
-            <a
-              href="https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA"
-              target="_blank"
-              rel="noreferrer"
-              className="btn-brand w-fit"
-              style={{ fontSize: "12px", padding: "11px 20px" }}
-            >
-              Abrir en Google Maps →
-            </a>
-            <Link href="/nosotros" className="w-fit text-xs font-bold uppercase tracking-wider hover:text-[var(--vermeil)]">
-              Conoce nuestra tienda ↗
-            </Link>
           </div>
         </div>
       </section>

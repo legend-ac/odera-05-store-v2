@@ -33,6 +33,34 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Seguridad de producción | `npm run audit:production` | 0 críticas, 0 altas; 8 moderadas pendientes |
 | Firestore actualizado | Lectura real de configuración con el SDK cliente y el parche gRPC | Correcta; ninguna escritura |
 
+## Ajustes seleccionados del frontend — 18 de octubre de 2026
+
+El usuario aprobó de la propuesta local únicamente el bloque «Visita la tienda»,
+«Finalizar compra» y «Pagar mi reserva». Se aplican esas tres partes sobre
+`695fee8`, la versión ya desplegada. El resto de la propuesta local se descarta:
+cabecera, pie, catálogo, tarjetas, carrito, seguimiento, información y ficha de
+producto conservan sus archivos anteriores. Tampoco cambia `globals.css`.
+
+La portada conserva el texto, las imágenes, la tarjeta y los efectos anteriores.
+El personaje deja de ocultarse debajo de 1024 px: permanece junto al texto desde
+640 px y se muestra debajo en pantallas menores, con su imagen completa.
+Los dos módulos CSS nuevos se limitan al bloque del local, las proporciones
+del personaje, checkout y pago. No se modifican consultas, validaciones,
+precios, stock, reservas, totales ni las API.
+
+Verificación de esta selección:
+
+- `npm run build:verify`: compilación de producción y TypeScript correctos.
+- `npm run lint`: sin errores; advertencia de fuente externa ya existente.
+- Las 18 pruebas E2E pasaron en Chrome de escritorio y teléfono.
+- Portada y local: 320, 393, 640, 768, 950, 1024 y 1366 px, claro y oscuro;
+  personaje cargado y visible, sin recortes laterales, desbordamientos ni
+  errores JavaScript.
+- Comparación independiente del código: únicamente cambian inicio, checkout,
+  pago y sus dos módulos CSS. La ficha de producto aprobada queda intacta.
+- Los recorridos de reserva y comprobante simulan las API: no crean pedidos,
+  descuentan inventario ni envían pagos reales.
+
 ## Restauración selectiva del diseño — 18 de octubre de 2026
 
 A petición del usuario, se restaura el diseño del despliegue anterior al
