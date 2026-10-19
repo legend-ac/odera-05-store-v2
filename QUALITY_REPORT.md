@@ -91,21 +91,22 @@ limpieza. Las operaciones de escritura quedan bloqueadas. La caché del CDN y
 las condiciones externas no están controladas: una medición no garantiza que
 todas las imágenes, reservas o llamadas a servicios terminen en un segundo.
 
-Medición pública de la entrega `bbf1590`, con Chrome y las condiciones anteriores
+Medición pública final de la entrega `14d7428`, con Chrome y las condiciones anteriores
 (un recorrido por perfil; LCP mide el mayor contenido visible, no toda la página):
 
 | Ruta | LCP en PC | LCP en móvil |
 | --- | ---: | ---: |
-| Inicio | 9,92 s | 0,95 s |
-| Catálogo | 0,74 s | 0,93 s |
-| Primer producto | 2,15 s | 2,48 s |
+| Inicio | 1,12 s | 0,70 s |
+| Catálogo | 0,90 s | 0,84 s |
+| Primer producto | 0,90 s | 0,94 s |
 
 Las seis páginas terminaron con sus imágenes visibles cargadas, sin errores
-JavaScript ni intentos de escritura. En el inicio de PC se observaron esperas
-de 8,6–8,9 s antes de recibir archivos estáticos pequeños del dominio; no se
-detectaron tareas largas de JavaScript. Las otras cinco visitas tuvieron
-tiempos distintos. **La meta de un segundo para todo no está alcanzada ni puede
-garantizarse con estos datos.** La transferencia de imágenes del catálogo bajó
+JavaScript ni intentos de escritura. En una medición anterior de `bbf1590`, el
+inicio en PC tardó 9,92 s, con esperas de 8,6–8,9 s para archivos estáticos del
+dominio; las fichas tardaron 2,15–2,48 s. Las condiciones del CDN y de los servicios
+varían entre recorridos. **La meta de un segundo para todo no está alcanzada ni
+puede garantizarse con estos datos:** LCP mide el contenido principal y no la
+descarga completa de la página ni las operaciones de servidor. La transferencia de imágenes del catálogo bajó
 aproximadamente un 41–42 % en la comparación de tamaños PC/móvil; la ficha,
 un 43–53 %. Son ahorros de bytes, no una promesa de tiempos de red.
 
@@ -116,11 +117,15 @@ pulsar. Los formularios de búsqueda ahora admiten GET nativo, y el envío con
 JavaScript lee el valor real del campo, incluso si se escribió antes de hidratar.
 Las dos tarjetas prioritarias quedan explícitamente fuera del efecto de entrada
 y sus fotos llevan prioridad alta, para que la transición no retrase su aparición.
-La compilación final pasó con comprobación de tipos. Los ocho E2E específicos de
-catálogo y movimiento pasaron en PC/teléfono después de corregir la prioridad
-del estilo de categorías; los otros 18 casos también se verificaron en esta
+La compilación final pasó con comprobación de tipos. Los diez E2E específicos de
+catálogo, movimiento y compra pasaron en PC/teléfono después de corregir la prioridad
+del estilo de categorías; los otros 16 casos también se verificaron en esta
 entrega. La búsqueda de cabecera, atrás/adelante, parámetros repetidos y búsqueda
 sin resultados pasaron en ambos tamaños, sin errores JavaScript.
+
+La aplicación `14d7428` quedó publicada en Vercel con estado **READY** y el
+dominio de producción asignado. Los diez E2E de catálogo, movimiento y compra
+se repitieron correctamente contra ese dominio. No se crearon pedidos reales.
 
 ## Portada móvil y categorías — 18 de octubre de 2026
 
