@@ -11,8 +11,9 @@
   border: 1px solid var(--ash-2);
   background: var(--ink-2);
   color: var(--paper);
-  transition: border-color 180ms ease;
 }
+
+.card:not(:global(.reveal)) { transition: border-color 180ms ease; }
 
 .card:hover,
 .card:focus-visible {

@@ -1,27 +1,26 @@
 import { expect, test, type Page } from "@playwright/test";
 
-type MotionEntry = { id: number; kind: string | null; critical: boolean; duration: number; opacity: number };
+type MotionEntry = { id: number; kind: string | null; critical: boolean; duration: number };
 declare global { interface Window { __storeMotionChecks: MotionEntry[] } }
 
 async function observeMotion(page: Page) {
   await page.addInitScript(() => {
-    const animate = Element.prototype.animate;
     const ids = new WeakMap<Element, number>();
     let sequence = 0;
     window.__storeMotionChecks = [];
-    Element.prototype.animate = function (frames, options) {
-      if (this.closest("main")) {
-        if (!ids.has(this)) ids.set(this, ++sequence);
-        const first = Array.isArray(frames) ? frames[0] : frames;
+    new MutationObserver((records) => {
+      for (const record of records) {
+        const element = record.target;
+        if (!(element instanceof HTMLElement) || !element.closest("main") ||
+          !element.matches(".reveal.visible") || ids.has(element)) continue;
+        ids.set(element, ++sequence);
         window.__storeMotionChecks.push({
-          id: ids.get(this)!, kind: this.getAttribute("data-store-motion"),
-          critical: this.matches("h1, img, form") || Boolean(this.querySelector("h1, form, img[fetchpriority='high']")),
-          duration: typeof options === "number" ? options : Number(options?.duration ?? 0),
-          opacity: Number(first?.opacity ?? 1),
+          id: sequence, kind: element.getAttribute("data-store-motion"),
+          critical: element.matches("h1, img, form") || Boolean(element.querySelector("h1, form, img[fetchpriority='high']")),
+          duration: parseFloat(getComputedStyle(element).transitionDuration) * 1000,
         });
       }
-      return animate.call(this, frames, options);
-    };
+    }).observe(document, { attributes: true, attributeFilter: ["class"], subtree: true });
   });
 }
 
@@ -38,13 +37,14 @@ test("la entrada y el desplazamiento animan contenido sin ocultar la portada ni 
   await expect.poll(() => page.evaluate(() => window.__storeMotionChecks.filter(item => item.kind === "card").length)).toBeGreaterThan(0);
   await category.focus();
   await expect(category).toBeFocused();
+  await expect(category).toHaveCSS("opacity", "1");
+  const entries = await page.evaluate(() => window.__storeMotionChecks);
+  expect(entries.filter(item => item.critical || item.duration !== 650)).toEqual([]);
+  expect(new Set(entries.map(item => item.id)).size).toBe(entries.length);
   const href = await category.getAttribute("href");
   await category.click();
   await expect(page).toHaveURL(new RegExp(`${href!.replace("?", "\\?")}$`));
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  const entries = await page.evaluate(() => window.__storeMotionChecks);
-  expect(entries.every(item => !item.critical && item.opacity > 0 && item.duration <= 700)).toBe(true);
-  expect(new Set(entries.map(item => item.id)).size).toBe(entries.length);
 });
 
 test("el movimiento reducido mantiene todo visible sin animaciones de entrada", async ({ page }) => {
@@ -56,6 +56,7 @@ test("el movimiento reducido mantiene todo visible sin animaciones de entrada", 
   await expect(categories.first()).toBeVisible();
   await page.waitForTimeout(250);
   expect(await page.evaluate(() => window.__storeMotionChecks)).toEqual([]);
+  await expect(page.locator(".reveal:not(.visible)")).toHaveCount(0);
 });
 
 test("sin JavaScript el inicio conserva titular, imágenes y enlaces de categorías", async ({ browser, baseURL, page }) => {

@@ -143,14 +143,22 @@ configurado, se utiliza el oscuro.
 
 `src/components/StorefrontMotion.tsx`, montado desde el layout público, introduce
 secciones y tarjetas al entrar en pantalla mediante `IntersectionObserver` y
-Web Animations API. Combina opacidad y un desplazamiento de 14 px, con duración
-de 550 ms y una separación entre elementos de hasta 120 ms. Cada elemento se
-presenta una vez, sin repetir el efecto al subir.
+las clases CSS solicitadas:
+
+```css
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .65s ease, transform .65s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+```
+
+Cada elemento aparece una vez, sin repetir el efecto al subir. Las clases se
+añaden cuando JavaScript está listo y se retiran al terminar la transición,
+para conservar los efectos de interacción originales.
 
 El contenido del servidor permanece visible sin JavaScript y
 `prefers-reduced-motion` desactiva estas entradas. El título y la imagen de la
 portada, los formularios y el administrador quedan fuera del efecto. Las acciones
-y estadísticas de portada llevan una entrada leve de 6 px. Se mantienen foco visible, etiquetas de formulario
+y estadísticas de portada también utilizan esta transición. Al recibir foco o
+un toque, el elemento se muestra de inmediato. Se mantienen foco visible, etiquetas de formulario
 y navegación por teclado.
 
 ## Rendimiento e imágenes
@@ -175,6 +183,9 @@ al abrir una página:
   de catálogo y búsqueda usan caché de 60 segundos. La disponibilidad mostrada
   puede quedar desactualizada durante esa ventana: precio y stock se vuelven a
   confirmar al reservar, sin usar la caché del catálogo para descontar inventario.
+- Los enlaces al catálogo evitan una precarga que bloqueaba la navegación en
+  producción. El buscador admite envío GET antes de que JavaScript esté listo
+  y conserva los filtros de la URL durante la navegación con JavaScript.
 - Las redes oficiales llegan desde el servidor con una caché de 60 segundos,
   invalidada al guardar ajustes. Así no dependen de otra consulta de Firestore
   en el navegador. App Check conserva sus verificaciones y se carga en un

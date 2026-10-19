@@ -28,7 +28,7 @@ export default function ProductCard({ p, priority = false, imageSizes = "(max-wi
   return (
     <Link
       href={`/p/${p.id}`}
-      className="group flex flex-col"
+      className="product-card group flex flex-col"
       data-store-motion="card"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -37,8 +37,6 @@ export default function ProductCard({ p, priority = false, imageSizes = "(max-wi
         border: hovered ? "1px solid var(--vermeil)" : "1px solid var(--ash-2)",
         borderRadius: "2px",
         boxShadow: hovered ? "3px 3px 0 rgba(232,69,44,0.35)" : "none",
-        transform: hovered ? "translate(-1px,-1px)" : "translate(0,0)",
-        transition: "border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease",
         overflow: "hidden",
       }}
     >

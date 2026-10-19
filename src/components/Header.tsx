@@ -14,6 +14,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
+      prefetch={href.startsWith("/catalog") ? false : undefined}
       className={[
         "relative px-3 py-1.5 text-sm font-bold uppercase tracking-widest transition-all duration-150",
         active
@@ -57,9 +58,11 @@ export default function Header() {
 
   const count = items.reduce((acc, x) => acc + x.qty, 0);
 
-  function submitSearch(e: React.FormEvent) {
+  function submitSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const value = q.trim();
+    // Read the actual submitted field so typing before hydration is preserved.
+    const value = String(new FormData(e.currentTarget).get("q") ?? "").trim();
+    setQ(value);
     if (pathname.startsWith("/catalog")) {
       const next = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
       if (value) next.set("q", value);
@@ -127,7 +130,7 @@ export default function Header() {
           </Link>
 
           {/* Barra de búsqueda — desktop */}
-          <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 flex-1 min-w-0 mx-3">
+          <form action="/catalog" method="get" onSubmit={submitSearch} className="hidden md:flex items-center gap-2 flex-1 min-w-0 mx-3">
             <div className="relative flex-1">
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
@@ -137,6 +140,7 @@ export default function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <Input
+                name="q"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Buscar zapatillas, ropa, marca..."
@@ -247,7 +251,7 @@ export default function Header() {
 
         {/* Panel de búsqueda mobile — expandible */}
         {searchOpen && (
-          <form onSubmit={submitSearch} className="md:hidden mt-3 fade-in">
+          <form action="/catalog" method="get" onSubmit={submitSearch} className="md:hidden mt-3 fade-in">
             <div className="relative flex items-center gap-2">
               <div className="relative flex-1">
                 <svg
@@ -258,6 +262,7 @@ export default function Header() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <Input
+                  name="q"
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Buscar productos..."
@@ -290,7 +295,7 @@ export default function Header() {
           >
             <div className="grid grid-cols-2 gap-2">
               <Link
-                href="/catalog"
+                href="/catalog" prefetch={false}
                 className="chip-link justify-center text-sm"
                 onClick={() => setOpen(false)}
               >

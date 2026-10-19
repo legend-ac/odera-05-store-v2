@@ -13,13 +13,13 @@ function supportsStorefrontMotion(pathname: string) {
     pathname.startsWith("/p/") || pathname.startsWith("/informacion/");
 }
 
-/** Enhances already visible HTML; animation never gates rendering, loading, or input. */
+/** Classes are added progressively so server HTML remains visible without JS. */
 export default function StorefrontMotion() {
   const pathname = usePathname();
 
   useEffect(() => {
     if (!pathname || !supportsStorefrontMotion(pathname) ||
-      typeof IntersectionObserver === "undefined" || typeof Element.prototype.animate !== "function") return;
+      typeof IntersectionObserver === "undefined") return;
 
     const main = document.querySelector("main");
     if (!main) return;
@@ -27,37 +27,19 @@ export default function StorefrontMotion() {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const seen = new WeakSet<HTMLElement>();
     const waiting = new Set<HTMLElement>();
-    const active = new Map<HTMLElement, Animation>();
+    const managed = new Set<HTMLElement>();
     let frame = 0;
     let stopped = false;
 
-    const reveal = (element: HTMLElement, index: number) => {
+    const reveal = (element: HTMLElement) => {
       waiting.delete(element);
       observer.unobserve(element);
-      if (preference.matches || !element.isConnected || element.contains(document.activeElement)) return;
-
-      const subtle = element.matches(INTRO_SELECTOR) || element.getBoundingClientRect().top < window.innerHeight * 0.8;
-      const animation = element.animate(
-        [
-          { opacity: subtle ? 0.92 : 0.65, translate: `0 ${subtle ? 6 : 14}px` },
-          { opacity: 1, translate: "0 0" },
-        ],
-        {
-          duration: 550,
-          delay: Math.min(index, 3) * 40,
-          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-        },
-      );
-      active.set(element, animation);
-      const forget = () => { if (active.get(element) === animation) active.delete(element); };
-      animation.onfinish = forget;
-      animation.oncancel = forget;
+      element.classList.add("visible");
     };
 
     const observer = new IntersectionObserver((entries) => {
-      let index = 0;
       for (const entry of entries) {
-        if (entry.isIntersecting && entry.target instanceof HTMLElement) reveal(entry.target, index++);
+        if (entry.isIntersecting && entry.target instanceof HTMLElement) reveal(entry.target);
       }
     }, { threshold: 0.04, rootMargin: "0px 0px 24px 0px" });
 
@@ -67,7 +49,11 @@ export default function StorefrontMotion() {
         element.querySelector(intro ? "form, h1, img" : "form, h1, img[fetchpriority='high']")) return;
       seen.add(element);
       // Content restored above the viewport must not replay when the user scrolls back up.
-      if (element.getBoundingClientRect().bottom <= 0 || preference.matches) return;
+      if (element.getBoundingClientRect().bottom <= 0 || preference.matches || element.contains(document.activeElement)) return;
+      element.classList.add("reveal");
+      // Commit the starting style before IntersectionObserver adds .visible.
+      void getComputedStyle(element).opacity;
+      managed.add(element);
       waiting.add(element);
       observer.observe(element);
     };
@@ -76,7 +62,11 @@ export default function StorefrontMotion() {
       frame = 0;
       if (stopped) return;
       for (const element of waiting) {
-        if (!element.isConnected) { observer.unobserve(element); waiting.delete(element); }
+        if (!element.isConnected) {
+          observer.unobserve(element);
+          waiting.delete(element);
+          managed.delete(element);
+        }
       }
       main.querySelectorAll<HTMLElement>(CARD_SELECTOR).forEach(register);
       main.querySelectorAll<HTMLElement>(INTRO_SELECTOR).forEach(register);
@@ -102,20 +92,33 @@ export default function StorefrontMotion() {
 
     const stopForInteraction = (event: Event) => {
       if (!(event.target instanceof Node)) return;
-      for (const [element, animation] of active) {
-        if (element.contains(event.target)) animation.cancel();
+      for (const element of managed) {
+        if (element.contains(event.target)) {
+          observer.unobserve(element);
+          waiting.delete(element);
+          element.classList.remove("reveal", "visible");
+          managed.delete(element);
+        }
       }
     };
     const updatePreference = () => {
       if (!preference.matches) return;
       observer.disconnect();
       waiting.clear();
-      for (const animation of active.values()) animation.cancel();
-      active.clear();
+      for (const element of managed) element.classList.remove("reveal", "visible");
+      managed.clear();
+    };
+    const finishTransition = (event: TransitionEvent) => {
+      const element = event.target;
+      if (event.propertyName !== "opacity" || !(element instanceof HTMLElement) ||
+        !managed.has(element) || !element.classList.contains("visible")) return;
+      element.classList.remove("reveal", "visible");
+      managed.delete(element);
     };
 
     main.addEventListener("focusin", stopForInteraction);
     main.addEventListener("pointerdown", stopForInteraction, { capture: true, passive: true });
+    main.addEventListener("transitionend", finishTransition);
     preference.addEventListener("change", updatePreference);
     scan();
 
@@ -126,9 +129,10 @@ export default function StorefrontMotion() {
       mutations.disconnect();
       main.removeEventListener("focusin", stopForInteraction);
       main.removeEventListener("pointerdown", stopForInteraction, true);
+      main.removeEventListener("transitionend", finishTransition);
       preference.removeEventListener("change", updatePreference);
-      for (const animation of active.values()) animation.cancel();
-      active.clear();
+      for (const element of managed) element.classList.remove("reveal", "visible");
+      managed.clear();
       waiting.clear();
     };
   }, [pathname]);

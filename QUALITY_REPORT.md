@@ -51,11 +51,12 @@ guardar ajustes. App Check se separa del código inicial sin quitar ninguna
 verificación de las API. El inicio baja de **246 KB a 116 KB de JavaScript de
 primera carga** en la compilación de Next.js, aproximadamente un 53 % menos.
 
-`StorefrontMotion` añade entradas de 550 ms y desplazamiento de 6–14 px con
-secuencia máxima de 120 ms. Se ejecutan una vez al entrar en pantalla, respetan
-movimiento reducido y se cancelan al interactuar. Título e imagen principal,
-formularios, pagos y administrador conservan respuesta inmediata. El HTML es
-visible sin JavaScript; no se ocultan imágenes mientras esperan una animación.
+`StorefrontMotion` aplica las clases `.reveal` / `.reveal.visible` solicitadas:
+opacidad de 0 a 1, desplazamiento de 14 px y transición de 650 ms. Se ejecutan una
+vez al entrar en pantalla, respetan movimiento reducido y se cancelan al
+interactuar. Las clases se añaden solo con JavaScript y se retiran al terminar.
+Título e imagen principal, formularios, pagos y administrador quedan fuera del
+efecto. Sin JavaScript el HTML conserva su visibilidad original.
 
 README actualizado: arquitectura, rutas, configuración, diseño editorial
 deportivo/manga, tipografía, temas/tokens, patrones responsive, movimiento,
@@ -89,6 +90,35 @@ Los informes se generan en `integration-results` y se limpian con el comando de
 limpieza. Las operaciones de escritura quedan bloqueadas. La caché del CDN y
 las condiciones externas no están controladas: una medición no garantiza que
 todas las imágenes, reservas o llamadas a servicios terminen en un segundo.
+
+Medición pública de la entrega `bbf1590`, con Chrome y las condiciones anteriores
+(un recorrido por perfil; LCP mide el mayor contenido visible, no toda la página):
+
+| Ruta | LCP en PC | LCP en móvil |
+| --- | ---: | ---: |
+| Inicio | 9,92 s | 0,95 s |
+| Catálogo | 0,74 s | 0,93 s |
+| Primer producto | 2,15 s | 2,48 s |
+
+Las seis páginas terminaron con sus imágenes visibles cargadas, sin errores
+JavaScript ni intentos de escritura. En el inicio de PC se observaron esperas
+de 8,6–8,9 s antes de recibir archivos estáticos pequeños del dominio; no se
+detectaron tareas largas de JavaScript. Las otras cinco visitas tuvieron
+tiempos distintos. **La meta de un segundo para todo no está alcanzada ni puede
+garantizarse con estos datos.** La transferencia de imágenes del catálogo bajó
+aproximadamente un 41–42 % en la comparación de tamaños PC/móvil; la ficha,
+un 43–53 %. Son ahorros de bytes, no una promesa de tiempos de red.
+
+La revisión pública detectó también una precarga de `/catalog` que quedaba
+pendiente y bloqueaba el clic de categorías en PC. Se desactiva esa precarga
+automática en los enlaces al catálogo; se mantiene la navegación de Next.js al
+pulsar. Los formularios de búsqueda ahora admiten GET nativo, y el envío con
+JavaScript lee el valor real del campo, incluso si se escribió antes de hidratar.
+La compilación final pasó con comprobación de tipos. Los ocho E2E específicos de
+catálogo y movimiento pasaron en PC/teléfono después de corregir la prioridad
+del estilo de categorías; los otros 18 casos también se verificaron en esta
+entrega. La búsqueda de cabecera, atrás/adelante, parámetros repetidos y búsqueda
+sin resultados pasaron en ambos tamaños, sin errores JavaScript.
 
 ## Portada móvil y categorías — 18 de octubre de 2026
 

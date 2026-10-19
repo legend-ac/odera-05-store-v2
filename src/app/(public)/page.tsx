@@ -183,7 +183,7 @@ export default async function HomePage() {
 
             {/* CTAs */}
             <div className={`${styles.heroActions} flex flex-wrap items-center gap-3`} data-store-motion="intro">
-              <Link href="/catalog" className="btn-brand" style={{ fontSize: "13px", padding: "12px 26px" }}>
+              <Link href="/catalog" prefetch={false} className="btn-brand" style={{ fontSize: "13px", padding: "12px 26px" }}>
                 Comprar ahora →
               </Link>
               <Link href="/track" className="btn-soft" style={{ fontSize: "13px", padding: "12px 24px" }}>
@@ -368,7 +368,7 @@ export default async function HomePage() {
             </h2>
           </div>
           <Link
-            href="/catalog"
+            href="/catalog" prefetch={false}
             className="hidden sm:flex items-center gap-2 font-bold uppercase transition-colors duration-150 hover:text-[var(--vermeil)]"
             style={{ fontSize: "12px", letterSpacing: "0.1em", color: "var(--paper)" }}
           >
@@ -410,7 +410,7 @@ export default async function HomePage() {
               </h2>
             </div>
             <Link
-              href="/catalog"
+              href="/catalog" prefetch={false}
               className="flex items-center gap-2 font-bold uppercase transition-colors duration-150 hover:text-[var(--vermeil)]"
               style={{ fontSize: "12px", letterSpacing: "0.1em", color: "var(--ash)" }}
             >
@@ -562,7 +562,7 @@ export default async function HomePage() {
             </span>
           </h2>
           <Link
-            href="/catalog"
+            href="/catalog" prefetch={false}
             className="btn-brand inline-flex"
             style={{ fontSize: "14px", padding: "14px 36px" }}
           >

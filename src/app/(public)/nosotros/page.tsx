@@ -52,7 +52,7 @@ export default async function NosotrosPage() {
         </figure>
 
         <div className="mt-10 flex flex-wrap gap-3" style={{ borderTop: "1px solid var(--ash-2)", paddingTop: "28px" }}>
-          <Link href="/catalog" className="btn-brand" style={{ fontSize: "12px", padding: "11px 18px" }}>Ver catálogo</Link>
+          <Link href="/catalog" prefetch={false} className="btn-brand" style={{ fontSize: "12px", padding: "11px 18px" }}>Ver catálogo</Link>
           <Link href="/informacion/terminos" className="btn-soft" style={{ fontSize: "12px", padding: "11px 18px" }}>Información de compra</Link>
         </div>
       </section>

@@ -25,6 +25,7 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
         <Link
           key={category.key}
           href={`/catalog?type=${encodeURIComponent(category.key)}`}
+          prefetch={false}
           className={styles.card}
           data-store-motion="card"
           aria-label={`${category.cta}: ${category.label}`}

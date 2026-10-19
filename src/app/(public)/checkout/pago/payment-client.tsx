@@ -149,7 +149,7 @@ export default function PaymentClient({ publicCode, trackingToken }: {
       <div className={styles.support}>
         <Link href={trackingHref} className="font-bold underline">Ver seguimiento del pedido</Link>
         {whatsapp ? <a href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Consulta sobre mi pedido ${publicCode}`)}`} target="_blank" rel="noreferrer" className="font-bold underline">Contactar a la tienda</a> : null}
-        <Link href="/catalog" className="text-[var(--ash)] underline">Volver al catálogo</Link>
+        <Link href="/catalog" prefetch={false} className="text-[var(--ash)] underline">Volver al catálogo</Link>
       </div>
     </div>
   );

@@ -237,7 +237,7 @@ function ConfirmPageInner() {
 
       {/* Continue shopping */}
       <div className="flex justify-center">
-        <Link href="/catalog" className="text-sm font-semibold text-[var(--brand-600)] hover:text-[var(--brand-700)] hover:underline transition-colors">
+        <Link href="/catalog" prefetch={false} className="text-sm font-semibold text-[var(--brand-600)] hover:text-[var(--brand-700)] hover:underline transition-colors">
           ← Volver al catálogo
         </Link>
       </div>

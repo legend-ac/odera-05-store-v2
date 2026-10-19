@@ -166,7 +166,7 @@ export default function CartPage() {
             <p style={{ fontSize: "13px", color: S.ash, marginBottom: "20px", maxWidth: "280px" }}>
               Explora el catálogo y agrega tus favoritos.
             </p>
-            <Link href="/catalog" className="btn-brand" style={{ fontSize: "12px", padding: "10px 24px" }}>
+            <Link href="/catalog" prefetch={false} className="btn-brand" style={{ fontSize: "12px", padding: "10px 24px" }}>
               Ver catálogo →
             </Link>
           </div>
@@ -346,7 +346,7 @@ export default function CartPage() {
               </Link>}
 
               <Link
-                href="/catalog"
+                href="/catalog" prefetch={false}
                 className="text-center font-semibold transition-colors hover:text-[var(--vermeil)]"
                 style={{ fontSize: "12px", color: S.ash, letterSpacing: "0.04em" }}
               >

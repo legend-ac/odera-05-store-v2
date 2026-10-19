@@ -178,7 +178,7 @@ export default function ProductClient({
         </div>
         <div>
           <p className="font-bold" style={{ color: S.paper, fontSize: "15px" }}>{error}</p>
-          <Link href="/catalog" className="mt-2 inline-block font-semibold hover:underline" style={{ fontSize: "13px", color: S.red }}>
+          <Link href="/catalog" prefetch={false} className="mt-2 inline-block font-semibold hover:underline" style={{ fontSize: "13px", color: S.red }}>
             ← Volver al catálogo
           </Link>
         </div>
@@ -197,7 +197,7 @@ export default function ProductClient({
             <nav aria-label="Ruta del producto" className="flex min-w-0 items-center gap-2" style={{ fontSize: "12px", color: S.ash }}>
               <Link href="/" className="hover:text-[var(--vermeil)] transition-colors">Inicio</Link>
               <span style={{ color: S.ash2 }}>›</span>
-              <Link href="/catalog" className="hover:text-[var(--vermeil)] transition-colors">Catálogo</Link>
+              <Link href="/catalog" prefetch={false} className="hover:text-[var(--vermeil)] transition-colors">Catálogo</Link>
               <span style={{ color: S.ash2 }}>›</span>
               <span style={{ color: S.paper, fontWeight: 600 }} className="truncate max-w-[160px] sm:max-w-none">
                 {String(data.name ?? "")}
@@ -483,7 +483,7 @@ export default function ProductClient({
                   TAMBIÉN TE PUEDE GUSTAR
                 </h2>
               </div>
-              <Link href="/catalog" className="font-bold uppercase transition-colors hover:text-[var(--vermeil)]"
+              <Link href="/catalog" prefetch={false} className="font-bold uppercase transition-colors hover:text-[var(--vermeil)]"
                 style={{ fontSize: "11px", letterSpacing: "0.1em", color: S.ash }}>
                 Ver todo →
               </Link>
@@ -494,7 +494,7 @@ export default function ProductClient({
               ))}
             </div>
             <div className="mt-6 flex justify-center">
-              <Link href="/catalog" className="btn-soft" style={{ fontSize: "12px", padding: "10px 28px" }}>
+              <Link href="/catalog" prefetch={false} className="btn-soft" style={{ fontSize: "12px", padding: "10px 28px" }}>
                 Ver catálogo completo →
               </Link>
             </div>
