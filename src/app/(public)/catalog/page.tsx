@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { unstable_cache } from "next/cache";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import CatalogClient from "./catalog-client";
 import type { ProductCardData } from "@/components/ProductCard";
 import { hasStock } from "@/lib/productStock";
+import { getSearchTerms, normalizeToken, productMatchesSearch } from "@/lib/searchTokens";
 
 export const metadata: Metadata = {
   title: "Catálogo",
@@ -22,9 +23,16 @@ const DEFAULT_PRODUCT_TYPES: ProductTypeOption[] = [
   { key: "accesorios", label: "Accesorios" },
 ];
 
-async function loadInitialCatalog(): Promise<CatalogItem[]> {
-  const snap = await adminDb.collection("products").where("status", "==", "active").limit(150).get();
-  const raw = snap.docs.map((d) => {
+function searchAudience(raw: unknown): CatalogItem["audience"] {
+  const value = normalizeToken(String(raw ?? "")).replace(/\s+/g, "");
+  if (value.startsWith("hombre")) return "hombre";
+  if (value.startsWith("mujer")) return "mujer";
+  if (value.startsWith("nino") || value.startsWith("nina")) return "ninos";
+  return "todos";
+}
+
+function catalogItemsFromDocs(docs: Array<{ id: string; data(): any }>, searching = false): CatalogItem[] {
+  const raw = docs.map((d) => {
     const data = d.data() as any;
     const imgs = Array.isArray(data.images) ? [...data.images] : [];
     const sorted = imgs.sort((a: any, b: any) => Number(a?.order ?? 0) - Number(b?.order ?? 0));
@@ -41,8 +49,8 @@ async function loadInitialCatalog(): Promise<CatalogItem[]> {
       onSale: Boolean(data.onSale),
       imageUrl: typeof mainUrl === "string" ? mainUrl : undefined,
       imageUrls,
-      productType: (String(data?.productType ?? "").toLowerCase() as CatalogItem["productType"]) || undefined,
-      audience: (String(data?.audience ?? "todos").toLowerCase() as CatalogItem["audience"]) || "todos",
+      productType: (searching ? String(data?.productType ?? "").trim() : String(data?.productType ?? "").toLowerCase()) || undefined,
+      audience: searching ? searchAudience(data?.audience) : (String(data?.audience ?? "todos").toLowerCase() as CatalogItem["audience"]) || "todos",
       hasStock: hasStock(variants),
       dedupeKey,
       updatedAtMs,
@@ -71,31 +79,71 @@ async function loadInitialCatalog(): Promise<CatalogItem[]> {
   return list;
 }
 
-export default async function CatalogPage() {
-  let productTypes: ProductTypeOption[] = DEFAULT_PRODUCT_TYPES;
-  const [initialItems, settingsSnap] = await Promise.all([
-    loadInitialCatalog(),
-    adminDb.doc("settings/store").get().catch(() => null),
-  ]);
+const loadInitialCatalog = unstable_cache(async (): Promise<CatalogItem[]> => {
+  const snap = await adminDb.collection("products").where("status", "==", "active").limit(150).get();
+  return catalogItemsFromDocs(snap.docs);
+}, ["public-catalog-initial"], { revalidate: 60, tags: ["store-catalog"] });
 
-  if (settingsSnap?.exists) {
-    try {
-      const data = settingsSnap.data() as any;
+const loadProductTypes = unstable_cache(async (): Promise<ProductTypeOption[]> => {
+  try {
+    const settingsSnap = await adminDb.doc("settings/store").get();
+    if (settingsSnap.exists) {
+      const data = settingsSnap.data();
       const raw = Array.isArray(data?.productTypes) ? data.productTypes : [];
       const parsed = raw
         .filter((x: any) => Boolean(x?.enabled ?? true))
         .map((x: any) => ({ key: String(x?.key ?? "").trim(), label: String(x?.label ?? "").trim() }))
         .filter((x: ProductTypeOption) => x.key.length > 0 && x.label.length > 0);
-      if (parsed.length) productTypes = parsed;
-    } catch {}
+      if (parsed.length) return parsed;
+    }
+  } catch {
+    // Keep the same default categories when settings are temporarily unavailable.
   }
+  return DEFAULT_PRODUCT_TYPES;
+}, ["public-catalog-product-types"], { revalidate: 60, tags: ["store-theme"] });
+
+const loadSearchCatalog = unstable_cache(async (search: string): Promise<CatalogItem[]> => {
+  const terms = getSearchTerms(search);
+  const token = terms.find((term) => term.length >= 2) ?? "";
+  const candidates: FirebaseFirestore.QueryDocumentSnapshot[] = [];
+  let base: FirebaseFirestore.Query = adminDb.collection("products").where("status", "==", "active");
+  if (token) base = base.where("searchTokens", "array-contains", token);
+  let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+  // Match the existing browser search: test every page against all query terms
+  // before deduplicating and taking the 50 most recently updated products.
+  while (true) {
+    const snap = await (cursor ? base.startAfter(cursor) : base).limit(50).get();
+    candidates.push(...snap.docs.filter((document) => productMatchesSearch(document.data(), terms)));
+    if (snap.size < 50) break;
+    cursor = snap.docs[snap.docs.length - 1];
+  }
+  return catalogItemsFromDocs(candidates, true);
+}, ["public-catalog-search"], { revalidate: 60, tags: ["store-catalog"] });
+
+type CatalogSearchParams = { q?: string | string[]; type?: string | string[]; audience?: string | string[] };
+
+function firstSearchParam(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
+
+export default async function CatalogPage({ searchParams }: { searchParams: Promise<CatalogSearchParams> }) {
+  const params = await searchParams;
+  const routeQuery = firstSearchParam(params.q);
+  const searchTerms = getSearchTerms(routeQuery);
+  const [initialItems, productTypes, initialSearchItems] = await Promise.all([
+    loadInitialCatalog(),
+    loadProductTypes(),
+    searchTerms.length ? loadSearchCatalog(searchTerms.join(" ")).catch(() => undefined) : undefined,
+  ]);
 
   return (
-    <Suspense fallback={null}>
-      <CatalogClient
-        initialItems={initialItems}
-        productTypes={productTypes}
-      />
-    </Suspense>
+    <CatalogClient
+      initialItems={initialItems}
+      initialSearchItems={initialSearchItems}
+      productTypes={productTypes}
+      routeQuery={routeQuery}
+      routeType={firstSearchParam(params.type)}
+      routeAudience={firstSearchParam(params.audience)}
+    />
   );
 }

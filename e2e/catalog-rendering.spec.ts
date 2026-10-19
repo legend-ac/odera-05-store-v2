@@ -1,0 +1,19 @@
+import { expect, test } from "@playwright/test";
+
+test("el catálogo entrega productos y búsqueda en HTML sin esperar JavaScript", async ({ browser, baseURL, page }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: page.viewportSize()! });
+  try {
+    const catalog = await context.newPage();
+    const response = await catalog.goto(`${baseURL}/catalog`, { waitUntil: "domcontentloaded" });
+    expect(response?.status()).toBe(200);
+    await expect(catalog.getByRole("heading", { level: 1, name: "Catálogo", exact: true })).toBeVisible();
+    const first = catalog.locator('a[href^="/p/"]').first();
+    await expect(first).toBeVisible();
+    const href = await first.getAttribute("href");
+    const name = await first.locator("p").first().innerText();
+
+    await catalog.goto(`${baseURL}/catalog?q=${encodeURIComponent(name)}`, { waitUntil: "domcontentloaded" });
+    await expect(catalog.locator(`a[href="${href}"]`)).toBeVisible();
+    expect(await catalog.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  } finally { await context.close(); }
+});

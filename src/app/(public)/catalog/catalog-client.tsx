@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { collection, getDocs, limit, query, startAfter, where, type QueryDocumentSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import ProductCard, { type ProductCardData } from "@/components/ProductCard";
@@ -58,16 +57,15 @@ function matchType(docTypeRaw: unknown, filterTypeRaw: string): boolean {
 }
 
 export default function CatalogClient({
-  initialItems, productTypes,
+  initialItems, initialSearchItems, productTypes, routeQuery = "", routeType = "", routeAudience = "",
 }: {
   initialItems: CatalogItem[];
+  initialSearchItems?: CatalogItem[];
   productTypes: { key: string; label: string }[];
+  routeQuery?: string;
+  routeType?: string;
+  routeAudience?: string;
 }) {
-  const searchParams = useSearchParams();
-  const routeQuery = searchParams.get("q") ?? "";
-  const routeType = searchParams.get("type") ?? "";
-  const routeAudience = searchParams.get("audience") ?? "";
-
   const [qText, setQText] = useState(routeQuery);
   const terms = useMemo(() => getSearchTerms(qText), [qText]);
   // Firestore can require one indexed token; the remaining terms are ANDed below.
@@ -82,7 +80,7 @@ export default function CatalogClient({
   const [sortBy, setSortBy] = useState<SortType>("latest");
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
-  const [items, setItems] = useState<CatalogItem[] | null>(initialItems ?? []);
+  const [items, setItems] = useState<CatalogItem[] | null>(() => terms.length ? initialSearchItems ?? null : initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -109,6 +107,10 @@ export default function CatalogClient({
     setError(null);
     if (!terms.length) {
       setItems(initialItems ?? []);
+      return () => { mounted = false; };
+    }
+    if (qText === routeQuery && initialSearchItems !== undefined) {
+      setItems(initialSearchItems);
       return () => { mounted = false; };
     }
     setItems(null);
@@ -167,7 +169,7 @@ export default function CatalogClient({
       }
     })();
     return () => { mounted = false; };
-  }, [token, terms, initialItems]);
+  }, [token, terms, qText, routeQuery, initialItems, initialSearchItems]);
 
   const sortedItems = useMemo(() => {
     const base = [...(items ?? [])];

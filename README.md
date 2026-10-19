@@ -170,6 +170,11 @@ al abrir una página:
   funciona, por un estado de respaldo, sin bloquear navegación ni controles.
 - Las imágenes reservan su espacio para reducir saltos de diseño. Las fuentes
   locales evitan una hoja de estilo externa de Google Fonts.
+- El catálogo entrega sus tarjetas y los filtros de la URL desde el servidor;
+  la lista inicial se puede leer sin esperar a JavaScript. Las lecturas públicas
+  de catálogo y búsqueda usan caché de 60 segundos. La disponibilidad mostrada
+  puede quedar desactualizada durante esa ventana: precio y stock se vuelven a
+  confirmar al reservar, sin usar la caché del catálogo para descontar inventario.
 - Las redes oficiales llegan desde el servidor con una caché de 60 segundos,
   invalidada al guardar ajustes. Así no dependen de otra consulta de Firestore
   en el navegador. App Check conserva sus verificaciones y se carga en un
@@ -205,16 +210,29 @@ de **5 Mbps** y latencia configurada de **80 ms**. No limita la CPU. Cada muestr
 usa un contexto nuevo, caché HTTP del navegador desactivada y movimiento reducido.
 
 El informe `integration-results/performance-<label>.json` registra TTFB,
-DOMContentLoaded, carga, LCP, peticiones/peso de imágenes y estado de las imágenes
-visibles. La consola muestra un resumen sin URL de productos ni recursos. No
-inicia sesión ni pulsa controles de compra; bloquea escrituras de API, cargas
-de Cloudinary y endpoints de escritura de Firestore.
+DOMInteractive, DOMContentLoaded, carga, FCP, LCP, peticiones/peso de imágenes y
+estado de las imágenes visibles. Identifica la etiqueta y los tiempos de carga
+y pintado del candidato LCP; también cuenta las tareas de más de 50 ms y suma
+sus duraciones. El catálogo se consulta primero sin JavaScript para descubrir
+una ficha; solo se permite un intento con JavaScript si una versión anterior
+del HTML todavía no contiene productos.
+
+El diagnóstico CDP incluye todos los tipos de recursos: host, estado, caché,
+peso, tiempo al primer byte y duración de la petición, con resumen por categoría
+y los diez recursos más lentos. No guarda rutas ni parámetros de sus URL. Las
+duraciones se superponen y una conexión de larga duración no demuestra por sí
+sola que bloquee el renderizado. La consola muestra un resumen sin URL de
+productos ni recursos. No inicia sesión ni pulsa controles de compra; bloquea
+escrituras de API, cargas de Cloudinary y endpoints de escritura de Firestore.
 
 La medición cubre la pantalla inicial, sin desplazamiento, y espera hasta 15
 segundos la decodificación de sus imágenes; cada navegación tiene un límite de
 60 segundos. El peso corresponde a lo descargado hasta la captura de métricas,
-no a todas las imágenes de la página. No controla la caché de CDN/servidor y la
-consulta previa del catálogo puede calentarla. Los resultados dependen también
+no a todas las imágenes de la página. LCP corresponde al último candidato
+observado en ese instante; no representa una medición de campo ni asegura que
+no aparezca otro candidato más tarde. Las peticiones todavía abiertas se marcan
+como pendientes y su duración llega hasta la captura. No controla la caché de
+CDN/servidor y la consulta previa del catálogo puede calentarla. Los resultados dependen también
 del equipo y la conexión reales: compara varias muestras en la misma compilación
 de producción y condiciones equivalentes. Los informes se excluyen de Git y el
 comando de limpieza de generados los elimina.

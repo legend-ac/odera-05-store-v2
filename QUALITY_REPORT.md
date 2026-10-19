@@ -23,8 +23,8 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Acceso al administrador | Sesión, permisos, CSRF, cookies seguras, antigüedad de autenticación, destinos y errores | 39 pruebas adicionales |
 | Gestión administrativa | Paginación de inventario, cantidades, conflictos de edición, creación sin sobrescritura, variantes, imágenes, archivo automático y operaciones masivas | 45 pruebas adicionales |
 | Selección de producto | Talla disponible, límite de cantidad y cambio a una talla con menos stock | 7 pruebas adicionales |
-| Entrega y carga inicial | Cloudinary responsive, firmas, transformaciones, anchos y enlaces públicos SSR | 24 pruebas adicionales; 279 unitarias en 36 archivos en total |
-| Recorrido público E2E | Compra, pago, imágenes, acceso, movimiento, preferencia reducida y uso sin JavaScript | 24 casos verificados entre escritorio y teléfono; detalle de ejecución abajo |
+| Entrega y carga inicial | Cloudinary responsive, firmas, transformaciones, anchos, redes y catálogo/búsqueda SSR | 28 pruebas adicionales; 283 unitarias en 37 archivos en total |
+| Recorrido público E2E | Compra, pago, imágenes, acceso, movimiento, preferencia reducida y uso sin JavaScript | 26 casos entre escritorio y teléfono; detalle de ejecución abajo |
 | Tipado | Compilación estática TypeScript | Sin errores |
 | Revisión de código | `npm run lint` | Sin errores ni advertencias; fuente externa sustituida por la misma fuente local |
 | Producción | Compilación aislada con `npm run build:verify` | Correcta |
@@ -61,13 +61,21 @@ README actualizado: arquitectura, rutas, configuración, diseño editorial
 deportivo/manga, tipografía, temas/tokens, patrones responsive, movimiento,
 rendimiento, gestión, pruebas, despliegue manual y límites del respaldo.
 
+Se encontró además un bloqueo de presentación en el catálogo: `useSearchParams`
+con `Suspense fallback={null}` dejaba el HTML inicial sin productos hasta la
+hidratación. Se pasan los parámetros de URL desde servidor, incluidas las
+búsquedas, y se conserva la consulta AND, paginación, stock, orden y límite de
+50 resultados. Los productos y filtros se incluyen ahora en el HTML sin esperar
+JavaScript. Las lecturas públicas se cachean 60 segundos; stock y precios se
+vuelven a validar al reservar. No se cachean reservas ni operaciones de escritura.
+La comprobación local directa pasó de cero a 22 enlaces de producto en el HTML;
+las dos pruebas nuevas verifican catálogo y búsqueda sin JavaScript en PC/móvil.
+
 Validación integrada:
 
-- Producción, TypeScript, lint sin advertencias y 279 pruebas unitarias correctos.
-- 24 casos E2E cubiertos en Chrome PC/teléfono. La ejecución general pasó 22;
-  los dos de recuperación usaban una imagen ficticia de un píxel que se redondea
-  a cero con descriptores responsive. Se cambió a un SVG de 512 px y la repetición
-  del archivo de imágenes pasó sus cuatro casos, sin cambiar la aplicación.
+- Producción, TypeScript, lint sin advertencias y 283 pruebas unitarias correctos.
+- 26 casos E2E mantenidos en Chrome PC/teléfono. La prueba de recuperación
+  utiliza una imagen de 512 px y exige carga completa, compatible con `srcset`.
 - Las seis pruebas nuevas comprueban entrada/desplazamiento, movimiento reducido
   y HTML usable sin JavaScript, sin ocultar título o imagen ni bloquear enlaces.
 - 20 vistas de portada/categorías, de 320 a 1366 px en ambos temas, sin errores
