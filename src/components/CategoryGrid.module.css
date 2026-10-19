@@ -1,0 +1,118 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--ash-2);
+  background: var(--ink-2);
+  color: var(--paper);
+  transition: border-color 180ms ease;
+}
+
+.card:hover,
+.card:focus-visible {
+  border-color: var(--vermeil);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--vermeil);
+  outline-offset: 4px;
+}
+
+.media {
+  position: relative;
+  aspect-ratio: 1.45;
+  background: #11161b;
+}
+
+.image {
+  object-fit: contain;
+  object-position: center;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px 20px;
+  border-top: 1px solid var(--ash-2);
+}
+
+.copy {
+  min-width: 0;
+}
+
+.title {
+  font-family: 'Bebas Neue', 'Roboto Condensed', sans-serif;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: .035em;
+}
+
+.subtitle {
+  margin-top: 7px;
+  color: var(--ash);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.arrow {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  color: var(--vermeil);
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .grid { gap: 16px; }
+  .content { gap: 10px; padding: 16px; }
+  .title { font-size: clamp(23px, 2.7vw, 27px); }
+}
+
+@media (max-width: 639px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .card {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    min-height: 112px;
+  }
+
+  .media {
+    align-self: stretch;
+    min-height: 112px;
+    aspect-ratio: auto;
+  }
+
+  .content {
+    gap: 10px;
+    padding: 18px 14px;
+    border-top: 0;
+    border-left: 1px solid var(--ash-2);
+  }
+
+  .title { font-size: 27px; }
+  .subtitle { margin-top: 6px; }
+  .arrow { flex-basis: 20px; width: 20px; height: 20px; }
+}
+
+@media (max-width: 359px) {
+  .card { grid-template-columns: 96px minmax(0, 1fr); }
+  .content { gap: 6px; padding-inline: 12px; }
+  .title { font-size: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+}

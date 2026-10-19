@@ -41,11 +41,41 @@
 }
 
 @media (max-width: 639px) {
-  .heroShell { grid-template-columns: minmax(0, 1fr); }
-  .heroShell > .heroMedia { padding: 12px 20px 8px; }
-  .heroMedia > .heroCard { max-width: 280px; height: 350px; }
+  .hero:global(.home-hero) { padding: 24px 0 28px; }
+  .heroShell {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+    grid-template-areas: 'eyebrow eyebrow' 'title art' 'microcopy microcopy' 'description description' 'actions actions' 'stats stats';
+    column-gap: 8px;
+    padding-inline: 20px;
+  }
+  .heroShell > .heroCopy { display: contents; }
+  .heroEyebrow { grid-area: eyebrow; margin: 0 0 12px; }
+  .heroTitle { grid-area: title; position: relative; z-index: 1; align-self: center; font-size: clamp(42px, 13vw, 72px) !important; line-height: .96 !important; letter-spacing: .025em !important; }
+  .heroShell > .heroMedia { grid-area: art; align-self: end; padding: 0; }
+  .heroMedia > .heroCard {
+    width: 100%;
+    max-width: none;
+    height: clamp(205px, 59vw, 310px);
+    border: 0 !important;
+    border-radius: 0;
+    box-shadow: none !important;
+    background: transparent !important;
+    animation: none;
+    -webkit-mask-image: linear-gradient(#000 78%, transparent);
+    mask-image: linear-gradient(#000 78%, transparent);
+  }
+  .heroCard > .heroImage { top: 0 !important; right: auto !important; bottom: auto !important; left: 50% !important; width: auto !important; height: 150% !important; max-width: none; transform: translateX(-50%); object-position: center top !important; }
+  .heroCard > .heroBadge, .heroCard > .heroOverlay { display: none; }
+  .heroMicrocopy { grid-area: microcopy; margin: 14px 0 0; font-size: 10px !important; letter-spacing: .08em !important; }
+  .heroDescription { grid-area: description; max-width: 100%; margin: 12px 0 18px; font-size: 14px !important; }
+  .heroActions { grid-area: actions; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 10px; }
+  .heroActions > a { display: flex; align-items: center; min-width: 0; min-height: 46px; justify-content: center; padding: 12px 8px !important; font-size: 12px !important; text-align: center; white-space: nowrap; }
+  .heroStats { grid-area: stats; max-width: 100%; margin-top: 24px; padding-top: 18px; }
+  .heroStats > div > span:first-child { font-size: 24px !important; }
+  .heroStats > div > span:last-child { font-size: 9px !important; }
 }
 
 @media (max-width: 359px) {
   .secondaryLink { font-size: 11px; }
+  .heroActions > a { font-size: 11px !important; letter-spacing: .01em; }
 }

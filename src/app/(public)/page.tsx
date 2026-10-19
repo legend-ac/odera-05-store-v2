@@ -93,7 +93,7 @@ export default async function HomePage() {
 
       {/* ── HERO ── */}
       <section
-        className="home-hero relative overflow-hidden"
+        className={`${styles.hero} home-hero relative overflow-hidden`}
         style={{ display: "flex", flexDirection: "column", background: "var(--hero-gradient)" }}
       >
         {/* Speed lines background */}
@@ -113,9 +113,9 @@ export default async function HomePage() {
         <div className={`${styles.heroShell} home-hero__shell relative z-10 mx-auto grid w-full lg:grid-cols-12 items-center`}>
 
           {/* Left — Text panel (col-span-7 on desktop, full width on mobile) */}
-          <div className="home-hero__copy flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 lg:col-span-7">
+          <div className={`${styles.heroCopy} home-hero__copy flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 lg:col-span-7`}>
             {/* Eyebrow */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className={`${styles.heroEyebrow} flex items-center gap-3 mb-4`}>
               <span className="h-px w-12" style={{ background: "var(--vermeil)" }} />
               <span
                 className="font-black"
@@ -132,7 +132,7 @@ export default async function HomePage() {
 
             {/* Main headline */}
             <h1
-              className="leading-none"
+              className={`${styles.heroTitle} leading-none`}
               style={{
                 fontFamily: "'Bebas Neue', var(--font-display), sans-serif",
                 fontSize: "clamp(52px, 6.2vw, 96px)",
@@ -165,7 +165,7 @@ export default async function HomePage() {
 
             {/* Subtitle japonés */}
             <p
-              className="mt-3 mb-4"
+              className={`${styles.heroMicrocopy} mt-3 mb-4`}
               style={{ fontSize: "12px", letterSpacing: "0.14em", color: "var(--ash)" }}
             >
               ザパティージャス・ロパ ——{" "}
@@ -173,14 +173,14 @@ export default async function HomePage() {
             </p>
 
             <p
-              className="max-w-md mb-6"
+              className={`${styles.heroDescription} max-w-md mb-6`}
               style={{ fontSize: "15px", color: "var(--ash)", lineHeight: "1.6" }}
             >
               Zapatillas, ropa y accesorios seleccionados para todos los días.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className={`${styles.heroActions} flex flex-wrap items-center gap-3`}>
               <Link href="/catalog" className="btn-brand" style={{ fontSize: "13px", padding: "12px 26px" }}>
                 Comprar ahora →
               </Link>
@@ -191,7 +191,7 @@ export default async function HomePage() {
 
             {/* Stats */}
             <div
-              className="mt-8 pt-5 grid grid-cols-3 gap-4 max-w-md"
+              className={`${styles.heroStats} mt-8 pt-5 grid grid-cols-3 gap-4 max-w-md`}
               style={{ borderTop: "1px solid var(--ash-2)" }}
             >
               {[
@@ -238,7 +238,7 @@ export default async function HomePage() {
             >
               {/* Corner badge top-left */}
               <div
-                className="absolute top-3 left-3 z-10"
+                className={`${styles.heroBadge} absolute top-3 left-3 z-10`}
                 style={{
                   background: "var(--header-background)",
                   backdropFilter: "blur(6px)",
@@ -257,20 +257,20 @@ export default async function HomePage() {
                 alt="Colección ODERA 05"
                 fill
                 priority
-                sizes="(max-width: 639px) 280px, (max-width: 1023px) 40vw, 400px"
-                className="object-contain"
+                sizes="(max-width: 639px) 320px, (max-width: 1023px) 40vw, 400px"
+                className={`${styles.heroImage} object-contain`}
                 style={{ objectPosition: "center bottom" }}
               />
 
               {/* Subtle bottom fade */}
               <div
-                className="absolute inset-0 pointer-events-none"
+                className={`${styles.heroOverlay} absolute inset-0 pointer-events-none`}
                 style={{ background: "var(--hero-art-overlay)" }}
               />
 
               {/* Badge bottom-right */}
               <div
-                className="absolute bottom-3 right-3 z-10"
+                className={`${styles.heroBadge} absolute bottom-3 right-3 z-10`}
                 style={{
                   background: "var(--header-background)",
                   backdropFilter: "blur(6px)",

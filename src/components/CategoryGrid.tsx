@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import styles from "./CategoryGrid.module.css";
 
 type Category = {
   key: string;
@@ -19,32 +20,31 @@ function categoryImage(category: Category, index: number): string {
 
 export default function CategoryGrid({ categories }: { categories: Category[] }) {
   return (
-    <div className="category-grid">
+    <div className={styles.grid}>
       {categories.map((category, index) => (
         <Link
           key={category.key}
           href={`/catalog?type=${encodeURIComponent(category.key)}`}
-          className="category-card group"
+          className={styles.card}
           aria-label={`${category.cta}: ${category.label}`}
         >
-          <div className="category-card__media">
+          <div className={styles.media}>
             <Image
               src={categoryImage(category, index)}
               alt=""
               fill
-              sizes="(max-width: 639px) 36vw, (max-width: 1023px) 33vw, 30vw"
-              className="category-card__image"
+              sizes="(max-width: 639px) 112px, (max-width: 1023px) 32vw, 380px"
+              className={styles.image}
             />
           </div>
-          <div className="category-card__shade" />
-          <span className="category-card__number">{String(index + 1).padStart(2, "0")}</span>
-          <div className="category-card__content">
-            <div>
-              <span className="category-card__eyebrow">EXPLORAR COLECCIÓN</span>
-              <h3 className="category-card__title">{category.label}</h3>
-              <p className="category-card__subtitle">{category.subtitle}</p>
+          <div className={styles.content}>
+            <div className={styles.copy}>
+              <h3 className={styles.title}>{category.label}</h3>
+              <p className={styles.subtitle}>{category.subtitle}</p>
             </div>
-            <span className="category-card__arrow" aria-hidden="true">↗</span>
+            <svg className={styles.arrow} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 12h15m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" strokeLinejoin="miter" />
+            </svg>
           </div>
         </Link>
       ))}

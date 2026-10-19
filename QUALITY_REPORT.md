@@ -33,6 +33,32 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Seguridad de producción | `npm run audit:production` | 0 críticas, 0 altas; 8 moderadas pendientes |
 | Firestore actualizado | Lectura real de configuración con el SDK cliente y el parche gRPC | Correcta; ninguna escritura |
 
+## Portada móvil y categorías — 18 de octubre de 2026
+
+Se revisan exclusivamente las dos partes señaladas por el usuario. En celular,
+el personaje se integra junto al titular con un encuadre del torso y un final
+suave, sin la tarjeta separada debajo de las estadísticas. Descripción, botones
+y datos de la tienda mantienen todo el ancho. La composición de PC y tablet
+permanece igual y se conserva el archivo original de la ilustración.
+
+Las categorías recuperan la presentación de la propuesta local anterior:
+imágenes completas, título y descripción separados, borde sencillo y flecha
+roja. Se eliminan los números y degradados superpuestos de esas tarjetas.
+En teléfono se organizan como filas de foto y texto, con una superficie táctil
+amplia. Se conservan imágenes, configuración, etiquetas y destinos del catálogo.
+
+Verificación:
+
+- `npm run build:verify`: producción y TypeScript correctos.
+- `npm run lint`: sin errores; advertencia de fuente externa ya existente.
+- Cuatro E2E correctos de inicio, hidratación y recorrido de compra entre PC
+  y teléfono, sin crear pedidos reales.
+- 20 vistas entre 320, 360, 393, 430, 639, 640, 768, 950, 1024 y 1366 px en
+  ambos temas: sin desbordamientos ni errores JavaScript, con títulos y flechas
+  separados y las tres categorías completas.
+- Cabecera, pie, tienda física, checkout, pago, ficha, datos e imágenes originales
+  sin cambios. Los estilos nuevos permanecen limitados a estas dos secciones.
+
 ## Ajustes seleccionados del frontend — 18 de octubre de 2026
 
 El usuario aprobó de la propuesta local únicamente el bloque «Visita la tienda»,
