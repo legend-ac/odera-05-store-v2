@@ -15,7 +15,7 @@ export type ProductCardData = {
   imageUrls?: string[];
 };
 
-export default function ProductCard({ p, priority = false }: { p: ProductCardData; priority?: boolean }) {
+export default function ProductCard({ p, priority = false, imageSizes = "(max-width: 639px) calc((100vw - 44px) / 2), (max-width: 1023px) calc((100vw - 80px) / 3), (max-width: 1279px) calc((100vw - 84px) / 4), 296px" }: { p: ProductCardData; priority?: boolean; imageSizes?: string }) {
   const price = p.onSale && typeof p.salePrice === "number" ? p.salePrice : p.price;
   const hasDiscount = p.onSale && typeof p.salePrice === "number";
   const discountPct =
@@ -29,6 +29,7 @@ export default function ProductCard({ p, priority = false }: { p: ProductCardDat
     <Link
       href={`/p/${p.id}`}
       className="group flex flex-col"
+      data-store-motion="card"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -57,9 +58,8 @@ export default function ProductCard({ p, priority = false }: { p: ProductCardDat
             imageWidth={600}
             alt={p.name}
             fill
-            unoptimized
             {...(priority ? { priority: true } : { loading: "lazy" as const })}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            sizes={imageSizes}
             className="object-contain transition-transform duration-400 ease-out group-hover:scale-[1.05]"
             style={{ padding: "8px" }}
           />

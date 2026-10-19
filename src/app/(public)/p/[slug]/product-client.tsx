@@ -10,7 +10,7 @@ import { formatPEN } from "@/lib/money";
 import type { ProductCardData } from "@/components/ProductCard";
 import ProductCard from "@/components/ProductCard";
 import ProductImage, { ProductImagePlaceholder, useProductImages } from "@/components/ProductImage";
-import { optimizedProductImage } from "@/lib/image";
+import { productImageDelivery } from "@/lib/image";
 import SizeGuide from "@/components/SizeGuide";
 import { clampProductQuantity, initialProductVariant } from "@/lib/productSelection";
 
@@ -136,7 +136,6 @@ export default function ProductClient({
   const gallery = useProductImages(galleryUrls, slug);
   const mainImg = gallery.current;
   const availableGalleryUrls = gallery.availableUrls;
-  const mainImgSrc = optimizedProductImage(mainImg, 1200);
   const available = selectedVariant ? selectedVariant.stock : 0;
   const purchaseQty = clampProductQuantity(qty, available);
   const modalSubtotal = useMemo(() => unitPrice * addedQty, [unitPrice, addedQty]);
@@ -227,13 +226,13 @@ export default function ProductClient({
                 {mainImg ? (
                   <Image
                     key={mainImg}
-                    src={mainImgSrc}
+                    {...productImageDelivery(mainImg, 1200)}
                     alt={data.name ?? ""}
                     fill
                     priority
-                    unoptimized
+                    decoding="async"
                     draggable={false}
-                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    sizes="(max-width: 599px) calc(100vw - 32px), (max-width: 767px) 568px, (max-width: 1023px) calc((100vw - 76px) / 2), (max-width: 1199px) calc((100vw - 224px) / 2), 488px"
                     className="object-contain"
                     onError={() => gallery.reportFailure(mainImg)}
                   />
@@ -280,10 +279,10 @@ export default function ProductClient({
                     }}
                   >
                     <Image
-                      src={optimizedProductImage(url, 180)}
+                      {...productImageDelivery(url, 180)}
                       alt={`${data.name ?? ""} vista ${i + 1}`}
-                      fill unoptimized draggable={false}
-                      sizes="64px"
+                      fill loading="lazy" decoding="async" draggable={false}
+                      sizes="(max-width: 767px) 48px, 56px"
                       className="object-contain p-1"
                       onError={() => gallery.reportFailure(url)}
                     />

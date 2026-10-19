@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image, { type ImageProps } from "next/image";
-import { optimizedProductImage } from "@/lib/image";
+import { productImageDelivery } from "@/lib/image";
 
 export function useProductImages(sources: Array<string | undefined>, productId = "") {
   const urls = Array.from(new Set(sources.map((url) => url?.trim()).filter((url): url is string => Boolean(url))));
@@ -64,5 +64,5 @@ export default function ProductImage({ sources, productId, imageWidth = 900, com
   const { current, reportFailure } = useProductImages(sources, productId);
   if (!current) return <ProductImagePlaceholder name={alt} compact={compact} />;
 
-  return <Image {...props} key={current} alt={alt} src={optimizedProductImage(current, imageWidth)} onError={() => reportFailure(current)} />;
+  return <Image {...props} {...productImageDelivery(current, imageWidth)} key={current} alt={alt} decoding="async" onError={() => reportFailure(current)} />;
 }

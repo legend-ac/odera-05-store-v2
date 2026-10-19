@@ -26,6 +26,7 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
           key={category.key}
           href={`/catalog?type=${encodeURIComponent(category.key)}`}
           className={styles.card}
+          data-store-motion="card"
           aria-label={`${category.cta}: ${category.label}`}
         >
           <div className={styles.media}>
@@ -33,7 +34,9 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
               src={categoryImage(category, index)}
               alt=""
               fill
-              sizes="(max-width: 639px) 112px, (max-width: 1023px) 32vw, 380px"
+              sizes="(max-width: 359px) 96px, (max-width: 639px) 112px, (max-width: 1023px) 32vw, 380px"
+              loading="lazy"
+              decoding="async"
               className={styles.image}
             />
           </div>

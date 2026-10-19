@@ -1,10 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
-
-type SocialLinks = {
+export type SocialLinks = {
   instagram?: string;
   tiktok?: string;
   facebook?: string;
@@ -60,28 +56,8 @@ const SOCIALS = [
   },
 ];
 
-export default function HomeSocialLinks({ compact = false }: { compact?: boolean }) {
-  const [links, setLinks] = useState<SocialLinks>({});
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const snap = await getDoc(doc(db, "settings", "store"));
-        if (!snap.exists() || !alive) return;
-        const social = ((snap.data() as any).socialLinks ?? {}) as SocialLinks;
-        setLinks(social);
-      } catch {
-        // silencioso
-      }
-    })();
-    return () => { alive = false; };
-  }, []);
-
-  const items = useMemo(
-    () => SOCIALS.filter((s) => isUrl(links[s.key])).map((s) => ({ ...s, url: links[s.key]! })),
-    [links]
-  );
+export default function HomeSocialLinks({ compact = false, initialLinks = {} }: { compact?: boolean; initialLinks?: SocialLinks }) {
+  const items = SOCIALS.filter((s) => isUrl(initialLinks[s.key])).map((s) => ({ ...s, url: initialLinks[s.key]! }));
 
   if (!items.length) return null;
 

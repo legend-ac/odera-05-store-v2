@@ -1,6 +1,6 @@
 # Evidencia de calidad — ODERA 05 STORE
 
-Última verificación: 18 de octubre de 2026.
+Última verificación: 19 de octubre de 2026.
 
 ## Puerta de calidad
 
@@ -22,16 +22,65 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Apariencia global | Selección clara/oscura, compatibilidad con ajustes antiguos, carga inicial e invalidación de caché | 25 pruebas adicionales |
 | Acceso al administrador | Sesión, permisos, CSRF, cookies seguras, antigüedad de autenticación, destinos y errores | 39 pruebas adicionales |
 | Gestión administrativa | Paginación de inventario, cantidades, conflictos de edición, creación sin sobrescritura, variantes, imágenes, archivo automático y operaciones masivas | 45 pruebas adicionales |
-| Selección de producto | Talla disponible, límite de cantidad y cambio a una talla con menos stock | 7 pruebas adicionales; 255 unitarias en 34 archivos en total |
-| Recorrido público E2E | Acceso protegido, inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 18 casos correctos en escritorio y teléfono; 8 recorridos de compra y reserva también correctos en producción |
+| Selección de producto | Talla disponible, límite de cantidad y cambio a una talla con menos stock | 7 pruebas adicionales |
+| Entrega y carga inicial | Cloudinary responsive, firmas, transformaciones, anchos y enlaces públicos SSR | 24 pruebas adicionales; 279 unitarias en 36 archivos en total |
+| Recorrido público E2E | Compra, pago, imágenes, acceso, movimiento, preferencia reducida y uso sin JavaScript | 24 casos verificados entre escritorio y teléfono; detalle de ejecución abajo |
 | Tipado | Compilación estática TypeScript | Sin errores |
-| Revisión de código | `npm run lint` | Sin errores; una advertencia existente de fuente externa |
+| Revisión de código | `npm run lint` | Sin errores ni advertencias; fuente externa sustituida por la misma fuente local |
 | Producción | Compilación aislada con `npm run build:verify` | Correcta |
 | Correo local | Plantilla y envío por SMTP a receptor local, con HTML y texto | Correcto; ningún destinatario externo |
 | Gmail configurado | Conexión y autenticación sin enviar correo | Rechazado: `535 / EAUTH` |
 | Cloudinary configurado | Carga real de PNG de prueba y lectura desde CDN | Correcto |
 | Seguridad de producción | `npm run audit:production` | 0 críticas, 0 altas; 8 moderadas pendientes |
 | Firestore actualizado | Lectura real de configuración con el SDK cliente y el parche gRPC | Correcta; ninguna escritura |
+
+## Rendimiento, apariciones y documentación — 19 de octubre de 2026
+
+La entrega de Cloudinary utiliza `srcset` y `sizes` reales, formato/calidad
+automáticos y ancho según pantalla. Se mantienen URL firmadas, transformaciones
+de imagen, orden y recuperación de fotografías rotas. Catálogo prioriza solo dos
+tarjetas; destacados y miniaturas usan carga diferida. Ficha y administración
+solicitan tamaños acordes al espacio visible. Una imagen real pasó de 10.300 a
+4.362 bytes al pedir 384 px en vez de 600 px, ambas respuestas WebP correctas;
+este ejemplo no representa una reducción idéntica en todas las fotografías.
+
+Bebas Neue conserva su archivo oficial y su licencia, con precarga local de
+13.768 bytes; se elimina la hoja de estilos externa de Google Fonts. Los enlaces
+de redes llegan desde el servidor con caché de 60 segundos e invalidación al
+guardar ajustes. App Check se separa del código inicial sin quitar ninguna
+verificación de las API. El inicio baja de **246 KB a 116 KB de JavaScript de
+primera carga** en la compilación de Next.js, aproximadamente un 53 % menos.
+
+`StorefrontMotion` añade entradas de 550 ms y desplazamiento de 6–14 px con
+secuencia máxima de 120 ms. Se ejecutan una vez al entrar en pantalla, respetan
+movimiento reducido y se cancelan al interactuar. Título e imagen principal,
+formularios, pagos y administrador conservan respuesta inmediata. El HTML es
+visible sin JavaScript; no se ocultan imágenes mientras esperan una animación.
+
+README actualizado: arquitectura, rutas, configuración, diseño editorial
+deportivo/manga, tipografía, temas/tokens, patrones responsive, movimiento,
+rendimiento, gestión, pruebas, despliegue manual y límites del respaldo.
+
+Validación integrada:
+
+- Producción, TypeScript, lint sin advertencias y 279 pruebas unitarias correctos.
+- 24 casos E2E cubiertos en Chrome PC/teléfono. La ejecución general pasó 22;
+  los dos de recuperación usaban una imagen ficticia de un píxel que se redondea
+  a cero con descriptores responsive. Se cambió a un SVG de 512 px y la repetición
+  del archivo de imágenes pasó sus cuatro casos, sin cambiar la aplicación.
+- Las seis pruebas nuevas comprueban entrada/desplazamiento, movimiento reducido
+  y HTML usable sin JavaScript, sin ocultar título o imagen ni bloquear enlaces.
+- 20 vistas de portada/categorías, de 320 a 1366 px en ambos temas, sin errores
+  JavaScript, desbordamientos ni solapamientos; fotos y diseño conservados.
+- No se crean pedidos, reservan existencias, envían mensajes ni suben comprobantes
+  reales durante las comprobaciones de compra.
+
+Se añade `npm run measure:performance`: Chrome con caché del navegador vacía,
+PC 1366 px y móvil 393 px/DPR2/10 Mbps/80 ms, inicio/catálogo/primer producto.
+Los informes se generan en `integration-results` y se limpian con el comando de
+limpieza. Las operaciones de escritura quedan bloqueadas. La caché del CDN y
+las condiciones externas no están controladas: una medición no garantiza que
+todas las imágenes, reservas o llamadas a servicios terminen en un segundo.
 
 ## Portada móvil y categorías — 18 de octubre de 2026
 
@@ -58,6 +107,10 @@ Verificación:
   separados y las tres categorías completas.
 - Cabecera, pie, tienda física, checkout, pago, ficha, datos e imágenes originales
   sin cambios. Los estilos nuevos permanecen limitados a estas dos secciones.
+
+Publicado previamente en el commit `d025bd8`, despliegue
+`dpl_5GeDMDN1xEP3qc4vA9XthYXk8cRG` en **READY**. Se comprobaron en el dominio
+público seis vistas de PC/teléfono en ambos temas y dos recorridos de inicio.
 
 ## Ajustes seleccionados del frontend — 18 de octubre de 2026
 

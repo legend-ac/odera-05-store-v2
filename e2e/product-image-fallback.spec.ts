@@ -6,7 +6,9 @@ const PRODUCT_NAME = "Producto con fotos de prueba";
 const FIRST = "https://res.cloudinary.com/e2e-image-tests/image/upload/first.png";
 const SECOND = "https://res.cloudinary.com/e2e-image-tests/image/upload/second.png";
 const REPLACEMENT = "https://res.cloudinary.com/e2e-image-tests/image/upload/replacement.png";
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jw1cAAAAASUVORK5CYII=", "base64");
+// A realistic intrinsic size keeps naturalWidth positive after the browser
+// applies the responsive source's width descriptor and device pixel ratio.
+const PRODUCT_PHOTO = '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8f5ee"/><path d="M80 288h352v64H80z" fill="#c8331c"/></svg>';
 
 test.describe("respaldo de imágenes de productos", () => {
   test.beforeEach(async ({ page }) => {
@@ -30,7 +32,7 @@ test.describe("respaldo de imágenes de productos", () => {
     await page.route("https://res.cloudinary.com/e2e-image-tests/**", async (route) => {
       const filename = new URL(route.request().url()).pathname.split("/").pop()!;
       attempted.push(filename);
-      if (filename === "replacement.png") await route.fulfill({ contentType: "image/png", body: PNG });
+      if (filename === "replacement.png") await route.fulfill({ contentType: "image/svg+xml", body: PRODUCT_PHOTO });
       else await route.abort();
     });
     await page.addInitScript(({ productId, variantId }) => {
@@ -48,7 +50,7 @@ test.describe("respaldo de imágenes de productos", () => {
     await page.getByRole("button", { name: "+", exact: true }).click();
     const recovered = page.getByRole("img", { name: PRODUCT_NAME, exact: true });
     await expect(recovered).toBeVisible();
-    await expect(recovered).toHaveJSProperty("naturalWidth", 1);
+    await expect.poll(() => recovered.evaluate((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true);
     await expect(placeholder).toHaveCount(0);
     expect(attempted).toEqual(["first.png", "second.png", "replacement.png"]);
   });

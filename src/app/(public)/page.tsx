@@ -7,6 +7,7 @@ import HomeSocialLinks from "@/components/HomeSocialLinks";
 import styles from "@/components/HomeSections.module.css";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { normalizeStoreInformation } from "@/lib/storeInformation";
+import { getStoreSocialLinks } from "@/lib/server/storeSocialLinks";
 
 export const revalidate = 60;
 
@@ -24,6 +25,7 @@ const DEFAULT_CATEGORIES: Category[] = [
 ];
 
 export default async function HomePage() {
+  const socialLinks = await getStoreSocialLinks();
   let categories = DEFAULT_CATEGORIES;
   let storeHours = "";
   let promo = { enabled: true, message: "Envío gratis desde S/ 200", couponCode: "" };
@@ -180,7 +182,7 @@ export default async function HomePage() {
             </p>
 
             {/* CTAs */}
-            <div className={`${styles.heroActions} flex flex-wrap items-center gap-3`}>
+            <div className={`${styles.heroActions} flex flex-wrap items-center gap-3`} data-store-motion="intro">
               <Link href="/catalog" className="btn-brand" style={{ fontSize: "13px", padding: "12px 26px" }}>
                 Comprar ahora →
               </Link>
@@ -192,6 +194,7 @@ export default async function HomePage() {
             {/* Stats */}
             <div
               className={`${styles.heroStats} mt-8 pt-5 grid grid-cols-3 gap-4 max-w-md`}
+              data-store-motion="intro"
               style={{ borderTop: "1px solid var(--ash-2)" }}
             >
               {[
@@ -483,7 +486,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <HomeSocialLinks />
+      <HomeSocialLinks initialLinks={socialLinks} />
 
       {/* ── Tienda física ── */}
       <section id="ubicacion" className={styles.store} aria-labelledby="store-title">

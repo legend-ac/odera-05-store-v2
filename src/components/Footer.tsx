@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Container } from "@/components/ui/layout";
-import HomeSocialLinks from "@/components/HomeSocialLinks";
+import HomeSocialLinks, { type SocialLinks } from "@/components/HomeSocialLinks";
 
 const mapsUrl =
   "https://www.google.com/maps/search/?api=1&query=Ollantaytambo+608%2C+Tahuantinsuyo%2C+Independencia%2C+Lima%2C+Per%C3%BA";
@@ -22,13 +22,15 @@ const footerLink: React.CSSProperties = {
   lineHeight: "1.5",
 };
 
-export default function Footer() {
+export default function Footer({ socialLinks }: { socialLinks?: SocialLinks }) {
   const pathname = usePathname();
   // Static/ISR rendering can resolve the pathname after the initial HTML.
   // Keep the home-specific branch identical until hydration has completed.
   const [isHome, setIsHome] = useState(false);
+  const [resolved, setResolved] = useState(false);
   useEffect(() => {
     setIsHome(pathname === "/");
+    setResolved(true);
   }, [pathname]);
 
   if (pathname === "/login" || pathname.startsWith("/dashboard")) return null;
@@ -76,9 +78,9 @@ export default function Footer() {
         </section>
       </Container>
 
-      {!isHome && (
+      {resolved && !isHome && (
         <Container className="pb-12">
-          <HomeSocialLinks compact />
+          <HomeSocialLinks compact initialLinks={socialLinks} />
         </Container>
       )}
 

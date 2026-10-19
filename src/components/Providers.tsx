@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { initAppCheckIfConfigured } from "@/lib/firebase/appCheck";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { Toaster } from "react-hot-toast";
 import type { StoreTheme } from "@/lib/storeTheme";
@@ -12,7 +11,8 @@ export default function Providers({ children, theme }: { children: React.ReactNo
   }, [theme]);
 
   useEffect(() => {
-    initAppCheckIfConfigured().catch((err) => {
+    if (!process.env.NEXT_PUBLIC_APP_CHECK_SITE_KEY) return;
+    import("@/lib/firebase/appCheck").then(({ initAppCheckIfConfigured }) => initAppCheckIfConfigured()).catch((err) => {
       console.error("[AppCheck] init error", err);
     });
   }, []);

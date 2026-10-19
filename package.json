@@ -12,6 +12,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:integrations": "node --conditions=react-server --import tsx scripts/check-integrations.ts",
+    "measure:performance": "node scripts/measure-performance.mjs",
     "check:providers": "node --conditions=react-server --import tsx scripts/check-integrations.ts --providers",
     "audit:production": "npm audit --omit=dev --audit-level=high",
     "build:verify": "node scripts/build-quality.mjs",

@@ -484,7 +484,7 @@ export default function CatalogClient({
         {items && sortedItems.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pb-12">
             {sortedItems.map((p, index) => (
-              <ProductCard key={p.id} p={p} priority={index < 8} />
+              <ProductCard key={p.id} p={p} priority={index < 2} />
             ))}
           </div>
         )}

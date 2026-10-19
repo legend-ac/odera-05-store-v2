@@ -6,7 +6,7 @@ import Link from "next/link";
 import { apiPost, CSRF_COOKIE_NAME } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/fields";
-import { optimizedProductImage } from "@/lib/image";
+import { productImageDelivery } from "@/lib/image";
 import { useUnsavedChanges } from "@/components/admin/useUnsavedChanges";
 
 type Product = {
@@ -762,11 +762,12 @@ export default function ProductsClient({
                         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                           {mainImage(p) ? (
                             <Image
-                              src={optimizedProductImage(mainImage(p), 160)}
+                              {...productImageDelivery(mainImage(p), 160)}
                               alt={p.name || p.slug}
                               fill
-                              unoptimized
-                              sizes="48px"
+                              loading="lazy"
+                              decoding="async"
+                              sizes="56px"
                               className="object-cover"
                             />
                           ) : (
@@ -1022,11 +1023,12 @@ export default function ProductsClient({
                 <div className="relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                   {currentImage ? (
                     <Image
-                      src={optimizedProductImage(currentImage, 900)}
+                      {...productImageDelivery(currentImage, 900)}
                       alt={draft.name || draft.slug}
                       fill
-                      unoptimized
-                      sizes="(max-width: 768px) 100vw, 50vw"
+                      loading="lazy"
+                      decoding="async"
+                      sizes="(max-width: 1023px) calc(100vw - 96px), 180px"
                       className="object-cover"
                     />
                   ) : (
@@ -1050,11 +1052,12 @@ export default function ProductsClient({
                     <div className="relative h-16 w-16 overflow-hidden rounded-md border border-slate-200 bg-white">
                       {img.url ? (
                         <Image
-                          src={optimizedProductImage(img.url, 180)}
+                          {...productImageDelivery(img.url, 180)}
                           alt={img.alt ?? ""}
                           fill
-                          unoptimized
-                          sizes="96px"
+                          loading="lazy"
+                          decoding="async"
+                          sizes="64px"
                           className="object-cover"
                         />
                       ) : (
