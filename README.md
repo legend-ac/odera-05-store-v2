@@ -183,8 +183,9 @@ al abrir una página:
   de catálogo y búsqueda usan caché de 60 segundos. La disponibilidad mostrada
   puede quedar desactualizada durante esa ventana: precio y stock se vuelven a
   confirmar al reservar, sin usar la caché del catálogo para descontar inventario.
-- Los enlaces al catálogo evitan una precarga que bloqueaba la navegación en
-  producción. El buscador admite envío GET antes de que JavaScript esté listo
+- Los enlaces al catálogo y las tarjetas de producto evitan una precarga de
+  rutas que bloqueaba la navegación en producción y consultaba fichas que aún
+  no se habían abierto. El buscador admite envío GET antes de que JavaScript esté listo
   y conserva los filtros de la URL durante la navegación con JavaScript.
 - Las redes oficiales llegan desde el servidor con una caché de 60 segundos,
   invalidada al guardar ajustes. Así no dependen de otra consulta de Firestore

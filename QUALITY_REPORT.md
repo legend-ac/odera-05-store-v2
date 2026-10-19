@@ -109,11 +109,13 @@ garantizarse con estos datos.** La transferencia de imágenes del catálogo baj�
 aproximadamente un 41–42 % en la comparación de tamaños PC/móvil; la ficha,
 un 43–53 %. Son ahorros de bytes, no una promesa de tiempos de red.
 
-La revisión pública detectó también una precarga de `/catalog` que quedaba
-pendiente y bloqueaba el clic de categorías en PC. Se desactiva esa precarga
-automática en los enlaces al catálogo; se mantiene la navegación de Next.js al
+La revisión pública detectó también precargas de catálogo y fichas que quedaban
+pendientes y bloqueaban la navegación en PC. Se desactiva esa precarga
+automática en los enlaces al catálogo y las tarjetas; se mantiene la navegación de Next.js al
 pulsar. Los formularios de búsqueda ahora admiten GET nativo, y el envío con
 JavaScript lee el valor real del campo, incluso si se escribió antes de hidratar.
+Las dos tarjetas prioritarias quedan explícitamente fuera del efecto de entrada
+y sus fotos llevan prioridad alta, para que la transición no retrase su aparición.
 La compilación final pasó con comprobación de tipos. Los ocho E2E específicos de
 catálogo y movimiento pasaron en PC/teléfono después de corregir la prioridad
 del estilo de categorías; los otros 18 casos también se verificaron en esta

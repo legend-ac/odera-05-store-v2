@@ -28,8 +28,9 @@ export default function ProductCard({ p, priority = false, imageSizes = "(max-wi
   return (
     <Link
       href={`/p/${p.id}`}
+      prefetch={false}
       className="product-card group flex flex-col"
-      data-store-motion="card"
+      data-store-motion={priority ? "off" : "card"}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -56,7 +57,7 @@ export default function ProductCard({ p, priority = false, imageSizes = "(max-wi
             imageWidth={600}
             alt={p.name}
             fill
-            {...(priority ? { priority: true } : { loading: "lazy" as const })}
+            {...(priority ? { priority: true, fetchPriority: "high" as const } : { loading: "lazy" as const })}
             sizes={imageSizes}
             className="object-contain transition-transform duration-400 ease-out group-hover:scale-[1.05]"
             style={{ padding: "8px" }}

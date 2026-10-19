@@ -9,6 +9,8 @@ test("el catálogo entrega productos y búsqueda en HTML sin esperar JavaScript"
     await expect(catalog.getByRole("heading", { level: 1, name: "Catálogo", exact: true })).toBeVisible();
     const first = catalog.locator('a[href^="/p/"]').first();
     await expect(first).toBeVisible();
+    await expect(first).toHaveAttribute("data-store-motion", "off");
+    await expect(first.locator("img")).toHaveAttribute("fetchpriority", "high");
     const href = await first.getAttribute("href");
     const name = await first.locator("p").first().innerText();
 
