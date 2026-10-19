@@ -25,6 +25,13 @@ de categorías/público, orden por precio y acciones de confirmación con datos
 simulados. Pasaron los 26 E2E mantenidos, lint y compilación con TypeScript.
 No se crearon pedidos, reservaron existencias ni enviaron mensajes reales.
 
+La aplicación `7644f6f` quedó publicada con estado **READY** en Vercel. Se
+comprobaron los mismos 88 estados contra el dominio público, con los cuatro
+tamaños de teléfono y escritorio, en ambos temas. Dos comprobaciones agotaron
+el límite inicial de cinco segundos esperando contenido de seguimiento y
+confirmación; pasaron al repetirlas. Esta revisión comprueba distribución y
+funcionamiento, no un tiempo máximo de carga.
+
 ## Puerta de calidad
 
 Antes de una entrega se ejecuta una verificación reproducible:
