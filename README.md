@@ -104,6 +104,11 @@ menos espacio y controles táctiles legibles.
 - **Categorías:** tres tarjetas en PC con imagen completa, título y descripción
   separados. En teléfono se convierten en filas de imagen y texto con una zona
   de enlace amplia, sin textos superpuestos a las fotos.
+- **Filtros del catálogo:** una fila por grupo en teléfono, con controles de
+  44 px y desplazamiento horizontal para opciones adicionales. Conteo y
+  ordenación comparten fila; la búsqueda activa utiliza el ancho completo debajo.
+  En móvil se ordena con el selector nativo. Seguimiento y confirmación mantienen
+  campos, importes y acciones alineados sin comprimir los textos.
 - **Ficha de producto:** miniaturas laterales en PC y galería/compra en dos
   columnas; en teléfono se apilan y las miniaturas pasan a una tira horizontal.
   Se conservan las imágenes y el orden configurados para cada producto.
@@ -131,8 +136,9 @@ clara para trabajar con datos.
 
 Los tokens completos y alias semánticos están en `src/app/globals.css`.
 `HomeSections.module.css` y `CategoryGrid.module.css` contienen los ajustes de
-portada/local y categorías; `src/app/(public)/purchase.module.css`, los estilos
-de checkout y pago. Al modificar una sección, utiliza sus estilos y los tokens
+portada/local y categorías; `src/app/(public)/catalog/catalog.module.css`, los filtros
+y resultados; `src/app/(public)/purchase.module.css`, los estilos de checkout y pago.
+Al modificar una sección, utiliza sus estilos y los tokens
 existentes para conservar ambos temas.
 
 El servidor incluye el tema guardado en el HTML inicial. La configuración vive

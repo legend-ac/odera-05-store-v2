@@ -2,6 +2,29 @@
 
 Última verificación: 19 de octubre de 2026.
 
+## Organización en celular — 19 de octubre de 2026
+
+Los filtros de categoría y público mantienen una sola fila por grupo. Las cuatro
+categorías habituales se muestran completas en teléfono; si hay opciones extra,
+la tira permite desplazarse horizontalmente sin ensanchar la página. Los botones
+tienen 44 px de alto y comunican su selección. Conteo y ordenación comparten una
+fila; búsqueda y filtros aplicados disponen del ancho completo debajo. El
+selector de ordenación móvil utiliza el control nativo del teléfono.
+
+Se alinean los campos y botones del seguimiento, se separan número y estado del
+pedido en móvil y se protegen los importes frente a saltos de línea. La
+confirmación presenta las dos acciones de copiar alineadas y el acceso al
+seguimiento a ancho completo. El buscador y los enlaces de recomendaciones
+tienen espacio reservado para no comprimirse. Se conservan colores, fotos,
+tipografía y estructura de escritorio.
+
+Revisión local en 320, 360, 393 y 430 px y escritorio de 1366 px, en ambos temas:
+88 estados de catálogo, búsqueda, seguimiento, confirmación, carrito y checkout
+sin desbordamiento horizontal ni errores JavaScript. Se comprobaron selección
+de categorías/público, orden por precio y acciones de confirmación con datos
+simulados. Pasaron los 26 E2E mantenidos, lint y compilación con TypeScript.
+No se crearon pedidos, reservaron existencias ni enviaron mensajes reales.
+
 ## Puerta de calidad
 
 Antes de una entrega se ejecuta una verificación reproducible:

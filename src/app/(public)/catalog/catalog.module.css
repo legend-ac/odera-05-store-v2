@@ -1,0 +1,172 @@
+.headerText,
+.filterGroup,
+.filterOptions,
+.resultSummary {
+  min-width: 0;
+}
+
+.headerText,
+.resultSummary {
+  overflow-wrap: anywhere;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterOptions {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterButton {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.filterButton:focus-visible,
+.sortSelect:focus-visible {
+  outline: 2px solid var(--vermeil);
+  outline-offset: 2px;
+}
+
+.resultSummary {
+  flex: 1;
+  line-height: 1.6;
+}
+
+.resultRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.clearCategoryFilter {
+  margin-left: 12px;
+}
+
+.desktopSort {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.mobileSort {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .filterOptions {
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ash-2) transparent;
+    padding: 3px 0 6px;
+  }
+
+  .filterOptions::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .filterOptions::-webkit-scrollbar-thumb {
+    background: var(--ash-2);
+  }
+
+  .filterButton {
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  .resultSummary {
+    display: contents;
+  }
+
+  .resultRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 146px);
+    grid-template-areas:
+      "count sort"
+      "applied applied";
+    column-gap: 12px;
+    row-gap: 4px;
+  }
+
+  .resultCount {
+    grid-area: count;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .appliedFilters {
+    grid-area: applied;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .appliedSearch {
+    display: block;
+  }
+
+  .resultSeparator {
+    display: none;
+  }
+
+  .clearFilter {
+    display: inline-flex;
+    min-height: 44px;
+    max-width: 100%;
+    align-items: center;
+    text-align: left;
+  }
+
+  .clearCategoryFilter {
+    margin-left: 0;
+  }
+
+  .desktopSort {
+    display: none;
+  }
+
+  .mobileSort {
+    position: relative;
+    display: block;
+    grid-area: sort;
+    min-width: 0;
+  }
+
+  .sortSelect {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    appearance: none;
+    border: 1px solid var(--ash-2);
+    border-radius: 2px;
+    padding: 8px 26px 8px 10px;
+    background: var(--ink-2);
+    color: var(--paper);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .mobileSort > svg {
+    position: absolute;
+    top: 50%;
+    right: 9px;
+    width: 12px;
+    height: 12px;
+    transform: translateY(-50%);
+    color: var(--ash);
+    pointer-events: none;
+  }
+}

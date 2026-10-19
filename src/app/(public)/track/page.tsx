@@ -58,9 +58,9 @@ const STATUS_STYLE: Record<string, { dot: string; badge: string; label: string }
 function StatusPill({ status }: { status: string }) {
   const s = STATUS_STYLE[status] ?? { dot: "bg-slate-400", badge: "bg-[var(--ink-3)] text-[var(--paper-2)] border-[var(--ash-2)]", label: status };
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${s.badge}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-      {s.label}
+    <span className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${s.badge}`}>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot}`} />
+      <span className="min-w-0">{s.label}</span>
     </span>
   );
 }
@@ -258,26 +258,26 @@ function TrackPageInner() {
         ) : null}
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--paper-2)]">Pegar enlace de seguimiento (opcional)</label>
-          <div className="flex gap-2">
-            <Input value={trackingUrl} onChange={(e) => setTrackingUrl(e.target.value)} placeholder="https://.../t/OD-0001/código-de-seguimiento" uiSize="sm" />
-            <Button type="button" variant="secondary" size="sm" onClick={applyTrackingUrl}>Cargar</Button>
+          <label htmlFor="track-url" className="text-sm font-medium text-[var(--paper-2)]">Pegar enlace de seguimiento (opcional)</label>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <Input id="track-url" value={trackingUrl} onChange={(e) => setTrackingUrl(e.target.value)} placeholder="https://.../t/OD-0001/código-de-seguimiento" uiSize="sm" className="min-w-0 max-sm:text-base" />
+            <Button type="button" variant="secondary" size="sm" onClick={applyTrackingUrl} className="shrink-0 whitespace-nowrap max-sm:w-24">Cargar</Button>
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--paper-2)]">Número de pedido (ejemplo: OD-1234)</label>
-          <div className="flex gap-2">
-            <Input value={publicCode} onChange={(e) => setPublicCode(e.target.value)} uiSize="sm" />
-            <Button type="button" variant="secondary" size="sm" onClick={() => copyText(publicCode, "Número")}>Copiar</Button>
+          <label htmlFor="track-public-code" className="text-sm font-medium text-[var(--paper-2)]">Número de pedido (ejemplo: OD-1234)</label>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <Input id="track-public-code" value={publicCode} onChange={(e) => setPublicCode(e.target.value)} uiSize="sm" className="min-w-0 max-sm:text-base" />
+            <Button type="button" variant="secondary" size="sm" onClick={() => copyText(publicCode, "Número")} className="shrink-0 whitespace-nowrap max-sm:w-24">Copiar</Button>
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--paper-2)]">Código de seguimiento</label>
-          <div className="flex gap-2">
-            <Input value={trackingToken} onChange={(e) => setTrackingToken(e.target.value)} uiSize="sm" className="font-mono" />
-            <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingToken, "Código")}>Copiar</Button>
+          <label htmlFor="track-token" className="text-sm font-medium text-[var(--paper-2)]">Código de seguimiento</label>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <Input id="track-token" value={trackingToken} onChange={(e) => setTrackingToken(e.target.value)} uiSize="sm" className="min-w-0 font-mono max-sm:text-base" />
+            <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingToken, "Código")} className="shrink-0 whitespace-nowrap max-sm:w-24">Copiar</Button>
           </div>
         </div>
 
@@ -302,7 +302,7 @@ function TrackPageInner() {
       {/* Order Result */}
       {data ? (
         <div className="rounded-2xl border border-[var(--ash-2)] bg-[var(--ink-2)] shadow-[var(--shadow-card)] overflow-hidden fade-in-up">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--ash-2)]">
+          <div className="flex flex-col items-start justify-between gap-3 px-5 py-4 border-b border-[var(--ash-2)] sm:flex-row sm:items-center">
             <div className="flex items-center gap-2.5">
               <span className="font-mono text-sm font-bold text-[var(--paper)] bg-[var(--ink-3)] px-2.5 py-1 rounded-lg">{data.publicCode}</span>
             </div>
@@ -320,19 +320,19 @@ function TrackPageInner() {
 
             <div className="border-t border-[var(--ash-2)] pt-3 flex flex-col gap-1.5 text-sm">
               {data.itemsSnapshots?.map((it, idx) => (
-                <div key={idx} className="flex justify-between">
-                  <span className="text-[var(--paper-2)]">{it.nameSnapshot} x {it.qty}</span>
-                  <span className="font-medium text-[var(--paper)] tabular-nums">{formatPEN(it.unitPriceSnapshot * it.qty)}</span>
+                <div key={idx} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                  <span className="min-w-0 break-words text-[var(--paper-2)]">{it.nameSnapshot} x {it.qty}</span>
+                  <span className="whitespace-nowrap text-right font-medium text-[var(--paper)] tabular-nums">{formatPEN(it.unitPriceSnapshot * it.qty)}</span>
                 </div>
               ))}
             </div>
 
             {data.totals ? (
               <div className="border-t border-[var(--ash-2)] pt-3 flex flex-col gap-1 text-sm">
-                <div className="flex justify-between"><span className="text-[var(--ash)]">Subtotal</span><span className="tabular-nums">{formatPEN(data.totals.subtotal)}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--ash)]">Descuento</span><span className="tabular-nums">{data.totals.discountAmount ? `-${formatPEN(data.totals.discountAmount)}` : formatPEN(0)}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--ash)]">Envío</span><span className="tabular-nums">{data.totals.shippingCost ? formatPEN(data.totals.shippingCost) : "Gratis"}</span></div>
-                <div className="flex justify-between font-semibold text-[var(--paper)]"><span>Total</span><span className="tabular-nums">{formatPEN(data.totals.totalToPay)}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-[var(--ash)]">Subtotal</span><span className="shrink-0 whitespace-nowrap tabular-nums">{formatPEN(data.totals.subtotal)}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-[var(--ash)]">Descuento</span><span className="shrink-0 whitespace-nowrap tabular-nums">{data.totals.discountAmount ? `-${formatPEN(data.totals.discountAmount)}` : formatPEN(0)}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-[var(--ash)]">Envío</span><span className="shrink-0 whitespace-nowrap tabular-nums">{data.totals.shippingCost ? formatPEN(data.totals.shippingCost) : "Gratis"}</span></div>
+                <div className="flex justify-between gap-3 font-semibold text-[var(--paper)]"><span>Total</span><span className="shrink-0 whitespace-nowrap tabular-nums">{formatPEN(data.totals.totalToPay)}</span></div>
                 {data.couponCode ? (
                   <div className="text-xs font-semibold text-emerald-700 mt-1">Cupón aplicado: {data.couponCode}</div>
                 ) : null}
@@ -342,11 +342,11 @@ function TrackPageInner() {
             <div className="border-t border-[var(--ash-2)] pt-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ash)] mb-2">Notificar por WhatsApp</p>
               {waHref ? (
-                <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand inline-flex items-center gap-2">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand inline-flex w-full min-w-0 items-center gap-2 text-center max-sm:px-3 max-sm:text-[13px] max-sm:tracking-[0.035em] sm:w-auto">
+                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Zm5.2 12.7c-.2.6-1.2 1.1-1.7 1.2-.5.1-1.1.1-1.8-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.4-1.1-2.7 0-1.3.7-1.9.9-2.2.3-.3.6-.4.8-.4h.6c.2 0 .5 0 .7.5.2.5.8 1.9.9 2 .1.2.1.4 0 .6-.1.2-.2.4-.3.5-.1.2-.3.4-.4.5-.1.1-.2.3-.1.5.1.2.4.8 1 1.3.7.7 1.3 1 1.5 1.1.2.1.4.1.6-.1.2-.2.8-.9 1-1.2.2-.3.4-.3.6-.2.2.1 1.5.7 1.8.9.3.2.4.2.5.4.1.2.1.9-.1 1.5Z" />
                   </svg>
-                  Enviar mensaje por WhatsApp
+                  <span className="min-w-0">Enviar mensaje por WhatsApp</span>
                 </a>
               ) : (
                 <p className="text-xs text-[var(--ash)]">WhatsApp no disponible por el momento.</p>

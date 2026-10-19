@@ -474,8 +474,8 @@ export default function ProductClient({
         {/* ── Productos recomendados ── */}
         {recommended.length > 0 && (
           <div className="product-related mx-auto max-w-7xl px-4 pb-14 sm:px-6">
-            <div className="flex items-center justify-between pb-4 mb-6" style={{ borderBottom: S.border }}>
-              <div>
+            <div className="flex items-center justify-between gap-3 pb-4 mb-6" style={{ borderBottom: S.border }}>
+              <div className="min-w-0">
                 <p className="font-black uppercase mb-1" style={{ fontSize: "10px", letterSpacing: "0.28em", color: S.red }}>
                   Descubre más
                 </p>
@@ -483,7 +483,7 @@ export default function ProductClient({
                   TAMBIÉN TE PUEDE GUSTAR
                 </h2>
               </div>
-              <Link href="/catalog" prefetch={false} className="font-bold uppercase transition-colors hover:text-[var(--vermeil)]"
+              <Link href="/catalog" prefetch={false} className="shrink-0 whitespace-nowrap font-bold uppercase transition-colors hover:text-[var(--vermeil)]"
                 style={{ fontSize: "11px", letterSpacing: "0.1em", color: S.ash }}>
                 Ver todo →
               </Link>

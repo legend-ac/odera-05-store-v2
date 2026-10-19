@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { collection, getDocs, limit, query, startAfter, where, type QueryDocumentSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import ProductCard, { type ProductCardData } from "@/components/ProductCard";
 import { getSearchTerms, normalizeToken, productMatchesSearch } from "@/lib/searchTokens";
 import { hasStock } from "@/lib/productStock";
+import styles from "./catalog.module.css";
 
 type SortType = "latest" | "price-asc" | "price-desc" | "name";
 type Audience = "hombre" | "mujer" | "ninos" | "todos";
@@ -56,6 +57,19 @@ function matchType(docTypeRaw: unknown, filterTypeRaw: string): boolean {
   return false;
 }
 
+function revealActiveFilter(viewport: HTMLDivElement | null) {
+  if (!viewport || viewport.scrollWidth <= viewport.clientWidth) return;
+  const active = viewport.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+  if (!active) return;
+  const bounds = viewport.getBoundingClientRect();
+  const selected = active.getBoundingClientRect();
+  if (selected.left < bounds.left) {
+    viewport.scrollLeft += selected.left - bounds.left - 4;
+  } else if (selected.right > bounds.right) {
+    viewport.scrollLeft += selected.right - bounds.right + 4;
+  }
+}
+
 export default function CatalogClient({
   initialItems, initialSearchItems, productTypes, routeQuery = "", routeType = "", routeAudience = "",
 }: {
@@ -80,6 +94,9 @@ export default function CatalogClient({
   const [sortBy, setSortBy] = useState<SortType>("latest");
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+  const categoryRef = useRef<HTMLDivElement>(null);
+  const audienceRef = useRef<HTMLDivElement>(null);
+  const filterId = useId();
   const [items, setItems] = useState<CatalogItem[] | null>(() => terms.length ? initialSearchItems ?? null : initialItems ?? []);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,12 +105,25 @@ export default function CatalogClient({
     const handler = (e: MouseEvent) => {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
     };
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setSortOpen(false);
+      sortRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", onEscape);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", onEscape);
+    };
   }, [sortOpen]);
 
   useEffect(() => { setQText(routeQuery); }, [routeQuery]);
   useEffect(() => { setTypeFilter(routeType.toLowerCase().trim()); }, [routeType]);
+  useEffect(() => {
+    revealActiveFilter(categoryRef.current);
+    revealActiveFilter(audienceRef.current);
+  }, [typeFilter, audienceFilter]);
   useEffect(() => {
     const normalizedAudience =
       ["hombre", "mujer", "ninos", "todos"].includes(routeAudience.toLowerCase())
@@ -205,7 +235,7 @@ export default function CatalogClient({
       <div style={{ background: "var(--ink-2)", borderBottom: "1px solid var(--ash-2)" }}>
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <div className="flex items-center justify-between gap-4">
-            <div>
+            <div className={styles.headerText}>
               {/* Breadcrumb */}
               <div className="flex items-center gap-2 mb-2">
                 <Link
@@ -278,108 +308,142 @@ export default function CatalogClient({
 
             {/* Categorías */}
             {!hasLockedType && productTypes.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className={styles.filterGroup} role="group" aria-labelledby={`${filterId}-category`}>
                 <span
-                  className="font-bold uppercase shrink-0"
+                  id={`${filterId}-category`}
+                  className="sr-only font-bold uppercase shrink-0 sm:not-sr-only"
                   style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--ash)" }}
                 >
-                  Cat:
+                  <span aria-hidden="true">Cat:</span>
+                  <span className="sr-only">Filtrar por categoría</span>
                 </span>
-                {[{ key: "", label: "Todos" }, ...productTypes].map((t) => (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => setTypeFilter(t.key)}
-                    className="font-semibold transition-all duration-150 cursor-pointer"
-                    style={{
-                      fontSize: "12px",
-                      letterSpacing: "0.06em",
-                      padding: "4px 10px",
-                      border: "1px solid",
-                      borderRadius: "2px",
-                      borderColor: typeFilter === t.key ? "var(--vermeil)" : "var(--ash-2)",
-                      background: typeFilter === t.key ? "var(--vermeil)" : "transparent",
-                      color: typeFilter === t.key ? "#fff" : "var(--ash)",
-                    }}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+                <div ref={categoryRef} className={styles.filterOptions}>
+                  {[{ key: "", label: "Todos" }, ...productTypes].map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      aria-pressed={typeFilter === t.key}
+                      onClick={() => setTypeFilter(t.key)}
+                      className={`${styles.filterButton} font-semibold transition-all duration-150 cursor-pointer`}
+                      style={{
+                        fontSize: "12px",
+                        letterSpacing: "0.06em",
+                        border: "1px solid",
+                        borderRadius: "2px",
+                        borderColor: typeFilter === t.key ? "var(--vermeil)" : "var(--ash-2)",
+                        background: typeFilter === t.key ? "var(--vermeil)" : "transparent",
+                        color: typeFilter === t.key ? "#fff" : "var(--ash)",
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
             {/* Público */}
             {typeFilter && supportsAudienceFilter(typeFilter) && (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className={styles.filterGroup} role="group" aria-labelledby={`${filterId}-audience`}>
                 <span
+                  id={`${filterId}-audience`}
                   className="font-bold uppercase shrink-0"
                   style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--ash)" }}
                 >
-                  Para:
+                  <span aria-hidden="true">Para:</span>
+                  <span className="sr-only">Filtrar por público</span>
                 </span>
-                {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
-                  <button
-                    key={a}
-                    type="button"
-                    onClick={() => setAudienceFilter(a)}
-                    className="font-semibold transition-all duration-150 cursor-pointer"
-                    style={{
-                      fontSize: "12px",
-                      letterSpacing: "0.06em",
-                      padding: "4px 10px",
-                      border: "1px solid",
-                      borderRadius: "2px",
-                      borderColor: audienceFilter === a ? "var(--vermeil)" : "var(--ash-2)",
-                      background: audienceFilter === a ? "var(--vermeil)" : "transparent",
-                      color: audienceFilter === a ? "#fff" : "var(--ash)",
-                    }}
-                  >
-                    {AUDIENCE_LABEL[a]}
-                  </button>
-                ))}
+                <div ref={audienceRef} className={styles.filterOptions}>
+                  {(["todos", "hombre", "mujer", "ninos"] as Audience[]).map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      aria-pressed={audienceFilter === a}
+                      onClick={() => setAudienceFilter(a)}
+                      className={`${styles.filterButton} font-semibold transition-all duration-150 cursor-pointer`}
+                      style={{
+                        fontSize: "12px",
+                        letterSpacing: "0.06em",
+                        border: "1px solid",
+                        borderRadius: "2px",
+                        borderColor: audienceFilter === a ? "var(--vermeil)" : "var(--ash-2)",
+                        background: audienceFilter === a ? "var(--vermeil)" : "transparent",
+                        color: audienceFilter === a ? "#fff" : "var(--ash)",
+                      }}
+                    >
+                      {AUDIENCE_LABEL[a]}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         </div>
 
         {/* Fila: conteo + ordenar */}
-        <div className="flex items-center justify-between gap-3 py-3">
+        <div className={styles.resultRow}>
           {items ? (
-            <p style={{ fontSize: "12px", color: "var(--ash)" }}>
-              <span style={{ fontWeight: 700, color: "var(--paper)" }}>{sortedItems.length}</span>{" "}
-              {sortedItems.length === 1 ? "producto" : "productos"}
-              {terms.length > 0 && (
-                <span style={{ color: "var(--ash)" }}>
-                  {" "}· &ldquo;{qText.trim()}&rdquo;
-                  <button
-                    type="button"
-                    onClick={() => setQText("")}
-                    className="ml-2 hover:underline"
-                    style={{ fontSize: "11px", color: "var(--vermeil)", fontWeight: 600 }}
-                  >
-                    ✕ borrar
-                  </button>
+            <p className={styles.resultSummary} style={{ fontSize: "12px", color: "var(--ash)" }}>
+              <span className={styles.resultCount}>
+                <span style={{ fontWeight: 700, color: "var(--paper)" }}>{sortedItems.length}</span>{" "}
+                {sortedItems.length === 1 ? "producto" : "productos"}
+              </span>
+              {(terms.length > 0 || (!hasLockedType && typeFilter && activeCategoryLabel)) && (
+                <span className={styles.appliedFilters}>
+                  {terms.length > 0 && (
+                    <span className={styles.appliedSearch} style={{ color: "var(--ash)" }}>
+                      <span className={styles.resultSeparator} aria-hidden="true"> · </span>
+                      &ldquo;{qText.trim()}&rdquo;
+                      <button
+                        type="button"
+                        onClick={() => setQText("")}
+                        className={`${styles.clearFilter} ml-2 hover:underline`}
+                        style={{ fontSize: "11px", color: "var(--vermeil)", fontWeight: 600 }}
+                      >
+                        ✕ borrar
+                      </button>
+                    </span>
+                  )}
+                  {!hasLockedType && typeFilter && activeCategoryLabel && (
+                    <button
+                      type="button"
+                      onClick={() => { setTypeFilter(""); setAudienceFilter(""); setSortBy("latest"); }}
+                      className={`${styles.clearFilter} ${styles.clearCategoryFilter} hover:underline`}
+                      style={{ fontSize: "11px", color: "var(--vermeil)", fontWeight: 600 }}
+                    >
+                      ✕ {activeCategoryLabel}
+                    </button>
+                  )}
                 </span>
-              )}
-              {!hasLockedType && typeFilter && activeCategoryLabel && (
-                <button
-                  type="button"
-                  onClick={() => { setTypeFilter(""); setAudienceFilter(""); setSortBy("latest"); }}
-                  className="ml-3 hover:underline"
-                  style={{ fontSize: "11px", color: "var(--vermeil)", fontWeight: 600 }}
-                >
-                  ✕ {activeCategoryLabel}
-                </button>
               )}
             </p>
           ) : (
-            <p style={{ fontSize: "12px", color: "var(--ash)" }}>Cargando...</p>
+            <p className={styles.resultCount} style={{ fontSize: "12px", color: "var(--ash)" }}>Cargando...</p>
           )}
 
+          <div className={styles.mobileSort}>
+            <select
+              className={styles.sortSelect}
+              aria-label="Ordenar productos"
+              value={sortBy}
+              onChange={(event) => { setSortBy(event.target.value as SortType); setSortOpen(false); }}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+
           {/* Sort dropdown */}
-          <div ref={sortRef} className="relative">
+          <div ref={sortRef} className={styles.desktopSort}>
             <button
               type="button"
+              aria-label={`Ordenar productos: ${SORT_OPTIONS.find((option) => option.value === sortBy)?.label}`}
+              aria-expanded={sortOpen}
+              aria-controls={`${filterId}-sort`}
               onClick={() => setSortOpen((v) => !v)}
               className="inline-flex items-center gap-2 font-semibold transition-all duration-150"
               style={{
@@ -409,6 +473,9 @@ export default function CatalogClient({
 
             {sortOpen && (
               <div
+                id={`${filterId}-sort`}
+                role="group"
+                aria-label="Opciones para ordenar productos"
                 className="absolute right-0 top-full mt-1.5 z-50 min-w-[160px] overflow-hidden"
                 style={{
                   background: "var(--ink-2)",
@@ -421,7 +488,12 @@ export default function CatalogClient({
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => { setSortBy(opt.value); setSortOpen(false); }}
+                    aria-pressed={sortBy === opt.value}
+                    onClick={() => {
+                      setSortBy(opt.value);
+                      setSortOpen(false);
+                      sortRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+                    }}
                     className="w-full flex items-center justify-between gap-3 px-4 py-2.5 transition-colors duration-100"
                     style={{
                       fontSize: "12px",

@@ -253,7 +253,7 @@ export default function Header() {
         {searchOpen && (
           <form action="/catalog" method="get" onSubmit={submitSearch} className="md:hidden mt-3 fade-in">
             <div className="relative flex items-center gap-2">
-              <div className="relative flex-1">
+              <div className="relative min-w-0 flex-1">
                 <svg
                   className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
                   style={{ color: "var(--ash)" }}
@@ -270,6 +270,7 @@ export default function Header() {
                   autoFocus
                   className="pl-9"
                   style={{
+                    fontSize: "16px",
                     background: "var(--ink-3)",
                     border: "1px solid var(--ash-2)",
                     color: "var(--paper)",
@@ -277,7 +278,7 @@ export default function Header() {
                   }}
                 />
               </div>
-              <button type="submit" className="btn-brand text-xs px-4 py-2">Ir</button>
+              <button type="submit" className="btn-brand min-h-10 shrink-0 text-xs px-4 py-2">Ir</button>
             </div>
           </form>
         )}

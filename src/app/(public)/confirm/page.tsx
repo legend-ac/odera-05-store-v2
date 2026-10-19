@@ -184,18 +184,16 @@ function ConfirmPageInner() {
           <div className="border-t border-[var(--ash-2)] pt-4">
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ash)] mb-1.5">Código de seguimiento</p>
             <div className="font-mono text-sm break-all bg-[var(--surface-muted)] border border-[var(--ash-2)] rounded-xl px-3 py-2.5">{trackingToken || "-"}</div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingToken, "Código de seguimiento")}>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingToken, "Código de seguimiento")} className="min-w-0 whitespace-nowrap max-sm:px-2 max-sm:text-[11px] max-sm:tracking-[0.035em]">
                 Copiar código
               </Button>
-              <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingPack, "Paquete completo")}>
+              <Button type="button" variant="secondary" size="sm" onClick={() => copyText(trackingPack, "Paquete completo")} className="min-w-0 whitespace-nowrap max-sm:px-2 max-sm:text-[11px] max-sm:tracking-[0.035em]">
                 Copiar todo
               </Button>
               {trackingUrl ? (
-                <Link href={trackingUrl}>
-                  <Button type="button" variant="secondary" size="sm">
-                    Abrir seguimiento
-                  </Button>
+                <Link href={trackingUrl} className="col-span-2 inline-flex min-h-10 w-full select-none items-center justify-center border border-[var(--ash-2)] bg-[var(--ink-3)] px-3 text-sm font-semibold uppercase tracking-widest text-[var(--paper)] transition-all duration-150 hover:border-[var(--vermeil)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vermeil)] focus-visible:ring-offset-1 active:scale-[0.97] sm:w-auto">
+                  Abrir seguimiento
                 </Link>
               ) : null}
             </div>
@@ -224,11 +222,11 @@ function ConfirmPageInner() {
           Tu pedido quedó en estado <span className="font-semibold text-[var(--paper)]">Pendiente de validación de pago</span>. El botón de WhatsApp incluye toda la información importante para que no pierdas nada.
         </p>
         {waHref ? (
-          <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand inline-flex items-center gap-2 self-start">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+          <a href={waHref} target="_blank" rel="noreferrer" className="btn-brand inline-flex w-full min-w-0 items-center gap-2 self-start text-center max-sm:px-3 max-sm:text-[13px] max-sm:tracking-[0.035em] sm:w-auto">
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Zm5.2 12.7c-.2.6-1.2 1.1-1.7 1.2-.5.1-1.1.1-1.8-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.4-1.1-2.7 0-1.3.7-1.9.9-2.2.3-.3.6-.4.8-.4h.6c.2 0 .5 0 .7.5.2.5.8 1.9.9 2 .1.2.1.4 0 .6-.1.2-.2.4-.3.5-.1.2-.3.4-.4.5-.1.1-.2.3-.1.5.1.2.4.8 1 1.3.7.7 1.3 1 1.5 1.1.2.1.4.1.6-.1.2-.2.8-.9 1-1.2.2-.3.4-.3.6-.2.2.1 1.5.7 1.8.9.3.2.4.2.5.4.1.2.1.9-.1 1.5Z" />
             </svg>
-            Enviar mensaje por WhatsApp
+            <span className="min-w-0">Enviar mensaje por WhatsApp</span>
           </a>
         ) : (
           <p className="text-sm text-[var(--ash)]">WhatsApp del negocio no disponible por el momento.</p>
