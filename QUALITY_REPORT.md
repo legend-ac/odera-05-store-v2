@@ -23,7 +23,7 @@ La orden integra pruebas unitarias, cobertura del núcleo crítico, flujo E2E p�
 | Acceso al administrador | Sesión, permisos, CSRF, cookies seguras, antigüedad de autenticación, destinos y errores | 39 pruebas adicionales |
 | Gestión administrativa | Paginación de inventario, cantidades, conflictos de edición, creación sin sobrescritura, variantes, imágenes, archivo automático y operaciones masivas | 45 pruebas adicionales |
 | Selección de producto | Talla disponible, límite de cantidad y cambio a una talla con menos stock | 7 pruebas adicionales; 255 unitarias en 34 archivos en total |
-| Recorrido público E2E | Acceso protegido, inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 18 casos mantenidos; última revisión del pie: 2 casos correctos en escritorio y teléfono; revisión previa de ficha: 8 correctos |
+| Recorrido público E2E | Acceso protegido, inicio e hidratación; catálogo → ficha → carrito → checkout; reserva y comprobante; vencimiento; imágenes agotadas y recuperación | 18 casos correctos en escritorio y teléfono; 8 recorridos de compra y reserva también correctos en producción |
 | Tipado | Compilación estática TypeScript | Sin errores |
 | Revisión de código | `npm run lint` | Sin errores; una advertencia existente de fuente externa |
 | Producción | Compilación aislada con `npm run build:verify` | Correcta |
@@ -56,10 +56,20 @@ Verificación de esta selección:
 - Portada y local: 320, 393, 640, 768, 950, 1024 y 1366 px, claro y oscuro;
   personaje cargado y visible, sin recortes laterales, desbordamientos ni
   errores JavaScript.
+- Checkout y pago: 16 vistas entre 320, 393, 950 y 1366 px en ambos temas,
+  sin desbordamientos ni errores JavaScript, con productos y reserva simulados.
 - Comparación independiente del código: únicamente cambian inicio, checkout,
   pago y sus dos módulos CSS. La ficha de producto aprobada queda intacta.
 - Los recorridos de reserva y comprobante simulan las API: no crean pedidos,
   descuentan inventario ni envían pagos reales.
+
+Publicado el commit `696b65c` mediante el despliegue
+`dpl_BfecFSDSodkXJr4sJ842iphq7yxa`, confirmado en estado **READY** y asignado a
+`https://odera-05-store-v2.vercel.app`. En el dominio público pasaron de nuevo
+las 14 vistas de portada/local y los 8 recorridos E2E de catálogo, carrito,
+checkout, reserva, comprobante y vencimiento entre escritorio y teléfono.
+La validación visual de checkout/pago usa datos ficticios y bloquea las
+operaciones de escritura, sin alterar la tienda ni sus pedidos.
 
 ## Restauración selectiva del diseño — 18 de octubre de 2026
 
