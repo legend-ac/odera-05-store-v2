@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSocialImages } from "./socialImages";
 
 type SiteEnvironment = Partial<Record<
   "NEXT_PUBLIC_SITE_URL" | "SITE_URL" | "VERCEL_PROJECT_PRODUCTION_URL" | "VERCEL_URL",
@@ -81,6 +82,10 @@ export function buildProductMetadata(
     }
   }
 
+  const ogImages = image
+    ? [image]
+    : getSocialImages("home", baseUrl);
+
   return {
     // The root layout adds the store name once through its title template.
     title,
@@ -93,13 +98,13 @@ export function buildProductMetadata(
       title: `${title} | ODERA 05 STORE`,
       description,
       url: canonical,
-      images: image ? [image] : [],
+      images: ogImages,
     },
     twitter: {
-      card: image ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: `${title} | ODERA 05 STORE`,
       description,
-      images: image ? [image] : [],
+      images: ogImages.slice(0, 1).map((img) => ({ url: img.url, alt: img.alt })),
     },
   };
 }

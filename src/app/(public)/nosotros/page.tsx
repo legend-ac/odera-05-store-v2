@@ -3,12 +3,42 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { adminDb } from "@/lib/server/firebaseAdmin";
 import { normalizeStoreInformation } from "@/lib/storeInformation";
+import { getSocialImages } from "@/lib/socialImages";
 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Nuestra tienda",
-  description: "Ubicación y frontis de ODERA 05 STORE en Independencia, Lima.",
+  description:
+    "Visítanos en Ollantaytambo 608, Tahuantinsuyo, Independencia, Lima. Conoce el frontis y el horario de ODERA 05 STORE.",
+  alternates: { canonical: "/nosotros" },
+  openGraph: {
+    title: "Nuestra Tienda — ODERA 05 STORE",
+    description:
+      "ODERA 05 STORE en Independencia, Lima Norte. Dirección, horario de atención y frontis del local.",
+    siteName: "ODERA 05 STORE",
+    locale: "es_PE",
+    type: "website",
+    url: "/nosotros",
+    images: [
+      {
+        // Foto real del local — imagen más auténtica para esta página
+        url: "/brand/storefront-odera-05.png",
+        width: 1200,
+        height: 630,
+        alt: "Frontis de ODERA 05 STORE — Independencia, Lima",
+        type: "image/png",
+      },
+      getSocialImages()[1],
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nuestra Tienda — ODERA 05 STORE",
+    description:
+      "Visítanos en Independencia, Lima Norte. Dirección y horario de ODERA 05 STORE.",
+    images: [{ url: "/brand/storefront-odera-05.png", alt: "Frontis ODERA 05 STORE" }],
+  },
 };
 
 const mapsUrl =

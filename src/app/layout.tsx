@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import { getMetadataBaseUrl } from "@/lib/productMetadata";
+import { getSocialImages } from "@/lib/socialImages";
 import { getStoreTheme } from "@/lib/server/storeTheme";
 import { getStoreSocialLinks } from "@/lib/server/storeSocialLinks";
 
@@ -41,18 +42,42 @@ export const metadata: Metadata = {
     "Plin",
     "envio Lima",
     "envio provincias",
+    "accesorios deportivos",
+    "sneakers Peru",
   ],
   icons: {
     icon: "/favicon.png",
     apple: "/favicon.png",
+    shortcut: "/favicon.png",
   },
+  // ── Canonical & Indexing ──────────────────────────────────────────────────
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  // ── Open Graph (Facebook · WhatsApp · LinkedIn · Telegram · Discord) ──────
+  // JPEG ligeros: horizontal principal y cuadrado alternativo.
   openGraph: {
     title: "ODERA 05 STORE — Zapatillas y Ropa Original",
     description:
-      "Tienda peruana de zapatillas, ropa y accesorios originales. Pago con Yape y Plin.",
+      "Zapatillas, ropa y accesorios originales con Yape y Plin. Envío a Lima y provincias. ¡Conoce el catálogo!",
     siteName: "ODERA 05 STORE",
     locale: "es_PE",
     type: "website",
+    url: "/",
+    images: getSocialImages(),
+  },
+  // ── Twitter / X Card (summary_large_image) ────────────────────────────────
+  twitter: {
+    card: "summary_large_image",
+    title: "ODERA 05 STORE — Zapatillas y Ropa Original",
+    description:
+      "Zapatillas, ropa y accesorios originales con Yape y Plin. Envío a Lima y provincias.",
+    images: [getSocialImages()[0]],
   },
 };
 

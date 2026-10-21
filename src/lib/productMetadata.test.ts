@@ -24,6 +24,8 @@ describe("product sharing metadata", () => {
       images: [{ url: product.images[1]!.url, alt: product.images[1]!.alt }],
     });
     expect(metadata.twitter).toMatchObject({ card: "summary_large_image", images: [{ url: product.images[1]!.url }] });
+    // Product photos can have any aspect ratio; do not declare invented dimensions.
+    expect(metadata.openGraph).not.toMatchObject({ images: [{ width: 1200, height: 630 }] });
   });
 
   it("falls back to a valid ordered image and resolves local image paths", () => {
@@ -51,8 +53,13 @@ describe("product sharing metadata", () => {
 
   it("supports a product without valid photos without publishing an unsafe URL", () => {
     const metadata = buildProductMetadata({ ...product, images: [{ url: "data:image/png;base64,image", isMain: true, order: 0 }] }, "p1", baseUrl);
-    expect(metadata.openGraph).toMatchObject({ images: [] });
-    expect(metadata.twitter).toMatchObject({ card: "summary", images: [] });
+    expect(metadata.openGraph).toMatchObject({ images: [
+      { url: "https://store.example.test/og-home-social.jpg", width: 1200, height: 630, type: "image/jpeg" },
+      { url: "https://store.example.test/og-square-social.jpg", width: 1200, height: 1200, type: "image/jpeg" },
+    ] });
+    expect(metadata.twitter).toMatchObject({ card: "summary_large_image", images: [
+      { url: "https://store.example.test/og-home-social.jpg" },
+    ] });
   });
 });
 

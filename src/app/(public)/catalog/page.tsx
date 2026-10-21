@@ -5,11 +5,30 @@ import CatalogClient from "./catalog-client";
 import type { ProductCardData } from "@/components/ProductCard";
 import { hasStock } from "@/lib/productStock";
 import { getSearchTerms, normalizeToken, productMatchesSearch } from "@/lib/searchTokens";
+import { getSocialImages } from "@/lib/socialImages";
 
 export const metadata: Metadata = {
   title: "Catálogo",
   description:
     "Explora zapatillas, ropa y accesorios originales. Filtra por categoría, público y precio. Envío a todo el Perú.",
+  alternates: { canonical: "/catalog" },
+  openGraph: {
+    title: "Catálogo — ODERA 05 STORE",
+    description:
+      "Zapatillas, ropa y accesorios originales en un solo lugar. Filtra, elige y recibe en Lima o provincias.",
+    siteName: "ODERA 05 STORE",
+    locale: "es_PE",
+    type: "website",
+    url: "/catalog",
+    images: getSocialImages("catalog"),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Catálogo — ODERA 05 STORE",
+    description:
+      "Zapatillas, ropa y accesorios originales. Filtra y encuentra tu producto favorito.",
+    images: [getSocialImages("catalog")[0]],
+  },
 };
 
 export const revalidate = 60;

@@ -1,9 +1,30 @@
 import type { Metadata } from "next";
 import ConsumerClaimForm from "./consumer-claim-form";
+import { getSocialImages } from "@/lib/socialImages";
 
 export const metadata: Metadata = {
   title: "Libro de Reclamaciones",
-  description: "Registra una queja o reclamo de consumo ante ODERA 05 STORE.",
+  description:
+    "Registra una queja o reclamo de consumo ante ODERA 05 STORE conforme al Código de Protección al Consumidor.",
+  alternates: { canonical: "/libro-reclamaciones" },
+  robots: { index: false, follow: true },
+  openGraph: {
+    title: "Libro de Reclamaciones — ODERA 05 STORE",
+    description:
+      "Presenta tu reclamo o queja de consumidor. Respuesta en un plazo máximo de 15 días hábiles.",
+    siteName: "ODERA 05 STORE",
+    locale: "es_PE",
+    type: "website",
+    url: "/libro-reclamaciones",
+    images: getSocialImages(),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Libro de Reclamaciones — ODERA 05 STORE",
+    description:
+      "Presenta tu reclamo o queja de consumidor. Respuesta en un plazo máximo de 15 días hábiles.",
+    images: [getSocialImages()[0]],
+  },
 };
 
 export default function LibroReclamacionesPage() {

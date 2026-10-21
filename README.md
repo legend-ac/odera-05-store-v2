@@ -478,6 +478,27 @@ npm run start
 `NEXT_PUBLIC_SITE_URL` permite fijar el dominio canónico. Si no se define, se
 detectan las variables de despliegue de Vercel cuando están disponibles.
 
+### Imágenes al compartir enlaces
+
+Los originales están en `public/og-home.png`, `public/og-catalog.png` y
+`public/og-square.png`. Las etiquetas Open Graph y Twitter usan sus copias
+JPEG optimizadas: `og-home-social.jpg` (1200 × 630, 115 KB),
+`og-catalog-social.jpg` (1200 × 630, 80 KB) y `og-square-social.jpg`
+(1200 × 1200, 158 KB). `src/lib/socialImages.ts` centraliza sus rutas,
+dimensiones y textos alternativos. Inicio usa la portada; catálogo usa su
+propia imagen; ambos ofrecen la cuadrada como alternativa. Cada red decide
+el formato y recorte de la vista previa en teléfono y escritorio.
+
+Al cambiar el diseño, actualiza también las copias JPEG y usa una ruta nueva
+para evitar reutilizar la imagen anterior en caché. Publica los archivos junto
+con los metadatos. Las vistas previas ya guardadas por las redes pueden
+necesitar una nueva lectura del enlace. Para verificar las etiquetas del
+servidor y la descarga pública de las imágenes con la tienda abierta:
+
+```bash
+npx playwright test e2e/social-metadata.spec.ts
+```
+
 ## Tareas programadas y respaldos
 
 ### Reservas vencidas
